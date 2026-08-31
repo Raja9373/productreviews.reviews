@@ -1,0 +1,6 @@
+{
+  "name": "productreviews.review",
+  "description": "Global AI Review Engine - Instant multi-source AI product analysis with 40-language auto-detection, verified buying verdicts, and coupon tracking.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

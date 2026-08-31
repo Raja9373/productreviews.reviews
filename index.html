@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Compatibility guard for sandboxed environments where window.fetch has only a getter
+      try {
+        if (typeof window !== 'undefined') {
+          const originalFetch = window.fetch ? window.fetch.bind(window) : undefined;
+          let _currentFetch = originalFetch;
+          try {
+            Object.defineProperty(window, 'fetch', {
+              get: function () {
+                return _currentFetch;
+              },
+              set: function (val) {
+                _currentFetch = val;
+              },
+              configurable: true,
+              enumerable: true,
+            });
+          } catch (e) {
+            // If defineProperty on window fails, ensure globalThis is protected
+            try {
+              if (typeof globalThis !== 'undefined' && globalThis !== window) {
+                let _gtFetch = globalThis.fetch;
+                Object.defineProperty(globalThis, 'fetch', {
+                  get: function () { return _gtFetch; },
+                  set: function (val) { _gtFetch = val; },
+                  configurable: true,
+                  enumerable: true,
+                });
+              }
+            } catch (err) {}
+          }
+        }
+      } catch (e) {}
+    </script>
+    <!-- Amazon OneLink Global Auto-Redirect & Geolocation Integration -->
+    <script src="//z-na.amazon-adsystem.com/widgets/onejs?MarketPlace=US"></script>
+    <title>productreviews.review — Global AI Review Engine</title>
+    <meta name="description" content="Global AI Review Engine - Instant multi-source AI product analysis with 40-language auto-detection, verified buying verdicts, and coupon tracking." />
+    <meta property="og:title" content="productreviews.review — Global AI Review Engine" />
+    <meta property="og:description" content="Global AI Review Engine - Instant multi-source AI product analysis with 40-language auto-detection, verified buying verdicts, and coupon tracking." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  </head>
+  <body class="font-sans antialiased bg-[#FAFAFA] text-zinc-900 selection:bg-zinc-900 selection:text-white">
+    <div id="root"></div>
+    <!-- Jai Guruji - Global Geo-Affiliate System Footer Script -->
+    <script>
+      (function() {
+        try {
+          console.log("Jai Guruji Geo Active");
+          function isIndiaUser() {
+            try {
+              var tz = (Intl && Intl.DateTimeFormat) ? Intl.DateTimeFormat().resolvedOptions().timeZone : "";
+              if (tz === "Asia/Kolkata" || tz === "Asia/Calcutta" || tz.indexOf("Kolkata") !== -1 || tz.indexOf("Calcutta") !== -1) {
+                return true;
+              }
+            } catch (e) {}
+            var lang = (navigator.language || "").toLowerCase();
+            return lang === "hi" || lang.indexOf("hi-") === 0 || lang.indexOf("-in") !== -1;
+          }
+
+          function extractAsin(url) {
+            if (!url) return null;
+            var dpMatch = url.match(/(?:\/dp\/|\/gp\/product\/|\/d\/|\/product\/)([A-Z0-9]{10})(?:[/?&#]|$)/i);
+            if (dpMatch && dpMatch[1]) return dpMatch[1].toUpperCase();
+            var queryMatch = url.match(/[?&]asin=([A-Z0-9]{10})(?:[&]|$)/i);
+            if (queryMatch && queryMatch[1]) return queryMatch[1].toUpperCase();
+            return null;
+          }
+
+          function rewriteAllAmazonLinks() {
+            var isIndia = isIndiaUser();
+            var targetDomain = isIndia ? "www.amazon.in" : "www.amazon.com";
+            var targetTag = isIndia ? "jaiguruji00-21" : "jaiguruji00-20";
+
+            var anchors = document.querySelectorAll("a[href*='amazon.']");
+            anchors.forEach(function(a) {
+              var href = a.getAttribute("href") || "";
+              if (!href) return;
+              var asin = extractAsin(href);
+              if (asin) {
+                a.href = "https://" + targetDomain + "/dp/" + asin + "?tag=" + targetTag;
+              } else if (href.indexOf("/s?") !== -1 || href.indexOf("/s/") !== -1) {
+                try {
+                  var urlObj = new URL(href, window.location.origin);
+                  urlObj.hostname = targetDomain;
+                  urlObj.searchParams.set("tag", targetTag);
+                  a.href = urlObj.toString();
+                } catch(err) {}
+              }
+              a.setAttribute("target", "_blank");
+              if (!a.getAttribute("rel") || a.getAttribute("rel").indexOf("noopener") === -1) {
+                a.setAttribute("rel", "noopener noreferrer");
+              }
+            });
+          }
+
+          if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", rewriteAllAmazonLinks);
+          } else {
+            rewriteAllAmazonLinks();
+          }
+          window.addEventListener("load", rewriteAllAmazonLinks);
+        } catch(e) {}
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
