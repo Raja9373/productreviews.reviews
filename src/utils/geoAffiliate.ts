@@ -110,13 +110,11 @@ export function rewriteAmazonLinksOnPage(): number {
         }
       }
 
-      // Ensure open in new tab
+      // Ensure open in new tab and compliant affiliate rel attributes
       if (anchor.getAttribute('target') !== '_blank') {
         anchor.setAttribute('target', '_blank');
       }
-      if (!anchor.getAttribute('rel')?.includes('noopener')) {
-        anchor.setAttribute('rel', 'noopener noreferrer');
-      }
+      anchor.setAttribute('rel', 'nofollow sponsored noopener noreferrer');
     } catch (err) {
       // ignore parsing error on malformed link
     }

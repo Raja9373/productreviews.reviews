@@ -38,7 +38,7 @@ export const AMAZON_MARKETPLACES: AmazonMarketplace[] = [
     countryName: 'Japan',
     flag: '🇯🇵',
     domain: 'amazon.co.jp',
-    defaultTag: 'JPTAG-22',
+    defaultTag: 'jaiguruji00-22',
     currencySymbol: '¥',
     currencyCode: 'JPY',
     associatedLangs: ['ja'],
@@ -48,7 +48,7 @@ export const AMAZON_MARKETPLACES: AmazonMarketplace[] = [
     countryName: 'Spain',
     flag: '🇪🇸',
     domain: 'amazon.es',
-    defaultTag: 'ESTAG-21',
+    defaultTag: 'jaiguruji0008-21',
     currencySymbol: '€',
     currencyCode: 'EUR',
     associatedLangs: ['es'],
@@ -58,7 +58,7 @@ export const AMAZON_MARKETPLACES: AmazonMarketplace[] = [
     countryName: 'United Kingdom',
     flag: '🇬🇧',
     domain: 'amazon.co.uk',
-    defaultTag: 'UKTAG-21',
+    defaultTag: 'jaiguruji0002-21',
     currencySymbol: '£',
     currencyCode: 'GBP',
     associatedLangs: [],
@@ -68,7 +68,7 @@ export const AMAZON_MARKETPLACES: AmazonMarketplace[] = [
     countryName: 'Germany',
     flag: '🇩🇪',
     domain: 'amazon.de',
-    defaultTag: 'DETAG-21',
+    defaultTag: 'jaiguruji0004-21',
     currencySymbol: '€',
     currencyCode: 'EUR',
     associatedLangs: ['de', 'cs', 'pl', 'nl', 'hu'],
@@ -78,7 +78,7 @@ export const AMAZON_MARKETPLACES: AmazonMarketplace[] = [
     countryName: 'France',
     flag: '🇫🇷',
     domain: 'amazon.fr',
-    defaultTag: 'FRTAG-21',
+    defaultTag: 'jaiguruji0005-21',
     currencySymbol: '€',
     currencyCode: 'EUR',
     associatedLangs: ['fr'],
@@ -88,7 +88,7 @@ export const AMAZON_MARKETPLACES: AmazonMarketplace[] = [
     countryName: 'Italy',
     flag: '🇮🇹',
     domain: 'amazon.it',
-    defaultTag: 'ITTAG-21',
+    defaultTag: 'jaiguruji0007-21',
     currencySymbol: '€',
     currencyCode: 'EUR',
     associatedLangs: ['it'],
@@ -98,7 +98,7 @@ export const AMAZON_MARKETPLACES: AmazonMarketplace[] = [
     countryName: 'Canada',
     flag: '🇨🇦',
     domain: 'amazon.ca',
-    defaultTag: 'CATAG-20',
+    defaultTag: 'jaiguruji000b-20',
     currencySymbol: 'CA$',
     currencyCode: 'CAD',
     associatedLangs: [],
@@ -211,7 +211,7 @@ export interface GeoAffiliateTarget {
 
 // Jai Guruji - Auto Geo Affiliate
 // Direct ASIN resolver using browser timezone + language detection
-export function getAffiliateLink(asin: string): string {
+export function getAffiliateLink(asin?: string, fallbackQuery = ''): string {
   let userLang = '';
   let userTz = '';
   try {
@@ -225,9 +225,7 @@ export function getAffiliateLink(asin: string): string {
   const inTag = settings.tags['IN'] || 'jaiguruji00-21';
   const usTag = settings.tags['US'] || 'jaiguruji00-20';
 
-  // Simple IP check se better - browser se pata chalega
-  // India user
-  if (
+  const isIndia =
     userTz.includes('Kolkata') ||
     userTz.includes('Calcutta') ||
     userLang.includes('hi') ||
@@ -235,11 +233,25 @@ export function getAffiliateLink(asin: string): string {
     userLang.includes('ta') ||
     userLang.includes('te') ||
     userLang.includes('mr') ||
-    userLang.includes('bn')
-  ) {
-    return `https://www.amazon.in/dp/${asin}?tag=${inTag}`;
+    userLang.includes('bn');
+
+  const domain = isIndia ? 'amazon.in' : 'amazon.com';
+  const activeTag = isIndia ? inTag : usTag;
+
+  // Strict ASIN validation (Must be exactly 10 alphanumeric characters, not synthetic/fake)
+  const isRealASIN = Boolean(
+    asin &&
+    asin.trim().length === 10 &&
+    /^[B0-9][A-Z0-9]{9}$/i.test(asin.trim()) &&
+    !asin.includes('99999')
+  );
+
+  if (isRealASIN) {
+    return `https://www.${domain}/dp/${asin!.trim()}?tag=${activeTag}`;
   } else {
-    return `https://www.amazon.com/dp/${asin}?tag=${usTag}`;
+    // NEVER 404: Guaranteed working search fallback
+    const q = encodeURIComponent(fallbackQuery.trim() || 'best sellers deals');
+    return `https://www.${domain}/s?k=${q}&tag=${activeTag}&linkCode=ll2&ref=as_li_ss_tl`;
   }
 }
 
@@ -325,7 +337,8 @@ export function resolveGeoAffiliate(
 
 /**
  * Builds a clean geo-localized affiliate URL with dynamic ?tag=
- * Supports direct ASIN product page if provided, otherwise clean product search link
+ * If a verified 10-character real ASIN is available, links to /dp/{ASIN}?tag=
+ * Otherwise, NEVER 404: links to high-converting Amazon Search page with affiliate tag!
  */
 export function buildAmazonAffiliateUrl(
   productName: string,
@@ -336,12 +349,25 @@ export function buildAmazonAffiliateUrl(
 ): { url: string; geoTarget: GeoAffiliateTarget } {
   const geoTarget = resolveGeoAffiliate(lang, countryOverride);
   
+  const isRealASIN = Boolean(
+    asin &&
+    asin.trim().length === 10 &&
+    /^[B0-9][A-Z0-9]{9}$/i.test(asin.trim()) &&
+    !asin.includes('99999') &&
+    !asin.startsWith('B0RANDOM')
+  );
+
   let affiliateUrl = '';
-  if (asin && asin.trim().length > 3) {
-    affiliateUrl = `https://www.${geoTarget.domain}/dp/${asin.trim()}?tag=${geoTarget.affiliateTag}`;
+  if (isRealASIN) {
+    affiliateUrl = `https://www.${geoTarget.domain}/dp/${asin!.trim()}?tag=${geoTarget.affiliateTag}`;
   } else {
-    const cleanQuery = encodeURIComponent(`${productName} ${modelNumber}`.trim());
-    affiliateUrl = `https://www.${geoTarget.domain}/s?k=${cleanQuery}&tag=${geoTarget.affiliateTag}&linkCode=ll2&ref=as_li_ss_tl`;
+    // Clean search terms to avoid weird symbol artifacts
+    const cleanSearch = `${productName} ${modelNumber}`
+      .replace(/[\(\)\[\]\{\}\/\\+🔥✓]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    affiliateUrl = `https://www.${geoTarget.domain}/s?k=${encodeURIComponent(cleanSearch || 'electronics appliances')}&tag=${geoTarget.affiliateTag}&linkCode=ll2&ref=as_li_ss_tl`;
   }
 
   return {

@@ -55,7 +55,11 @@ export interface ProductModel {
   basePriceUSD: number;
   rating: number;
   totalReviews: number;
-  tag: string; // e.g. "Best Overall", "Top Value", "Flagship 2026", "Editor's Choice"
+  tag: string; // e.g. "🔥 Aaj Kal Sabse Zyada Bik Raha Hai", "Budget Pick", "Balanced Value", "Premium Flagship"
+  budgetTier?: 'TRENDING' | 'BUDGET' | 'BALANCED' | 'PREMIUM';
+  verifiedBuyersCount?: number;
+  positiveRatingPercent?: number;
+  whyDemandReason?: string; // e.g. "3,450 verified buyers, 88% 5-star"
   specs: { [key: string]: string };
   asin?: string;
 }

@@ -303,7 +303,7 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
           <Clock className="w-4 h-4 text-zinc-700 shrink-0 mt-0.5" />
           <div>
             <div className="font-medium text-zinc-900">5-7s Deep AI Report</div>
-            <div className="text-[11px] text-zinc-400 mt-0.5">Multi-point scan with honest BUY / DONT BUY verdict</div>
+            <div className="text-[11px] text-zinc-400 mt-0.5">Multi-point scan with honest AI recommendation verdict</div>
           </div>
         </div>
 

@@ -23,13 +23,33 @@ import {
   TrendingDown,
   ChevronRight,
   HelpCircle,
-  ChevronDown
+  ChevronDown,
+  Car,
+  Hotel,
+  Utensils,
+  Plane,
+  HeartPulse,
+  Building,
+  GraduationCap,
+  CreditCard as CreditCardIcon
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { DetailedReport, LanguageCode } from '../types';
 import { LANGUAGES, TRANSLATIONS } from '../data/languages';
 import { EdgeRedisCache } from '../utils/cacheManager';
 import { buildAmazonAffiliateUrl } from '../utils/affiliateManager';
+import { resolveAffiliateDestination } from '../lib/smartRouter';
+import {
+  detectCountry,
+  getAmazonUrl,
+  getCarUrl,
+  getHotelUrl,
+  getFlightUrl,
+  getRestaurantUrl,
+  getFinanceUrl,
+  getRealEstateUrl,
+  getHealthcareUrl,
+} from '../lib/amazonGlobal';
 import { AdSlot } from './AdSlot';
 
 interface ReportViewProps {
@@ -94,16 +114,54 @@ export const ReportView: React.FC<ReportViewProps> = ({
     setTimeout(() => setCopiedLink(false), 2500);
   };
 
-  const isBuy = report.verdict === 'BUY';
+  const isRecommended = report.verdict === 'BUY' || (report.verdict as string) === 'RECOMMENDED';
+
+  const detectedGeoCountry = detectCountry();
+  const userCountry = currentLang === 'hi' ? 'IN' : detectedGeoCountry || 'US';
+  const routing = resolveAffiliateDestination(report.name, report.category, userCountry);
+
+  const finalCtaUrl =
+    routing.partnerKey === 'amazon'
+      ? getAmazonUrl(report.name, userCountry)
+      : routing.partnerKey === 'cardekho'
+      ? getCarUrl(report.name, userCountry).url
+      : routing.partnerKey === 'hotels' || routing.partnerKey === 'resorts'
+      ? getHotelUrl(report.name).url
+      : routing.partnerKey === 'flights'
+      ? getFlightUrl(report.name, userCountry).url
+      : routing.partnerKey === 'restaurants' || routing.partnerKey === 'cafes'
+      ? getRestaurantUrl(report.name, userCountry).url
+      : routing.partnerKey === 'finance'
+      ? getFinanceUrl(report.name, userCountry).url
+      : routing.partnerKey === 'realestate'
+      ? getRealEstateUrl(report.name, userCountry).url
+      : routing.url || getAmazonUrl(report.name, userCountry);
+
+  const finalButtonText =
+    routing.partnerKey === 'amazon'
+      ? 'Have a Look'
+      : routing.partnerKey === 'cardekho'
+      ? 'Check On-Road Price'
+      : routing.partnerKey === 'hotels' || routing.partnerKey === 'resorts'
+      ? 'Check Availability'
+      : routing.partnerKey === 'restaurants' || routing.partnerKey === 'cafes'
+      ? 'View Menu & Reserve'
+      : routing.partnerKey === 'flights'
+      ? 'Check Flight Prices'
+      : routing.partnerKey === 'finance'
+      ? 'Compare Offers'
+      : routing.partnerKey === 'healthcare'
+      ? 'View Hospital Info'
+      : routing.buttonText || 'Have a Look';
 
   // Subreddit source matching
   const getSubreddit = () => {
-    const cat = report.category.toLowerCase();
-    if (cat.includes('tv') || cat.includes('television') || cat.includes('oled')) return 'r/4kTV & r/HomeTheater';
-    if (cat.includes('headphone') || cat.includes('audio') || cat.includes('earbud')) return 'r/headphones & r/audiophile';
-    if (cat.includes('phone') || cat.includes('smartphone')) return 'r/Android & r/apple';
-    if (cat.includes('laptop') || cat.includes('pc') || cat.includes('macbook')) return 'r/SuggestALaptop & r/pcmasterrace';
-    return 'r/BuyItForLife & r/gadgets';
+    const catrest = report.category.toLowerCase();
+    if (catrest.includes('tv') || catrest.includes('television') || catrest.includes('oled')) return 'r/4kTV & r/HomeTheater';
+    if (catrest.includes('headphone') || catrest.includes('audio') || catrest.includes('earbud')) return 'r/headphones & r/audiophile';
+    if (catrest.includes('phone') || catrest.includes('smartphone')) return 'r/Android & r/apple';
+    if (catrest.includes('laptop') || catrest.includes('pc') || catrest.includes('macbook')) return 'r/SuggestALaptop & r/pcmasterrace';
+    return 'r/gadgets & r/technology';
   };
 
   // Structured FAQs for SEO & Adsense
@@ -125,9 +183,9 @@ export const ReportView: React.FC<ReportViewProps> = ({
       answer: `While generally rated high, verified user feedback notes potential limitations such as: ${localizedCons.join(', ')}. If these factors are critical for your setup, consider reviewing comparative alternatives before finalizing.`,
     },
     {
-      question: `Is the ${report.modelNumber} worth buying at ${formatPrice(report.basePriceUSD)}?`,
-      answer: `Our consensus algorithm gives the ${report.name} a final verdict of ${report.verdict}. ${
-        isBuy
+      question: `Is the ${report.modelNumber} a recommended choice at ${formatPrice(report.basePriceUSD)}?`,
+      answer: `Our consensus algorithm gives the ${report.name} a final verdict of ${isRecommended ? 'RECOMMENDED' : 'CONSIDER ALTERNATIVES'}. ${
+        isRecommended
           ? `With an average return rate below 3.2% and verified store discounts up to ${report.coupon.discountText}, it represents strong value in the ${report.category} segment.`
           : `Given competing options in the same price tier, we advise looking at alternative models or waiting for promotional seasonal discounts.`
       }`,
@@ -457,7 +515,7 @@ export const ReportView: React.FC<ReportViewProps> = ({
           <div
             id="verdict-sticky-card"
             className={`rounded-[24px] p-8 shadow-lg flex flex-col items-center text-center ${
-              isBuy
+              isRecommended
                 ? 'bg-emerald-600 text-white'
                 : 'bg-red-600 text-white'
             }`}
@@ -467,9 +525,9 @@ export const ReportView: React.FC<ReportViewProps> = ({
               AI Final Verdict
             </span>
 
-            {/* Huge BUY / DON'T BUY */}
-            <div className="text-5xl sm:text-6xl font-black tracking-tighter mb-4">
-              {isBuy ? t.verdictBuy : t.verdictDontBuy}
+            {/* Verdict Badge */}
+            <div className="text-4xl sm:text-5xl font-black tracking-tighter mb-4">
+              {isRecommended ? t.verdictBuy : t.verdictDontBuy}
             </div>
 
             <div className="h-px w-full bg-white/20 mb-4" />
@@ -489,25 +547,31 @@ export const ReportView: React.FC<ReportViewProps> = ({
               <span className="ml-1 text-white font-normal text-xs">({report.totalReviews.toLocaleString()})</span>
             </div>
 
-            {/* View Deal CTA Button (Amazon Geo-Affiliate + Local Price) */}
+            {/* View Deal CTA Button (Smart Affiliate / CarDekho / Booking / Amazon) */}
             <a
-              id="buy-deal-cta"
-              href={amazonGeoData.url}
+              id="check-price-cta"
+              href={finalCtaUrl}
               target="_blank"
-              rel="noopener noreferrer"
+              rel="nofollow sponsored"
               className={`w-full py-4 px-4 bg-white rounded-xl font-extrabold text-sm sm:text-base shadow-md hover:scale-[1.02] transition-transform active:scale-95 flex flex-col items-center justify-center gap-0.5 ${
-                isBuy ? 'text-emerald-700' : 'text-red-700'
+                isRecommended ? 'text-emerald-700' : 'text-red-700'
               }`}
             >
               <div className="flex items-center gap-1.5 font-black tracking-tight">
-                <span>Buy on Amazon — {formatPrice(report.basePriceUSD)}</span>
+                <span>{finalButtonText}</span>
                 <ExternalLink className="w-4 h-4 shrink-0" />
               </div>
             </a>
 
             {/* Small Geo Notice under button */}
             <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-white/95 font-medium leading-tight">
-              <span>We found best price in your country — <strong>{amazonGeoData.geoTarget.shipsToText}</strong></span>
+              {routing.partnerKey === 'cardekho' ? (
+                <span>Official CarDekho on-road comparison &amp; price breakup</span>
+              ) : routing.partnerKey === 'amazon' ? (
+                <span>We found best price in your country — <strong>{amazonGeoData.geoTarget.shipsToText}</strong></span>
+              ) : (
+                <span>Verified ratings &amp; real customer consensus</span>
+              )}
             </div>
           </div>
 
@@ -567,7 +631,7 @@ export const ReportView: React.FC<ReportViewProps> = ({
                     key={st.storeName}
                     href={storeUrl}
                     target="_blank"
-                    rel="noopener noreferrer"
+                    rel="nofollow sponsored"
                     className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-50 hover:bg-zinc-100 transition-colors text-xs group"
                   >
                     <div>
@@ -593,7 +657,7 @@ export const ReportView: React.FC<ReportViewProps> = ({
             </div>
           </div>
 
-          {/* Ad 3: Right sticky column, below BUY/DONT BUY card (Sidebar 300x250) */}
+          {/* Ad 3: Right sticky column (Sidebar 300x250) */}
           <AdSlot id="ad-slot-sidebar" type="sidebar" className="my-2" />
         </div>
       </div>

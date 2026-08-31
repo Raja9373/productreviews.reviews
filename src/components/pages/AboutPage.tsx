@@ -33,7 +33,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onBackToHome }) => {
 
         <div className="space-y-6 text-zinc-600 text-base leading-relaxed font-normal">
           <p>
-            Welcome to <strong>productreviews.review</strong>, the world’s dedicated real-time AI product intelligence engine designed to eliminate commercial bias and review fatigue. Founded on the principle of algorithmic transparency, we believe consumers deserve objective, rapid, and comprehensive buying advice before spending their hard-earned money.
+            Welcome to <strong>productreviews.review</strong>, the world’s dedicated real-time AI product intelligence engine designed to eliminate commercial bias and review fatigue. Founded on the principle of algorithmic transparency, we believe consumers deserve objective, rapid, and comprehensive shopping guidance before spending their hard-earned money.
           </p>
 
           <p>
@@ -41,7 +41,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onBackToHome }) => {
           </p>
 
           <p>
-            <strong>productreviews.review</strong> solves this by aggregating and synthesizing thousands of verified customer reviews, expert hardware tests, long-term durability reports, and community sentiments in 5 to 7 seconds. Our multi-source consensus engine parses sentiment from Amazon verified purchases, Reddit community discussions (such as r/BuyItForLife and specialized hardware subreddits), and independent YouTube teardown creators.
+            <strong>productreviews.review</strong> solves this by aggregating and synthesizing thousands of verified customer reviews, expert hardware tests, long-term durability reports, and community sentiments in 5 to 7 seconds. Our multi-source consensus engine parses sentiment from Amazon verified purchases, Reddit community discussions (such as hardware subreddits and lifestyle communities), and independent YouTube teardown creators.
           </p>
 
           <h2 className="text-xl font-bold text-zinc-900 pt-4">
@@ -53,7 +53,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onBackToHome }) => {
           </p>
 
           <p>
-            Every product assessment concludes with an unambiguous <strong>BUY</strong> or <strong>DON’T BUY</strong> verdict powered by multi-point data weighting. We do not accept sponsored product placements or manufacturer alterations. If a product overheats, suffers firmware defects, or fails prematurely, our consensus scorecard reflects it directly.
+            Every product assessment concludes with an unambiguous <strong>RECOMMENDED</strong> or <strong>NOT RECOMMENDED</strong> verdict powered by multi-point data weighting. We do not accept sponsored product placements or manufacturer alterations. If a product overheats, suffers firmware defects, or fails prematurely, our consensus scorecard reflects it directly.
           </p>
         </div>
 

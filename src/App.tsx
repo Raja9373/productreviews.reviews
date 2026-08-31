@@ -22,10 +22,12 @@ import { LANGUAGES, TRANSLATIONS } from './data/languages';
 import {
   getInitialLanguage,
   saveLanguagePreference,
-  detectLanguageFromQuery,
 } from './utils/languageDetector';
 import { getMockResults, generateDetailedReport, CURATED_PRODUCT_DATABASES } from './data/mockProducts';
+import { CATEGORIES, Category, SubCategory, matchCategoryFromQuery } from './data/categories';
 import { EdgeRedisCache } from './utils/cacheManager';
+import { searchAmazonProducts, fetchCategoryProducts } from './utils/paapiClient';
+import { getAffiliatePartner } from './lib/smartRouter';
 
 type AppScreen =
   | 'HERO'
@@ -43,6 +45,7 @@ export default function App() {
   const [currentLang, setCurrentLang] = useState<LanguageCode>(getInitialLanguage());
   const [screen, setScreen] = useState<AppScreen>('HERO');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [matchingModels, setMatchingModels] = useState<ProductModel[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<ProductModel | null>(null);
   const [activeReport, setActiveReport] = useState<DetailedReport | null>(null);
@@ -56,7 +59,7 @@ export default function App() {
     }
   }, [currentLang]);
 
-  // URL Hash & Pathname Routing Support: e.g. /es, /about, /#/ja/panasonic-tv-th55mx800 or /#/about
+  // URL Hash & Pathname Routing Support: e.g. /category/mobile-communication, /about, /review/[slug]
   const parseUrlRoute = useCallback(() => {
     try {
       const hash = window.location.hash.replace(/^#\/?/, '');
@@ -108,6 +111,22 @@ export default function App() {
         return;
       }
 
+      // Check category route: e.g. /category/[slug] or #/category/[slug]
+      if (cleanPath.startsWith('category/') || cleanPath.includes('/category/')) {
+        const catSlug = cleanPath.split('category/')[1]?.split('/')[0];
+        if (catSlug) {
+          const matchedCat = CATEGORIES.find((c) => c.slug === catSlug || c.id === catSlug);
+          if (matchedCat) {
+            setSelectedCategory(matchedCat);
+            setSearchQuery(matchedCat.name);
+            const models = getMockResults(matchedCat.name);
+            setMatchingModels(models);
+            setScreen('MODEL_SELECTOR');
+            return;
+          }
+        }
+      }
+
       // Check standalone language route: e.g. /es or /fr or /ja
       const matchedLang = LANGUAGES.find((l) => l.code.toLowerCase() === cleanPath.toLowerCase());
       if (matchedLang) {
@@ -116,8 +135,13 @@ export default function App() {
         return;
       }
 
-      // Dynamic product report route: e.g. /#/en/panasonic-tv-th55mx800 or /en/panasonic-tv-th55mx800 or /#/panasonic-tv-th55mx800
-      const parts = activeRoute.split('/');
+      // Dynamic product report route: e.g. /review/samsung-7kg-ai-washing-machine or /#/en/panasonic-tv-th55mx800 or /#/review/[slug]
+      let normalizedRoute = activeRoute;
+      if (normalizedRoute.startsWith('review/')) {
+        normalizedRoute = normalizedRoute.replace(/^review\//, '');
+      }
+
+      const parts = normalizedRoute.split('/');
       let targetLang = currentLang;
       let slug = '';
 
@@ -126,10 +150,16 @@ export default function App() {
         if (LANGUAGES.some((l) => l.code === urlLang)) {
           targetLang = urlLang;
           setCurrentLang(urlLang);
+          slug = parts.slice(1).join('/');
+        } else {
+          slug = parts.join('/');
         }
-        slug = parts[1];
       } else {
         slug = parts[0];
+      }
+
+      if (slug.startsWith('review/')) {
+        slug = slug.replace(/^review\//, '');
       }
 
       if (!slug) return;
@@ -143,17 +173,30 @@ export default function App() {
         return;
       }
 
-      // Search in databases
+      // Search in curated databases
+      let foundMatch: ProductModel | undefined;
       for (const key in CURATED_PRODUCT_DATABASES) {
-        const match = CURATED_PRODUCT_DATABASES[key].find((m) => m.slug === slug);
+        const match = CURATED_PRODUCT_DATABASES[key].find((m) => m.slug === slug || m.id === slug);
         if (match) {
-          setSelectedProduct(match);
-          const generated = generateDetailedReport(match, targetLang || currentLang);
-          EdgeRedisCache.set(match.slug, generated);
-          setActiveReport(generated);
-          setScreen('REPORT');
-          return;
+          foundMatch = match;
+          break;
         }
+      }
+
+      // If not in curated, generate dynamically from slug words
+      if (!foundMatch) {
+        const queryFromSlug = slug.replace(/[-_]+/g, ' ');
+        const models = getMockResults(queryFromSlug);
+        foundMatch = models.find((m) => m.slug === slug || m.id === slug) || models[0];
+      }
+
+      if (foundMatch) {
+        setSelectedProduct(foundMatch);
+        const generated = generateDetailedReport(foundMatch, targetLang || currentLang);
+        EdgeRedisCache.set(foundMatch.slug, generated);
+        setActiveReport(generated);
+        setScreen('REPORT');
+        return;
       }
     } catch {
       // ignore
@@ -166,13 +209,15 @@ export default function App() {
     return () => window.removeEventListener('hashchange', parseUrlRoute);
   }, [parseUrlRoute]);
 
-  // Sync URL when Report is active
+  // Sync URL when Report or page is active
   useEffect(() => {
     if (screen === 'REPORT' && activeReport) {
       const newHash = `#/${currentLang}/${activeReport.slug}`;
       if (window.location.hash !== newHash) {
         window.history.pushState(null, '', newHash);
       }
+    } else if (screen === 'MODEL_SELECTOR' && selectedCategory) {
+      window.history.pushState(null, '', `#/category/${selectedCategory.slug}`);
     } else if (screen === 'ABOUT') {
       window.history.pushState(null, '', `#/about`);
     } else if (screen === 'CONTACT') {
@@ -188,7 +233,7 @@ export default function App() {
     } else if (screen === 'HERO' && window.location.hash && !window.location.hash.startsWith('#/')) {
       window.history.pushState(null, '', window.location.pathname);
     }
-  }, [screen, activeReport, currentLang]);
+  }, [screen, activeReport, currentLang, selectedCategory]);
 
   // Language Change Handler
   const handleSelectLanguage = (lang: LanguageCode, manual = false) => {
@@ -205,6 +250,30 @@ export default function App() {
     }
   };
 
+  // Category Selection Handler (from Mega Menu or Category links)
+  const handleSelectCategory = (category: Category, subcategory?: SubCategory) => {
+    setSelectedCategory(category);
+    const searchTarget = subcategory ? subcategory.searchQuery : category.name;
+    setSearchQuery(searchTarget);
+
+    // Instant local results
+    const initialModels = getMockResults(searchTarget);
+    setMatchingModels(initialModels);
+    setScreen('MODEL_SELECTOR');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Live PA-API fetch ONLY if this category routes to Amazon
+    if (category.ctaType === 'amazon' || !category.ctaType) {
+      fetchCategoryProducts(category.slug).then((res) => {
+        if (res && res.items && res.items.length > 0) {
+          setMatchingModels(res.items);
+        }
+      }).catch((err) => {
+        console.warn('[App] Category PA-API fetch notice:', err);
+      });
+    }
+  };
+
   // Search Submission Handler
   const handleSearchSubmit = (query: string, queryDetectedLang?: LanguageCode) => {
     const targetLang = queryDetectedLang || currentLang;
@@ -212,12 +281,20 @@ export default function App() {
       setCurrentLang(queryDetectedLang);
     }
 
-    setSearchQuery(query);
-    const models = getMockResults(query);
+    const trimmed = query.trim();
+    setSearchQuery(trimmed);
+
+    // Check matched category if any
+    const matchResult = matchCategoryFromQuery(trimmed);
+    const matchedCategory = matchResult?.category || null;
+    setSelectedCategory(matchedCategory);
+
+    // Immediate display with initial curated catalog
+    const initialModels = getMockResults(trimmed);
 
     // If query was exact match or only 1 model found or user searched exact slug
-    const normalized = query.toLowerCase().trim();
-    const exactMatch = models.find(
+    const normalized = trimmed.toLowerCase();
+    const exactMatch = initialModels.find(
       (m) =>
         m.name.toLowerCase() === normalized ||
         m.modelNumber.toLowerCase() === normalized ||
@@ -228,9 +305,22 @@ export default function App() {
       // Direct jump to 5-7s scan
       handleSelectModel(exactMatch, targetLang);
     } else {
-      // Show 6 models selector
-      setMatchingModels(models);
+      // Show models selector
+      setMatchingModels(initialModels);
       setScreen('MODEL_SELECTOR');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // Check affiliate partner: ONLY call Amazon PA-API if partner is Amazon
+      const partner = getAffiliatePartner(trimmed, matchedCategory?.slug);
+      if (partner === 'amazon') {
+        searchAmazonProducts(trimmed).then((res) => {
+          if (res && res.items && res.items.length > 0) {
+            setMatchingModels(res.items);
+          }
+        }).catch((err) => {
+          console.warn('[App] Search PA-API notice:', err);
+        });
+      }
     }
   };
 
@@ -264,6 +354,7 @@ export default function App() {
     setScreen('HERO');
     setSelectedProduct(null);
     setActiveReport(null);
+    setSelectedCategory(null);
     setSearchQuery('');
     window.location.hash = '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -281,10 +372,11 @@ export default function App() {
         currentLang={currentLang}
         onSelectLanguage={handleSelectLanguage}
         onResetToHome={handleResetToHome}
+        onSelectCategory={handleSelectCategory}
         currentSlug={activeReport?.slug}
       />
 
-      {/* Ad 1: After header, 728x90 Leaderboard (TASK 2 Requirement) */}
+      {/* Ad 1: After header, 728x90 Leaderboard */}
       <div className="w-full px-4 pt-4 flex justify-center">
         <AdSlot id="ad-slot-leaderboard-top" type="leaderboard" className="my-2" />
       </div>
@@ -307,6 +399,7 @@ export default function App() {
             currentLang={currentLang}
             onSelectModel={(m) => handleSelectModel(m)}
             onBackToSearch={handleResetToHome}
+            categoryContext={selectedCategory}
           />
         )}
 
@@ -336,12 +429,12 @@ export default function App() {
         {screen === 'AFFILIATE_SETTINGS' && <AffiliateSettingsPage onBackToHome={handleResetToHome} />}
       </main>
 
-      {/* Ad 4: Before footer, full width responsive banner (TASK 2 Requirement) */}
+      {/* Ad 4: Before footer, full width responsive banner */}
       <div className="w-full px-4 pb-2 flex justify-center">
         <AdSlot id="ad-slot-footer-banner" type="footerBanner" className="my-4" />
       </div>
 
-      {/* Clean Minimalism Footer (TASK 1: Compulsory Footer Pages Links) */}
+      {/* Clean Minimalism Footer */}
       <footer className="w-full border-t border-zinc-100 bg-white py-8 px-4 sm:px-8 mt-auto">
         <div className="max-w-6xl mx-auto flex flex-col space-y-6">
           {/* Top Footer Row: Branding & Compulsory Navigation Links */}
@@ -416,6 +509,8 @@ export default function App() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-400">
             <div className="flex flex-wrap items-center justify-center gap-3 text-[11px]">
               <span>⚡ Edge Redis Cached</span>
+              <span>•</span>
+              <span>33 Categories Hub</span>
               <span>•</span>
               <span>40 Languages Pre-translated</span>
               <span>•</span>

@@ -38,7 +38,7 @@ export const CountdownScanner: React.FC<CountdownScannerProps> = ({
     },
     {
       icon: MessageSquare,
-      title: 'Checking Reddit r/gadgets & r/BuyItForLife discussions...',
+      title: 'Checking Reddit r/gadgets & community discussions...',
       desc: 'Aggregating genuine community sentiment & long term durability',
       color: 'text-orange-500',
       bgColor: 'bg-orange-50',

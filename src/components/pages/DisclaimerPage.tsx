@@ -42,14 +42,14 @@ export const DisclaimerPage: React.FC<DisclaimerPageProps> = ({ onBackToHome }) 
               Affiliate Commission Disclosure
             </h2>
             <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
-              <strong>productreviews.review</strong> is a participant in affiliate advertising programs designed to provide a means for sites to earn advertising fees by linking to retail partners including Amazon, Best Buy, B&amp;H, Walmart, and other authorized e-commerce merchants. If you click on an outbound retailer link and complete a qualifying purchase, we may receive a small affiliate commission at <strong>no additional cost to you</strong>.
+              <strong>productreviews.review</strong> is a participant in affiliate advertising programs designed to provide a means for sites to earn advertising fees by linking to retail partners including Amazon, Walmart, and other authorized e-commerce merchants. If you click on an outbound retailer link and complete a qualifying purchase, we may receive a small affiliate commission at <strong>no additional cost to you</strong>.
             </p>
           </div>
 
           <section className="space-y-3">
             <h2 className="text-lg font-bold text-zinc-900">1. Complete Editorial &amp; Algorithmic Independence</h2>
             <p>
-              Our affiliate relationships <strong>never influence</strong> our AI evaluations, numerical scorecards, or final <strong>BUY</strong> vs. <strong>DON’T BUY</strong> verdicts. If a product fails benchmark standards, has documented reliability flaws on Reddit, or suffers high warranty return rates, our consensus algorithm reports those defects transparently.
+              Our affiliate relationships <strong>never influence</strong> our AI evaluations, numerical scorecards, or final <strong>RECOMMENDED</strong> vs. <strong>NOT RECOMMENDED</strong> verdicts. If a product fails benchmark standards, has documented reliability flaws on Reddit, or suffers high warranty return rates, our consensus algorithm reports those defects transparently.
             </p>
           </section>
 
@@ -61,9 +61,9 @@ export const DisclaimerPage: React.FC<DisclaimerPageProps> = ({ onBackToHome }) 
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-lg font-bold text-zinc-900">3. Verify Before Buying</h2>
+            <h2 className="text-lg font-bold text-zinc-900">3. Verify Before Proceeding</h2>
             <p>
-              Prices, product availability, coupon validity, rebate terms, and technical specifications are subject to merchant modification at any moment. Always confirm final checkout totals, regional compatibility, and warranty policies directly on the merchant's checkout page before completing any financial transaction.
+              Prices, product availability, coupon validity, rebate terms, and technical specifications are subject to merchant modification at any moment. Always confirm final checkout totals, regional compatibility, and warranty policies directly on the merchant's checkout page before completing any transaction.
             </p>
           </section>
 

@@ -81,7 +81,7 @@ export const PrivacyPage: React.FC<PrivacyPageProps> = ({ onBackToHome }) => {
           <section className="space-y-3">
             <h2 className="text-lg font-bold text-zinc-900">4. Affiliate Links &amp; Merchant Tracking</h2>
             <p>
-              When you click outbound store links (e.g. Amazon, Best Buy, B&amp;H Photo), the merchant may place a transient tracking cookie to record qualifying purchases and attribute commissions. These cookies do not transmit personally identifiable information back to productreviews.review.
+              When you click outbound store links (e.g. Amazon, Walmart, B&amp;H Photo), the merchant may place a transient tracking cookie to record qualifying purchases and attribute commissions. These cookies do not transmit personally identifiable information back to productreviews.review.
             </p>
           </section>
 
