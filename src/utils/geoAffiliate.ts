@@ -125,16 +125,21 @@ export function rewriteAmazonLinksOnPage(): number {
   return rewrittenCount;
 }
 
-/**
- * Site-wide initializer: Sets up link rewriting on page load, DOM mutations, and logs Jai Guruji Geo Active.
- */
-let isInitialized = false;
+declare global {
+  interface Window {
+    __jaiGurujiGeoLogged?: boolean;
+    __jaiGurujiGeoInitialized?: boolean;
+  }
+}
 
 export function initJaiGurujiGeoAffiliate(): void {
   if (typeof window === 'undefined') return;
 
-  // 6. Console log "Jai Guruji Geo Active"
-  console.log('Jai Guruji Geo Active');
+  // 6. Console log "Jai Guruji Geo Active" - SINGLE TIME ONLY
+  if (!window.__jaiGurujiGeoLogged) {
+    window.__jaiGurujiGeoLogged = true;
+    console.log('Jai Guruji Geo Active');
+  }
 
   // Initial rewrite
   if (document.readyState === 'loading') {
@@ -146,22 +151,24 @@ export function initJaiGurujiGeoAffiliate(): void {
   }
 
   // Keep active across React view transitions and DOM changes via MutationObserver
-  if (!isInitialized && typeof MutationObserver !== 'undefined') {
-    isInitialized = true;
+  if (!window.__jaiGurujiGeoInitialized && typeof MutationObserver !== 'undefined') {
+    window.__jaiGurujiGeoInitialized = true;
     let throttleTimer: ReturnType<typeof setTimeout> | null = null;
     const observer = new MutationObserver(() => {
       if (throttleTimer) return;
       throttleTimer = setTimeout(() => {
         rewriteAmazonLinksOnPage();
         throttleTimer = null;
-      }, 100);
+      }, 150);
     });
 
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['href'],
-    });
+    if (document.body) {
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['href'],
+      });
+    }
   }
 }

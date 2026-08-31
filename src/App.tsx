@@ -56,19 +56,22 @@ export default function App() {
     }
   }, [currentLang]);
 
-  // URL Hash Routing Support: e.g. /#/ja/panasonic-tv-th55mx800 or /#/about
+  // URL Hash & Pathname Routing Support: e.g. /es, /about, /#/ja/panasonic-tv-th55mx800 or /#/about
   const parseUrlRoute = useCallback(() => {
     try {
       const hash = window.location.hash.replace(/^#\/?/, '');
-      if (!hash) {
+      const pathname = window.location.pathname.replace(/^\/+|\/+$/g, '');
+      const activeRoute = hash || pathname;
+
+      if (!activeRoute) {
         if (screen !== 'HERO' && screen !== 'MODEL_SELECTOR' && screen !== 'SCANNING' && screen !== 'REPORT') {
           setScreen('HERO');
         }
         return;
       }
 
-      // Check direct static pages: #/about, #/contact, #/privacy, #/terms, #/disclaimer, #/settings/affiliate
-      const cleanPath = hash.toLowerCase().replace(/^\/+/, '');
+      // Check direct static pages: about, contact, privacy, terms, disclaimer, settings/affiliate
+      const cleanPath = activeRoute.toLowerCase().replace(/^\/+/, '');
       if (cleanPath === 'about' || cleanPath.endsWith('/about')) {
         setScreen('ABOUT');
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -105,8 +108,16 @@ export default function App() {
         return;
       }
 
-      // Dynamic product report route: e.g. /#/en/panasonic-tv-th55mx800 or /#/panasonic-tv-th55mx800
-      const parts = hash.split('/');
+      // Check standalone language route: e.g. /es or /fr or /ja
+      const matchedLang = LANGUAGES.find((l) => l.code.toLowerCase() === cleanPath.toLowerCase());
+      if (matchedLang) {
+        setCurrentLang(matchedLang.code);
+        setScreen('HERO');
+        return;
+      }
+
+      // Dynamic product report route: e.g. /#/en/panasonic-tv-th55mx800 or /en/panasonic-tv-th55mx800 or /#/panasonic-tv-th55mx800
+      const parts = activeRoute.split('/');
       let targetLang = currentLang;
       let slug = '';
 

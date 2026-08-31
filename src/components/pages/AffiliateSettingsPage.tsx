@@ -112,56 +112,56 @@ export const AffiliateSettingsPage: React.FC<AffiliateSettingsPageProps> = ({ on
           <span className="text-xs text-zinc-400 font-mono">13 Amazon Marketplaces</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 tracking-tight">
-          Auto Geo-Affiliate &amp; OneLink Settings
+          Auto Geo-Affiliate Settings
         </h1>
         <p className="text-sm text-zinc-600 mt-2 max-w-3xl leading-relaxed">
-          Configure country-specific Amazon Associate Store IDs. When international shoppers analyze products, links automatically target their localized Amazon storefront with the matching affiliate tracking tag.
+          Configure country-specific Amazon Associate Store IDs. Visitors from India are routed to Amazon India (<code>amazon.in?tag=jaiguruji00-21</code>), while USA and global international visitors are routed to Amazon US (<code>amazon.com?tag=jaiguruji00-20</code>) with Amazon Global Earning coverage.
         </p>
       </div>
 
-      {/* Amazon OneLink & Script Status Card */}
+      {/* Jai Guruji Global Geo-Affiliate System Status Card */}
       <div className="bg-white rounded-2xl border border-zinc-200 p-6 mb-8 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-zinc-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-lg shrink-0">
-              a
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-lg shrink-0">
+              ⚡
             </div>
             <div>
               <h3 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
-                <span>Amazon OneLink Global Script</span>
+                <span>Jai Guruji Global Geo-Affiliate System</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
-                  ACTIVE IN &lt;HEAD&gt;
+                  ACTIVE IN FOOTER
                 </span>
               </h3>
               <p className="text-xs text-zinc-500 mt-0.5">
-                Automatically resolves international cross-store redirects for North American, European &amp; Asian visitors.
+                Zero external dependencies. Pure client-side browser timezone (Asia/Kolkata / Asia/Calcutta) &amp; ASIN auto-rewriting.
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 text-xs font-mono bg-zinc-50 px-3 py-1.5 rounded-lg border border-zinc-200 text-zinc-600 shrink-0">
             <Code className="w-3.5 h-3.5 text-zinc-400" />
-            <span>MarketPlace=US (Hub)</span>
+            <span>Site-Wide Hook</span>
           </div>
         </div>
 
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
           <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-100">
-            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Script Hook</span>
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">India Storefront</span>
             <code className="text-[11px] font-mono text-zinc-800 break-all mt-1 block">
-              //z-na.amazon-adsystem.com/widgets/onejs?MarketPlace=US
+              amazon.in/dp/{'{ASIN}'}?tag=jaiguruji00-21
             </code>
           </div>
           <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-100">
-            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Detection Priority</span>
-            <span className="text-[11px] font-semibold text-zinc-800 mt-1 block">
-              1. IP Geo &gt; 2. Language &gt; 3. OneLink Redirect
-            </span>
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">USA &amp; Global Earning</span>
+            <code className="text-[11px] font-mono text-zinc-800 break-all mt-1 block">
+              amazon.com/dp/{'{ASIN}'}?tag=jaiguruji00-20
+            </code>
           </div>
           <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-100">
-            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Sub-ID Tracking</span>
-            <span className="text-[11px] font-semibold text-zinc-800 mt-1 block font-mono">
-              pr-global-review
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Detection Logic</span>
+            <span className="text-[11px] font-semibold text-zinc-800 mt-1 block">
+              Asia/Kolkata or Asia/Calcutta
             </span>
           </div>
         </div>
