@@ -20,17 +20,15 @@ import { AffiliateSettingsPage } from './components/pages/AffiliateSettingsPage'
 import { FooterGeoAffiliateScript } from './components/FooterGeoAffiliateScript';
 import { AdUnit } from './components/AdUnit';
 import { ProductModel, DetailedReport, LanguageCode } from './types';
-import { LANGUAGES, TRANSLATIONS } from './data/languages';
+import { LANGUAGES } from './data/languages';
 import {
   getInitialLanguage,
   saveLanguagePreference,
 } from './utils/languageDetector';
-import { getMockResults, generateDetailedReport, CURATED_PRODUCT_DATABASES } from './data/mockProducts';
+import { generateDetailedReport } from './utils/reportGenerator';
 import { CATEGORIES, Category, SubCategory, matchCategoryFromQuery } from './data/categories';
 import { EdgeRedisCache } from './utils/cacheManager';
-import { searchAmazonProducts, fetchCategoryProducts } from './utils/paapiClient';
 import { fetchGroundedProducts, GroundingSource } from './utils/groundedSearchClient';
-import { getAffiliatePartner } from './lib/smartRouter';
 
 type AppScreen =
   | 'HERO'
@@ -54,6 +52,7 @@ export default function App() {
   const [selectedProduct, setSelectedProduct] = useState<ProductModel | null>(null);
   const [activeReport, setActiveReport] = useState<DetailedReport | null>(null);
   const [isGroundedSearching, setIsGroundedSearching] = useState(false);
+  const [isCategorySearching, setIsCategorySearching] = useState(false);
   const [groundingChunks, setGroundingChunks] = useState<GroundingSource[]>([]);
   const [searchQueriesRun, setSearchQueriesRun] = useState<string[]>([]);
   const [groundingError, setGroundingError] = useState<string | undefined>(undefined);
@@ -127,9 +126,23 @@ export default function App() {
           if (matchedCat) {
             setSelectedCategory(matchedCat);
             setSearchQuery(matchedCat.name);
-            const models = getMockResults(matchedCat.name);
-            setMatchingModels(models);
+            setMatchingModels([]);
+            setIsCategorySearching(true);
             setScreen('CATEGORY');
+
+            fetchGroundedProducts(matchedCat.name, currentLang)
+              .then((res) => {
+                setIsCategorySearching(false);
+                if (res && res.success && res.products.length > 0) {
+                  setMatchingModels(res.products);
+                } else {
+                  setMatchingModels([]);
+                }
+              })
+              .catch(() => {
+                setIsCategorySearching(false);
+                setMatchingModels([]);
+              });
             return;
           }
         }
@@ -181,31 +194,20 @@ export default function App() {
         return;
       }
 
-      // Search in curated databases
-      let foundMatch: ProductModel | undefined;
-      for (const key in CURATED_PRODUCT_DATABASES) {
-        const match = CURATED_PRODUCT_DATABASES[key].find((m) => m.slug === slug || m.id === slug);
-        if (match) {
-          foundMatch = match;
-          break;
+      // Fetch grounded product live for direct URL
+      const queryFromSlug = slug.replace(/[-_]+/g, ' ');
+      fetchGroundedProducts(queryFromSlug, targetLang || currentLang).then((res) => {
+        if (res.success && res.products.length > 0) {
+          const found = res.products.find((m) => m.slug === slug || m.id === slug) || res.products[0];
+          setSelectedProduct(found);
+          const generated = generateDetailedReport(found, targetLang || currentLang);
+          EdgeRedisCache.set(found.slug, generated);
+          setActiveReport(generated);
+          setScreen('REPORT');
         }
-      }
-
-      // If not in curated, generate dynamically from slug words
-      if (!foundMatch) {
-        const queryFromSlug = slug.replace(/[-_]+/g, ' ');
-        const models = getMockResults(queryFromSlug);
-        foundMatch = models.find((m) => m.slug === slug || m.id === slug) || models[0];
-      }
-
-      if (foundMatch) {
-        setSelectedProduct(foundMatch);
-        const generated = generateDetailedReport(foundMatch, targetLang || currentLang);
-        EdgeRedisCache.set(foundMatch.slug, generated);
-        setActiveReport(generated);
-        setScreen('REPORT');
-        return;
-      }
+      }).catch((err) => {
+        console.warn('[App] Direct route grounded search notice:', err);
+      });
     } catch {
       // ignore
     }
@@ -264,20 +266,27 @@ export default function App() {
     const searchTarget = subcategory ? subcategory.searchQuery : category.name;
     setSearchQuery(searchTarget);
 
-    // Instant local results
-    const initialModels = getMockResults(searchTarget);
-    setMatchingModels(initialModels);
+    // Enter CATEGORY screen with active live Google Search Grounding
+    setMatchingModels([]);
+    setIsCategorySearching(true);
     setScreen('CATEGORY');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     // Live Google Search Grounding for Category discovery
-    fetchGroundedProducts(searchTarget, currentLang).then((res) => {
-      if (res && res.success && res.products.length > 0) {
-        setMatchingModels(res.products);
-      }
-    }).catch((err) => {
-      console.warn('[App] Category Grounded fetch notice:', err);
-    });
+    fetchGroundedProducts(searchTarget, currentLang)
+      .then((res) => {
+        setIsCategorySearching(false);
+        if (res && res.success && res.products.length > 0) {
+          setMatchingModels(res.products);
+        } else {
+          setMatchingModels([]);
+        }
+      })
+      .catch((err) => {
+        console.warn('[App] Category Grounded fetch notice:', err);
+        setIsCategorySearching(false);
+        setMatchingModels([]);
+      });
   };
 
   // Search Submission Handler - Google Search Grounding Powered
@@ -321,7 +330,7 @@ export default function App() {
             `${trimmed} Amazon bestseller`,
           ]);
         } else {
-          // If no real products found, do NOT invent fake ones.
+          // If no real products found, strictly show empty state without mock data
           setMatchingModels([]);
           setGroundingError(
             res.errorMessage || `No real products found online for "${trimmed}".`
@@ -415,6 +424,7 @@ export default function App() {
             currentLang={currentLang}
             onSelectModel={(m) => handleSelectModel(m)}
             onBackToHome={handleResetToHome}
+            isLoading={isCategorySearching}
           />
         )}
 
@@ -535,7 +545,7 @@ export default function App() {
             <div className="flex flex-wrap items-center justify-center gap-3 text-[11px]">
               <span>⚡ Edge Redis Cached</span>
               <span>•</span>
-              <span>33 Categories Hub</span>
+              <span>33 Categories Live Grounding</span>
               <span>•</span>
               <span>40 Languages Pre-translated</span>
               <span>•</span>

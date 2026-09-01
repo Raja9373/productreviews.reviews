@@ -1,10 +1,9 @@
 import { ProductModel } from '../types';
-import { getMockResults } from '../data/mockProducts';
 
 export interface LiveSearchResponse {
   success: boolean;
   isLive: boolean;
-  source: 'paapi_live' | 'curated_fallback';
+  source: 'paapi_live' | 'empty';
   items: ProductModel[];
   query: string;
   categorySlug?: string;
@@ -44,7 +43,7 @@ export async function searchAmazonProducts(
 
         const tag =
           idx === 0
-            ? '🔥 Aaj Kal Sabse Zyada Bik Raha Hai'
+            ? '🔥 Top Pick'
             : idx === 1
             ? 'Budget Pick'
             : idx < 4
@@ -87,7 +86,7 @@ export async function searchAmazonProducts(
       return {
         success: true,
         isLive: data.isLive === true,
-        source: data.source || 'curated_fallback',
+        source: 'paapi_live',
         items: mappedModels,
         query,
         categorySlug,
@@ -100,16 +99,15 @@ export async function searchAmazonProducts(
       };
     }
   } catch (err) {
-    console.warn('[searchAmazonProducts] Falling back to local catalog:', err);
+    console.warn('[searchAmazonProducts] PA-API notice:', err);
   }
 
-  // Graceful fallback to client-side database
-  const fallbackModels = getMockResults(query);
+  // No mock fallback
   return {
-    success: true,
+    success: false,
     isLive: false,
-    source: 'curated_fallback',
-    items: fallbackModels,
+    source: 'empty',
+    items: [],
     query,
     categorySlug,
     searchIndex: 'All',
@@ -117,7 +115,7 @@ export async function searchAmazonProducts(
     amazonDirectUrl: fallbackDirectUrl,
     bannerText: 'Showing live results from Amazon',
     ctaText: `Have a Look - Explore all ${query} on Amazon`,
-    totalResults: fallbackModels.length,
+    totalResults: 0,
   };
 }
 
@@ -136,7 +134,7 @@ export async function fetchCategoryProducts(categorySlug: string): Promise<LiveS
       }
     }
   } catch (err) {
-    console.warn('[fetchCategoryProducts] Fallback triggered:', err);
+    console.warn('[fetchCategoryProducts] Notice:', err);
   }
 
   return searchAmazonProducts(categorySlug.replace(/-/g, ' '), categorySlug);

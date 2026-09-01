@@ -1,5 +1,4 @@
 import { ProductModel } from '../types';
-import { getMockResults } from '../data/mockProducts';
 import { getAmazonUrl, detectCountry } from './amazonGlobal';
 
 export { getAmazonUrl, detectCountry };
@@ -19,7 +18,7 @@ export interface AmazonSearchResponse {
 }
 
 /**
- * Search Amazon products with instant fallback if PA-API keys are dummy/missing
+ * Search Amazon products - strictly no mock products
  */
 export async function searchAmazonProducts(query: string): Promise<AmazonSearchResponse> {
   const searchUrl = getAmazonSearchUrl(query);
@@ -41,7 +40,7 @@ export async function searchAmazonProducts(query: string): Promise<AmazonSearchR
       fallback: true,
       searchUrl,
       message: 'Have a Look',
-      items: getMockResults(query),
+      items: [],
     };
   }
 
@@ -58,7 +57,7 @@ export async function searchAmazonProducts(query: string): Promise<AmazonSearchR
         fallback: true,
         searchUrl,
         message: 'Have a Look',
-        items: getMockResults(query),
+        items: [],
       };
     }
 
@@ -67,14 +66,14 @@ export async function searchAmazonProducts(query: string): Promise<AmazonSearchR
       fallback: !data.isLive,
       searchUrl: data.amazonDirectUrl || searchUrl,
       message: data.ctaText || 'Have a Look',
-      items: data.items && data.items.length > 0 ? data.items : getMockResults(query),
+      items: data.items && data.items.length > 0 ? data.items : [],
     };
   } catch {
     return {
       fallback: true,
       searchUrl,
       message: 'Have a Look',
-      items: getMockResults(query),
+      items: [],
     };
   }
 }

@@ -10,51 +10,24 @@
 
 // 1. Direct Product ID & SKU/ASIN Verified Image Mapping
 export const PRODUCT_IMAGE_REGISTRY: Record<string, string> = {
-  // Water Bottles & Hydration
-  'WAT-ULTRA-850': 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800&auto=format&fit=crop&q=80',
-  'WAT-PRO-700': 'https://images.unsplash.com/photo-1570831739427-4ff2fa9a72b5?w=800&auto=format&fit=crop&q=80',
-  'WAT-EV-300': 'https://images.unsplash.com/photo-1544003484-3cd181d17917?w=800&auto=format&fit=crop&q=80',
-  'WAT-PLUS-520': 'https://images.unsplash.com/photo-1523362628745-0c100150b504?w=800&auto=format&fit=crop&q=80',
-  'milton-thermosteel-bottle': 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800&auto=format&fit=crop&q=80',
-  'hydro-flask-wide-mouth': 'https://images.unsplash.com/photo-1570831739427-4ff2fa9a72b5?w=800&auto=format&fit=crop&q=80',
-  'purelife-water-bottle': 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800&auto=format&fit=crop&q=80',
-  'purelife-water-bottle-ultra-850': 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800&auto=format&fit=crop&q=80',
-
-  // Alarm Clocks
-  'ALAR-CLOCK-001': 'https://images.unsplash.com/photo-1563861826100-9cb868fdbe1c?w=800&auto=format&fit=crop&q=80',
-  'purelife-pro-alarm-clock-edition': 'https://images.unsplash.com/photo-1563861826100-9cb868fdbe1c?w=800&auto=format&fit=crop&q=80',
-  'philips-smartsleep-wake-up-light-clock': 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=800&auto=format&fit=crop&q=80',
-  'braun-classic-digital-bedside-clock': 'https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?w=800&auto=format&fit=crop&q=80',
-  'lenovo-smart-clock-essential': 'https://images.unsplash.com/photo-1584824486509-112e4181ff6b?w=800&auto=format&fit=crop&q=80',
-
-  // Audio / Headphones
+  // Real Brand Models Verified Image Mapping
   'sony-wh1000xm5': 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80',
   'bose-quietcomfort-ultra': 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&auto=format&fit=crop&q=80',
   'airpods-pro-2': 'https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?w=800&auto=format&fit=crop&q=80',
-
-  // Cameras
   'sony-alpha-7-iv': 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&auto=format&fit=crop&q=80',
   'sony-alpha-7c-ii': 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=800&auto=format&fit=crop&q=80',
   'sony-zv-e10': 'https://images.unsplash.com/photo-1512790182412-b19e6d62bc39?w=800&auto=format&fit=crop&q=80',
   'sony-alpha-6700': 'https://images.unsplash.com/photo-1500634245200-e5245c7574ef?w=800&auto=format&fit=crop&q=80',
-
-  // Washing Machines
   'lg-8kg-direct-drive-front-load': 'https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=800&auto=format&fit=crop&q=80',
   'samsung-8kg-ecobubble-front-load': 'https://images.unsplash.com/photo-1610557892470-55d9e80c0bce?w=800&auto=format&fit=crop&q=80',
   'bosch-7-5kg-series-5-front-load': 'https://images.unsplash.com/photo-1582735689369-4fe89db7114c?w=800&auto=format&fit=crop&q=80',
   'ifb-8kg-senorita-plus-front-load': 'https://images.unsplash.com/photo-1545173168-9f1947eebb7f?w=800&auto=format&fit=crop&q=80',
-
-  // Smartphones
   'iphone-15-pro-max': 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&auto=format&fit=crop&q=80',
   'samsung-galaxy-s24-ultra': 'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=800&auto=format&fit=crop&q=80',
   'vivo-x100-pro-5g': 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&auto=format&fit=crop&q=80',
-
-  // Laptops
   'macbook-pro-14-m3': 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&auto=format&fit=crop&q=80',
   'dell-xps-15': 'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=800&auto=format&fit=crop&q=80',
   'asus-rog-zephyrus-g14': 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800&auto=format&fit=crop&q=80',
-
-  // Smart TVs
   'sony-bravia-xr-55-oled': 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&auto=format&fit=crop&q=80',
   'lg-c3-55-4k-oled': 'https://images.unsplash.com/photo-1509281373149-e957c6296406?w=800&auto=format&fit=crop&q=80',
 };

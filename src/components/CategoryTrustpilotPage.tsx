@@ -26,6 +26,7 @@ interface CategoryTrustpilotPageProps {
   onSelectModel: (model: ProductModel) => void;
   onBackToHome: () => void;
   onSelectSubcategory?: (sub: SubCategory) => void;
+  isLoading?: boolean;
 }
 
 export const CategoryTrustpilotPage: React.FC<CategoryTrustpilotPageProps> = ({
@@ -35,6 +36,7 @@ export const CategoryTrustpilotPage: React.FC<CategoryTrustpilotPageProps> = ({
   onSelectModel,
   onBackToHome,
   onSelectSubcategory,
+  isLoading = false,
 }) => {
   const [selectedSubTab, setSelectedSubTab] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'rating' | 'reviews' | 'priceAsc' | 'priceDesc'>('rating');
@@ -56,7 +58,7 @@ export const CategoryTrustpilotPage: React.FC<CategoryTrustpilotPageProps> = ({
           m.name.toLowerCase().includes(queryLower) ||
           m.category.toLowerCase().includes(queryLower) ||
           m.tag.toLowerCase().includes(queryLower) ||
-          (queryLower === 'suv' && (m.category.toLowerCase().includes('suv') || m.name.toLowerCase().includes('suv') || m.name.toLowerCase().includes('scorpio') || m.name.toLowerCase().includes('thar') || m.name.toLowerCase().includes('creta') || m.name.toLowerCase().includes('fortuner') || m.name.toLowerCase().includes('brezza')))
+          m.brand.toLowerCase().includes(queryLower)
       );
     }
 
@@ -244,7 +246,21 @@ export const CategoryTrustpilotPage: React.FC<CategoryTrustpilotPageProps> = ({
         {/* TRUSTPILOT PRODUCT CARDS LIST                                             */}
         {/* ========================================================================= */}
         <div className="space-y-6 mb-12">
-          {filteredModels.map((product, idx) => (
+          {isLoading && (
+            <div className="bg-white rounded-2xl border border-zinc-200 p-12 text-center shadow-xs">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 mb-4 animate-spin">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-zinc-900 mb-1">
+                Searching Real Grounded Products for {category.name}...
+              </h3>
+              <p className="text-xs text-zinc-500 max-w-md mx-auto">
+                Executing live Google Search Grounding to fetch verified commercial products, authentic specifications, and live reviews.
+              </p>
+            </div>
+          )}
+
+          {!isLoading && filteredModels.map((product, idx) => (
             <TrustpilotProductCard
               key={product.id || product.slug}
               product={product}
@@ -255,14 +271,14 @@ export const CategoryTrustpilotPage: React.FC<CategoryTrustpilotPageProps> = ({
             />
           ))}
 
-          {filteredModels.length === 0 && (
+          {!isLoading && filteredModels.length === 0 && (
             <div className="bg-white rounded-xl border border-zinc-200 p-12 text-center">
               <Search className="w-8 h-8 text-zinc-300 mx-auto mb-3" />
               <h3 className="text-base font-bold text-zinc-800 mb-1">
-                No matching models found
+                No real products found online for this search query
               </h3>
               <p className="text-xs text-zinc-500 mb-4">
-                Try adjusting your search terms or filter tabs.
+                We strictly enforce zero fake or placeholder data. Try adjusting your search keywords or browsing other categories.
               </p>
               <button
                 onClick={() => {
