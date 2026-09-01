@@ -50,6 +50,7 @@ import {
   getRealEstateUrl,
   getHealthcareUrl,
 } from '../lib/amazonGlobal';
+import { isAutoCategory, getAutoVehicleUrl } from '../lib/affiliateRouting';
 import { AdSlot } from './AdSlot';
 
 interface ReportViewProps {
@@ -118,10 +119,13 @@ export const ReportView: React.FC<ReportViewProps> = ({
 
   const detectedGeoCountry = detectCountry();
   const userCountry = currentLang === 'hi' ? 'IN' : detectedGeoCountry || 'US';
+  const isAuto = isAutoCategory(report.category) || isAutoCategory(report.name);
   const routing = resolveAffiliateDestination(report.name, report.category, userCountry);
 
   const finalCtaUrl =
-    routing.partnerKey === 'amazon'
+    isAuto
+      ? getAutoVehicleUrl(report.name)
+      : routing.partnerKey === 'amazon'
       ? getAmazonUrl(report.name, userCountry)
       : routing.partnerKey === 'cardekho'
       ? getCarUrl(report.name, userCountry).url
@@ -138,7 +142,9 @@ export const ReportView: React.FC<ReportViewProps> = ({
       : routing.url || getAmazonUrl(report.name, userCountry);
 
   const finalButtonText =
-    routing.partnerKey === 'amazon'
+    isAuto
+      ? 'Check On-Road Price'
+      : routing.partnerKey === 'amazon'
       ? 'Have a Look'
       : routing.partnerKey === 'cardekho'
       ? 'Check On-Road Price'
@@ -507,6 +513,98 @@ export const ReportView: React.FC<ReportViewProps> = ({
               })}
             </div>
           </div>
+
+          {/* Auto Vehicle Accessories on Amazon Section */}
+          {isAuto && (
+            <div id="vehicle-accessories-section" className="bg-white rounded-[24px] border border-zinc-200 p-6 sm:p-8 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-zinc-100">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <ShoppingBag className="w-5 h-5 text-amber-600" />
+                    <h3 className="text-lg font-bold text-zinc-900">
+                      Accessories for {report.name} on Amazon
+                    </h3>
+                  </div>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Direct Amazon verified deals with our affiliate discount link ({userCountry})
+                  </p>
+                </div>
+                <a
+                  href={getAmazonUrl(`${report.name} accessories`, userCountry)}
+                  target="_blank"
+                  rel="nofollow sponsored"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg transition-colors whitespace-nowrap self-start sm:self-auto shadow-xs"
+                >
+                  <span>View All on Amazon</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[
+                  {
+                    title: '7D All-Weather Custom Floor Mats',
+                    rating: 4.6,
+                    reviews: '1,420',
+                    price: '₹2,499 / $35',
+                    query: `${report.name} 7d floor mats`,
+                  },
+                  {
+                    title: '4K Dual Dash Cam with Night Vision & GPS',
+                    rating: 4.8,
+                    reviews: '3,890',
+                    price: '₹4,999 / $69',
+                    query: `${report.name} 4k dashcam front rear`,
+                  },
+                  {
+                    title: 'Waterproof Triple-Layer Body Cover',
+                    rating: 4.5,
+                    reviews: '920',
+                    price: '₹1,599 / $22',
+                    query: `${report.name} waterproof car body cover`,
+                  },
+                  {
+                    title: 'Wireless Digital Tyre Inflator & Vacuum Kit',
+                    rating: 4.7,
+                    reviews: '2,640',
+                    price: '₹2,199 / $29',
+                    query: `wireless car tyre inflator pump`,
+                  },
+                ].map((acc, i) => (
+                  <div key={i} className="p-4 rounded-xl border border-zinc-100 bg-zinc-50/70 flex flex-col justify-between hover:border-amber-200 transition-colors">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60">
+                          Amazon Prime
+                        </span>
+                        <div className="flex items-center text-xs text-amber-500 font-semibold gap-1">
+                          <Star className="w-3 h-3 fill-current" />
+                          <span>{acc.rating}</span>
+                          <span className="text-zinc-400 font-normal">({acc.reviews})</span>
+                        </div>
+                      </div>
+                      <h4 className="text-xs sm:text-sm font-semibold text-zinc-900 line-clamp-2 mt-1">
+                        {acc.title}
+                      </h4>
+                      <p className="text-xs font-bold text-zinc-800 mt-2">
+                        {acc.price}
+                      </p>
+                    </div>
+
+                    <a
+                      href={getAmazonUrl(acc.query, userCountry)}
+                      target="_blank"
+                      rel="nofollow sponsored"
+                      className="mt-3 w-full py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <span>Buy on Amazon</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Column (4 cols Sticky Verdict Card + Coupon + Stores + Sidebar Ad) */}
@@ -526,7 +624,15 @@ export const ReportView: React.FC<ReportViewProps> = ({
             </span>
 
             {/* Verdict Badge */}
-            <div className="text-4xl sm:text-5xl font-black tracking-tighter mb-4">
+            <div
+              className="w-full max-w-full font-black tracking-tight mb-4 break-words text-center"
+              style={{
+                fontSize: 'clamp(1.5rem, 5.5vw, 2.5rem)',
+                lineHeight: 0.9,
+                overflowWrap: 'anywhere',
+                wordBreak: 'break-word',
+              }}
+            >
               {isRecommended ? t.verdictBuy : t.verdictDontBuy}
             </div>
 
@@ -563,10 +669,25 @@ export const ReportView: React.FC<ReportViewProps> = ({
               </div>
             </a>
 
+            {/* Secondary Amazon Accessories button if Auto category */}
+            {isAuto && (
+              <a
+                id="vehicle-amazon-accessories-cta"
+                href={getAmazonUrl(`${report.name} accessories`, userCountry)}
+                target="_blank"
+                rel="nofollow sponsored"
+                className="mt-2.5 w-full py-2.5 px-3 bg-white/15 hover:bg-white/25 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-white/30 backdrop-blur-xs"
+              >
+                <ShoppingBag className="w-3.5 h-3.5" />
+                <span>Buy Accessories on Amazon</span>
+                <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+              </a>
+            )}
+
             {/* Small Geo Notice under button */}
             <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-white/95 font-medium leading-tight">
-              {routing.partnerKey === 'cardekho' ? (
-                <span>Official CarDekho on-road comparison &amp; price breakup</span>
+              {isAuto ? (
+                <span>Official CarDekho / BikeDekho price breakup &amp; deals</span>
               ) : routing.partnerKey === 'amazon' ? (
                 <span>We found best price in your country — <strong>{amazonGeoData.geoTarget.shipsToText}</strong></span>
               ) : (

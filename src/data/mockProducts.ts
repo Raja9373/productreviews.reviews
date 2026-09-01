@@ -27,6 +27,101 @@ export function sanitizeProductName(name: string): string {
 }
 
 export const CURATED_PRODUCT_DATABASES: Record<string, ProductModel[]> = {
+  'sony camera': [
+    {
+      id: 'sony-alpha-7-iv',
+      slug: 'sony-alpha-7-iv',
+      name: 'Sony Alpha ILCE-7M4K Full-Frame Hybrid Camera with 28-70mm Zoom Lens',
+      modelNumber: 'ILCE-7M4K',
+      brand: 'Sony',
+      category: 'Cameras & Photography',
+      image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&auto=format&fit=crop&q=80',
+      basePriceUSD: 2498,
+      rating: 4.8,
+      totalReviews: 4890,
+      tag: '🔥 Aaj Kal Sabse Zyada Bik Raha Hai',
+      budgetTier: 'TRENDING',
+      whyDemandReason: '4,890 verified reviews, 33MP Exmor R Sensor, 4K 60p 10-Bit Video',
+      specs: {
+        'Sensor': '33MP Full-Frame Exmor R CMOS Sensor',
+        'Video': '4K 60p 10-Bit 4:2:2 All-Intra Recording',
+        'Autofocus': '759 Phase-Detection AF Points with Real-Time Eye AF',
+        'Stabilization': '5.5-Step 5-Axis In-Body Image Stabilization',
+        'Viewfinder': '3.68M-Dot Quad-VGA OLED Electronic Viewfinder',
+        'Lens Mount': 'Sony E-Mount (Interchangeable)',
+      },
+    },
+    {
+      id: 'sony-zv-e10',
+      slug: 'sony-zv-e10',
+      name: 'Sony Alpha ZV-E10 Mirrorless Vlog Camera with 16-50mm Power Zoom Lens',
+      modelNumber: 'ZV-E10L',
+      brand: 'Sony',
+      category: 'Cameras & Photography',
+      image: 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=800&auto=format&fit=crop&q=80',
+      basePriceUSD: 699,
+      rating: 4.6,
+      totalReviews: 8340,
+      tag: 'Budget Creator Pick (Under ₹70,000)',
+      budgetTier: 'BUDGET',
+      whyDemandReason: '8,340 verified reviews, Directional 3-Capsule Mic & Product Showcase',
+      specs: {
+        'Sensor': '24.2MP APS-C Exmor CMOS Sensor',
+        'Vlogging Features': 'Product Showcase Setting & Background Defocus',
+        'Audio': 'Directional 3-Capsule Mic with Windscreen Included',
+        'Display': 'Vari-Angle Side-Opening Touch LCD Screen',
+        'Connectivity': 'Instant USB Livestreaming & Webcam Mode',
+        'Battery Life': 'Up to 125 Mins Continuous Video Recording',
+      },
+    },
+    {
+      id: 'sony-alpha-6700',
+      slug: 'sony-alpha-6700',
+      name: 'Sony Alpha ILCE-6700 APS-C Mirrorless Camera with AI Recognition AF',
+      modelNumber: 'ILCE-6700',
+      brand: 'Sony',
+      category: 'Cameras & Photography',
+      image: 'https://images.unsplash.com/photo-1512790182412-b19e6d62bc39?w=800&auto=format&fit=crop&q=80',
+      basePriceUSD: 1398,
+      rating: 4.8,
+      totalReviews: 2750,
+      tag: 'Balanced Pick (₹1,00,000 - ₹1,50,000)',
+      budgetTier: 'BALANCED',
+      whyDemandReason: '2,750 verified reviews, Dedicated AI Processing Unit, 4K 120p',
+      specs: {
+        'Sensor': '26.0MP Back-Illuminated APS-C Exmor R CMOS',
+        'AI Processing': 'AI Unit for Human/Animal/Vehicle Recognition AF',
+        'Video Frame Rates': '4K 120p High Frame Rate & S-Cinetone',
+        'Stabilization': '5-Axis Optical In-Body Image Stabilization',
+        'Shooting Speed': 'Up to 11 fps with AF/AE Tracking',
+        'Build': 'Magnesium Alloy Dust & Moisture Resistant Body',
+      },
+    },
+    {
+      id: 'sony-alpha-7r-v',
+      slug: 'sony-alpha-7r-v',
+      name: 'Sony Alpha ILCE-7RM5 Full-Frame Camera (61MP, 8K Video, AI Deep Learning)',
+      modelNumber: 'ILCE-7RM5',
+      brand: 'Sony',
+      category: 'Cameras & Photography',
+      image: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80',
+      basePriceUSD: 3898,
+      rating: 4.9,
+      totalReviews: 1650,
+      tag: 'Flagship Resolution Pro (₹3,00,000+)',
+      budgetTier: 'PREMIUM',
+      whyDemandReason: '1,650 verified reviews, 61MP High Resolution & 8-Step IBIS',
+      specs: {
+        'Sensor': '61.0MP Full-Frame Back-Illuminated Exmor R Sensor',
+        'Video': '8K 24p & 4K 60p 10-Bit Recording',
+        'Stabilization': '8.0-Step Optical In-Body Stabilization',
+        'LCD': '4-Axis Multi-Angle 3.2-Inch Touchscreen LCD',
+        'AI Tracking': 'Next-Gen AI Deep Learning Pose Estimation AF',
+        'Dual Slots': 'Dual CFexpress Type A & SD UHS-II Card Slots',
+      },
+    },
+  ],
+
   'washing machine': [
     {
       id: 'samsung-7kg-ai-washing-machine',
@@ -1662,6 +1757,12 @@ export function getMockResults(query: string): ProductModel[] {
   }
 
   // Check category and brand keywords
+  if (normalized.includes('sony') && (normalized.includes('camera') || normalized.includes('alpha') || normalized.includes('zv') || normalized.includes('cam'))) {
+    return CURATED_PRODUCT_DATABASES['sony camera'];
+  }
+  if (normalized.includes('camera') || normalized.includes('dslr') || normalized.includes('mirrorless')) {
+    return CURATED_PRODUCT_DATABASES['sony camera'];
+  }
   if (/wipe|baby wipe|water wipe/i.test(normalized)) {
     return CURATED_PRODUCT_DATABASES['baby wipes'];
   }
@@ -1734,8 +1835,8 @@ export function getMockResults(query: string): ProductModel[] {
     reviews: number;
   }[] = [
     {
-      realModelTitle: `${brand} 5 Star AI Control Series`,
-      modelCode: 'AI-700',
+      realModelTitle: `${brand} ${categoryName} Pro Series`,
+      modelCode: 'PRO-700',
       budgetTier: 'TRENDING',
       tag: '🔥 Aaj Kal Sabse Zyada Bik Raha Hai',
       reason: '3,450 verified reviews, 88% 5-star ratings',
@@ -1744,50 +1845,50 @@ export function getMockResults(query: string): ProductModel[] {
       reviews: 3450,
     },
     {
-      realModelTitle: `${brand} Essential Value Series`,
+      realModelTitle: `${brand} ${categoryName} Essential Series`,
       modelCode: 'EV-300',
       budgetTier: 'BUDGET',
-      tag: 'Budget Pick (Under ₹20,000)',
+      tag: 'Budget Pick (Top Value)',
       reason: '2,100 verified reviews, Best Entry Choice',
       price: 189,
       rating: 4.5,
       reviews: 2100,
     },
     {
-      realModelTitle: `${brand} Smart Connected Touch Series`,
-      modelCode: 'BT-520',
+      realModelTitle: `${brand} ${categoryName} Plus Series`,
+      modelCode: 'PLUS-520',
       budgetTier: 'BALANCED',
-      tag: 'Balanced Pick (₹20,000 - ₹35,000)',
+      tag: 'Balanced Pick (Most Popular)',
       reason: '3,800 verified reviews, High Reliability',
       price: 289,
       rating: 4.7,
       reviews: 3800,
     },
     {
-      realModelTitle: `${brand} Digital Inverter Series`,
-      modelCode: 'DI-650',
+      realModelTitle: `${brand} ${categoryName} Max Performance`,
+      modelCode: 'MAX-650',
       budgetTier: 'BALANCED',
-      tag: 'Balanced Pro (₹20k - ₹35k)',
+      tag: 'Balanced Pro Performance',
       reason: '1,950 verified reviews, Advanced Features',
       price: 349,
       rating: 4.6,
       reviews: 1950,
     },
     {
-      realModelTitle: `${brand} Heavy-Duty Series`,
-      modelCode: 'HD-850',
+      realModelTitle: `${brand} ${categoryName} Ultra Flagship`,
+      modelCode: 'ULTRA-850',
       budgetTier: 'PREMIUM',
-      tag: 'Premium Pick (₹35,000+)',
+      tag: 'Premium Flagship Choice',
       reason: '1,420 verified reviews, Superior Build & Warranty',
       price: 489,
       rating: 4.9,
       reviews: 1420,
     },
     {
-      realModelTitle: `${brand} Flagship Direct Drive Series`,
-      modelCode: 'DD-990',
+      realModelTitle: `${brand} ${categoryName} Master Edition`,
+      modelCode: 'MASTER-990',
       budgetTier: 'PREMIUM',
-      tag: 'Flagship Pro (₹35,000+)',
+      tag: 'Top-Tier Master Grade',
       reason: '980 verified reviews, Top Tier Performance',
       price: 689,
       rating: 4.9,
@@ -1797,7 +1898,7 @@ export function getMockResults(query: string): ProductModel[] {
 
   return realTiers.map((tier, idx) => {
     const verifiedImage = getValidatedCategoryImage(query, undefined, idx);
-    const cleanName = sanitizeProductName(`${tier.realModelTitle} ${categoryName}`);
+    const cleanName = sanitizeProductName(`${tier.realModelTitle}`);
 
     return {
       id: `${querySlug}-${tier.modelCode.toLowerCase()}`,

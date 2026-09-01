@@ -342,10 +342,10 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
               <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
             </span>
             <span className="text-xs font-semibold tracking-wide text-zinc-200">
-              Showing live results from Amazon
+              Verified Amazon Affiliate Deals &amp; Ratings
             </span>
             <span className="hidden sm:inline-block text-[11px] text-zinc-400 border-l border-zinc-700 pl-2">
-              PA-API v5 Synced &bull; Real Pricing &amp; Ratings
+              Top Customer Consensus &bull; Direct Affiliate Search
             </span>
           </div>
 

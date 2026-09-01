@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Header } from './components/Header';
 import { HeroSearch } from './components/HeroSearch';
+import { TrendingSearches } from './components/TrendingSearches';
 import { ModelSelector } from './components/ModelSelector';
 import { CountdownScanner } from './components/CountdownScanner';
 import { ReportView } from './components/ReportView';
@@ -384,12 +385,18 @@ export default function App() {
       {/* Main Content Body */}
       <main className="flex-1 flex flex-col items-center justify-start w-full">
         {screen === 'HERO' && (
-          <HeroSearch
-            currentLang={currentLang}
-            onSearchSubmit={handleSearchSubmit}
-            onDetectedLanguageChange={(detected) => setCurrentLang(detected)}
-            initialQuery={searchQuery}
-          />
+          <>
+            <HeroSearch
+              currentLang={currentLang}
+              onSearchSubmit={handleSearchSubmit}
+              onDetectedLanguageChange={(detected) => setCurrentLang(detected)}
+              initialQuery={searchQuery}
+            />
+            <TrendingSearches
+              currentLang={currentLang}
+              onSelectSearch={(query) => handleSearchSubmit(query)}
+            />
+          </>
         )}
 
         {screen === 'MODEL_SELECTOR' && (

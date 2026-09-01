@@ -1,11 +1,36 @@
 /**
  * Amazon Global Multi-Country Tag and Domain Registry
- * Supports 9 primary Amazon Associate store IDs with automatic browser geo-detection.
+ * Supports 14 primary Amazon Associate store IDs with automatic browser geo-detection
+ * and dynamic Vercel / process.env store ID loading.
  */
 
-export type SupportedCountryCode = 'IN' | 'US' | 'UK' | 'JP' | 'DE' | 'FR' | 'ES' | 'IT' | 'CA';
+export type SupportedCountryCode =
+  | 'IN'
+  | 'US'
+  | 'UK'
+  | 'JP'
+  | 'DE'
+  | 'FR'
+  | 'ES'
+  | 'IT'
+  | 'CA'
+  | 'AU'
+  | 'BR'
+  | 'MX'
+  | 'NL'
+  | 'SG';
 
-export const AMAZON_TAGS: Record<SupportedCountryCode, string> = {
+export function getStoreTag(country: string): string {
+  const cc = (country || 'IN').toUpperCase();
+  if (typeof process !== 'undefined' && process.env) {
+    const envKey = `AMAZON_TAG_${cc}`;
+    if (process.env[envKey]) return process.env[envKey] as string;
+    if (process.env.AMAZON_PARTNER_TAG) return process.env.AMAZON_PARTNER_TAG as string;
+  }
+  return AMAZON_DEFAULT_TAGS[cc as SupportedCountryCode] || 'jaiguruji00-21';
+}
+
+export const AMAZON_DEFAULT_TAGS: Record<SupportedCountryCode, string> = {
   IN: 'jaiguruji00-21',
   US: 'jaiguruji00-20',
   UK: 'jaiguruji0002-21',
@@ -15,7 +40,18 @@ export const AMAZON_TAGS: Record<SupportedCountryCode, string> = {
   ES: 'jaiguruji0008-21',
   IT: 'jaiguruji0007-21',
   CA: 'jaiguruji000b-20',
+  AU: 'jaiguruji000a-22',
+  BR: 'jaiguruji0009-20',
+  MX: 'jaiguruji0006-20',
+  NL: 'jaiguruji000c-21',
+  SG: 'jaiguruji000e-22',
 };
+
+export const AMAZON_TAGS = new Proxy(AMAZON_DEFAULT_TAGS, {
+  get(target, prop: string) {
+    return getStoreTag(prop);
+  },
+});
 
 export const AMAZON_DOMAINS: Record<SupportedCountryCode, string> = {
   IN: 'https://www.amazon.in/s?k=',
@@ -27,6 +63,11 @@ export const AMAZON_DOMAINS: Record<SupportedCountryCode, string> = {
   ES: 'https://www.amazon.es/s?k=',
   IT: 'https://www.amazon.it/s?k=',
   CA: 'https://www.amazon.ca/s?k=',
+  AU: 'https://www.amazon.com.au/s?k=',
+  BR: 'https://www.amazon.com.br/s?k=',
+  MX: 'https://www.amazon.com.mx/s?k=',
+  NL: 'https://www.amazon.nl/s?k=',
+  SG: 'https://www.amazon.sg/s?k=',
 };
 
 export const COUNTRY_NAMES: Record<SupportedCountryCode, string> = {
@@ -39,6 +80,11 @@ export const COUNTRY_NAMES: Record<SupportedCountryCode, string> = {
   ES: 'Spain',
   IT: 'Italy',
   CA: 'Canada',
+  AU: 'Australia',
+  BR: 'Brazil',
+  MX: 'Mexico',
+  NL: 'Netherlands',
+  SG: 'Singapore',
 };
 
 export const COUNTRY_FLAGS: Record<SupportedCountryCode, string> = {
@@ -51,6 +97,11 @@ export const COUNTRY_FLAGS: Record<SupportedCountryCode, string> = {
   ES: '🇪🇸',
   IT: '🇮🇹',
   CA: '🇨🇦',
+  AU: '🇦🇺',
+  BR: '🇧🇷',
+  MX: '🇲🇽',
+  NL: '🇳🇱',
+  SG: '🇸🇬',
 };
 
 /**

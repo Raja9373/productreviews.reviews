@@ -20,13 +20,10 @@ async function startServer() {
     res.json({
       status: 'ok',
       service: 'productreviews.review-engine',
+      mode: 'sitestripe_direct_affiliate',
       timestamp: new Date().toISOString(),
-      hasAmazonCredentials: Boolean(
-        process.env.AMAZON_ACCESS_KEY &&
-          !process.env.AMAZON_ACCESS_KEY.includes('MY_AMAZON')
-      ),
-      partnerTag: process.env.AMAZON_PARTNER_TAG || 'jaiguruji00-21',
-      host: process.env.AMAZON_HOST || 'webservices.amazon.in',
+      partnerTag: process.env.AMAZON_TAG_IN || process.env.AMAZON_PARTNER_TAG || 'jaiguruji00-21',
+      creatorsApiEnabled: false,
     });
   });
 
