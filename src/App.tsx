@@ -17,7 +17,7 @@ import { TermsPage } from './components/pages/TermsPage';
 import { DisclaimerPage } from './components/pages/DisclaimerPage';
 import { AffiliateSettingsPage } from './components/pages/AffiliateSettingsPage';
 import { FooterGeoAffiliateScript } from './components/FooterGeoAffiliateScript';
-import { AdSlot } from './components/AdSlot';
+import { AdUnit } from './components/AdUnit';
 import { ProductModel, DetailedReport, LanguageCode } from './types';
 import { LANGUAGES, TRANSLATIONS } from './data/languages';
 import {
@@ -377,11 +377,6 @@ export default function App() {
         currentSlug={activeReport?.slug}
       />
 
-      {/* Ad 1: After header, 728x90 Leaderboard */}
-      <div className="w-full px-4 pt-4 flex justify-center">
-        <AdSlot id="ad-slot-leaderboard-top" type="leaderboard" className="my-2" />
-      </div>
-
       {/* Main Content Body */}
       <main className="flex-1 flex flex-col items-center justify-start w-full">
         {screen === 'HERO' && (
@@ -396,6 +391,8 @@ export default function App() {
               currentLang={currentLang}
               onSelectSearch={(query) => handleSearchSubmit(query)}
             />
+            {/* Ad: Homepage placement - 1 ad AFTER TrendingSearches (format auto, max 1) */}
+            <AdUnit id="ad-homepage-after-trending" format="auto" responsive={true} className="mb-8" />
           </>
         )}
 
@@ -435,11 +432,6 @@ export default function App() {
         {screen === 'DISCLAIMER' && <DisclaimerPage onBackToHome={handleResetToHome} />}
         {screen === 'AFFILIATE_SETTINGS' && <AffiliateSettingsPage onBackToHome={handleResetToHome} />}
       </main>
-
-      {/* Ad 4: Before footer, full width responsive banner */}
-      <div className="w-full px-4 pb-2 flex justify-center">
-        <AdSlot id="ad-slot-footer-banner" type="footerBanner" className="my-4" />
-      </div>
 
       {/* Clean Minimalism Footer */}
       <footer className="w-full border-t border-zinc-100 bg-white py-8 px-4 sm:px-8 mt-auto">

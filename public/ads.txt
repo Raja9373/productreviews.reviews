@@ -1,3 +1,3 @@
 # Google AdSense Publisher Verification File for productreviews.review
-# Update with your Google AdSense Publisher ID (pub-xxxxxxxxxxxxxxxx) upon account approval
-google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0
+google.com, pub-9048615701580913, DIRECT, f08c47fec0942fa0
+

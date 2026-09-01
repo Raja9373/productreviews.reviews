@@ -51,7 +51,7 @@ import {
   getHealthcareUrl,
 } from '../lib/amazonGlobal';
 import { isAutoCategory, getAutoVehicleUrl } from '../lib/affiliateRouting';
-import { AdSlot } from './AdSlot';
+import { AdUnit } from './AdUnit';
 
 interface ReportViewProps {
   report: DetailedReport;
@@ -344,6 +344,9 @@ export const ReportView: React.FC<ReportViewProps> = ({
               </p>
             </div>
 
+            {/* Ad: Review Page placement (a) after AI Analysis Summary */}
+            <AdUnit id="ad-review-after-summary" format="auto" responsive={true} className="my-4" />
+
             {/* Pros and Cons */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               {/* Pros */}
@@ -380,9 +383,6 @@ export const ReportView: React.FC<ReportViewProps> = ({
                 </div>
               </div>
             </div>
-
-            {/* Ad 2: Inside Left Report Card, after Pros/Cons section (In-Article 336x280) */}
-            <AdSlot id="ad-slot-in-article" type="inArticle" className="my-6" />
 
             {/* Best For Tags */}
             <div className="pt-4 border-t border-zinc-100">
@@ -783,11 +783,11 @@ export const ReportView: React.FC<ReportViewProps> = ({
               })}
             </div>
           </div>
-
-          {/* Ad 3: Right sticky column (Sidebar 300x250) */}
-          <AdSlot id="ad-slot-sidebar" type="sidebar" className="my-2" />
         </div>
       </div>
+
+      {/* Ad: Review Page placement (b) before footer */}
+      <AdUnit id="ad-review-before-footer" format="auto" responsive={true} className="mt-8 mb-2" />
 
       {/* SEO Canonical Hreflang Tags Modal (Next.js 14 App Router Ready) */}
       {showHreflangModal && (

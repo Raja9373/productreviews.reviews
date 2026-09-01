@@ -128,6 +128,12 @@ async function startServer() {
     }
   });
 
+  // Serve ads.txt directly
+  app.get('/ads.txt', (req, res) => {
+    res.type('text/plain');
+    res.send('google.com, pub-9048615701580913, DIRECT, f08c47fec0942fa0\n');
+  });
+
   // Vite middleware in development mode
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
