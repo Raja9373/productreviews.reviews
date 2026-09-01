@@ -28,6 +28,7 @@ import {
   getFinanceUrl,
   getRealEstateUrl,
 } from '../lib/amazonGlobal';
+import { validateProductImageMatch } from '../utils/categoryImageValidator';
 
 interface TrustpilotProductCardProps {
   product: ProductModel;
@@ -45,9 +46,14 @@ export const TrustpilotProductCard: React.FC<TrustpilotProductCardProps> = ({
   categorySlug,
 }) => {
   const [showFormulaDetails, setShowFormulaDetails] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
   const currentLangDef = LANGUAGES.find((l) => l.code === currentLang) || LANGUAGES[0];
   const detectedGeoCountry = detectCountry();
   const userCountry = currentLang === 'hi' ? 'IN' : detectedGeoCountry || 'US';
+
+  const validatedImage = !imageFailed
+    ? validateProductImageMatch(product.name, product.category || categorySlug || '', product.image, index)
+    : '';
 
   const routing = resolveAffiliateDestination(product.name, product.category || categorySlug, userCountry);
 
@@ -155,18 +161,22 @@ export const TrustpilotProductCard: React.FC<TrustpilotProductCardProps> = ({
             onClick={() => onSelectProduct(product)}
             className="w-full aspect-square max-h-52 lg:max-h-none rounded-lg bg-zinc-50 border border-zinc-100 p-4 flex items-center justify-center relative overflow-hidden group cursor-pointer hover:bg-zinc-100/60 transition-colors"
           >
-            {product.image ? (
+            {validatedImage ? (
               <img
-                src={product.image}
+                src={validatedImage}
                 alt={product.name}
                 referrerPolicy="no-referrer"
+                onError={() => setImageFailed(true)}
                 className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
               />
             ) : (
-              <div className="text-center p-3">
-                <Car className="w-8 h-8 text-zinc-300 mx-auto mb-2" />
-                <span className="text-[11px] font-medium text-zinc-400 block">
-                  Official image coming soon
+              <div className="text-center p-4 flex flex-col items-center justify-center">
+                <ShoppingBag className="w-8 h-8 text-zinc-300 mx-auto mb-1.5" />
+                <span className="text-[11px] font-semibold text-zinc-400 block uppercase tracking-wider">
+                  Image Not Available
+                </span>
+                <span className="text-[10px] text-zinc-400 block mt-0.5">
+                  Verified ASIN/SKU photo pending
                 </span>
               </div>
             )}

@@ -1,6 +1,6 @@
 import { ProductModel, DetailedReport, LanguageCode } from '../types';
 import { LANGUAGES } from './languages';
-import { getValidatedCategoryImage } from '../utils/categoryImageValidator';
+import { getValidatedCategoryImage, validateProductImageMatch } from '../utils/categoryImageValidator';
 
 export const BANNED_PRODUCT_SUBSTRINGS = [
   'Pro Max 2026',
@@ -27,6 +27,100 @@ export function sanitizeProductName(name: string): string {
 }
 
 export const CURATED_PRODUCT_DATABASES: Record<string, ProductModel[]> = {
+  'alarm clock': [
+    {
+      id: 'purelife-pro-alarm-clock-edition',
+      slug: 'purelife-pro-alarm-clock-edition',
+      name: 'PureLife Pro Alarm Clock Edition with Sunrise Wake-Up & Dual Alarms',
+      modelNumber: 'PL-CLK-700',
+      brand: 'PureLife',
+      category: 'Electronics & Smart Clocks',
+      image: 'https://images.unsplash.com/photo-1563861826100-9cb868fdbe1c?w=800&auto=format&fit=crop&q=80',
+      basePriceUSD: 49,
+      rating: 4.8,
+      totalReviews: 3240,
+      tag: '🔥 Top Verified Alarm Clock',
+      budgetTier: 'TRENDING',
+      whyDemandReason: '3,240 verified reviews, Sunrise Simulation, 7 Natural Wake Tones & FM Radio',
+      specs: {
+        'Display Type': 'Dimmable Ambient LED Digital Display',
+        'Alarm Modes': 'Dual Alarm Settings with Tap Snooze (9 Mins)',
+        'Wake-Up System': 'Gradual Sunrise Wake-Up Light + 7 Natural Alarm Sounds',
+        'Power Source': 'USB-C Mains Powered with CR2032 Battery Backup',
+        'Extra Features': 'Integrated Sleep Aid Sound Machine & USB Charging Port',
+        'Dimensions': '16.5 x 16.5 x 7.0 cm (Compact Bedside Design)',
+      },
+    },
+    {
+      id: 'philips-smartsleep-wake-up-light-clock',
+      slug: 'philips-smartsleep-wake-up-light-clock',
+      name: 'Philips SmartSleep Wake-Up Light Digital Alarm Clock (HF3520/01)',
+      modelNumber: 'HF3520/01',
+      brand: 'Philips',
+      category: 'Electronics & Smart Clocks',
+      image: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=800&auto=format&fit=crop&q=80',
+      basePriceUSD: 99,
+      rating: 4.9,
+      totalReviews: 6850,
+      tag: 'Clinical Grade Sleep Pick',
+      budgetTier: 'PREMIUM',
+      whyDemandReason: '6,850 verified reviews, Clinically Proven Light Therapy & Sunset Simulation',
+      specs: {
+        'Light Simulation': 'Coloured Sunrise Simulation with 20 Brightness Settings',
+        'Sound Options': '5 Natural Wake-up Sounds + FM Radio',
+        'Display': 'Auto-Dimming LED Time Display',
+        'Clinically Proven': 'Developed with Sleep Foundation Specialists',
+        'Snooze': 'Smart Tap Snooze Sensor',
+        'Power': 'AC Mains with 15-Minute Power Failure Memory',
+      },
+    },
+    {
+      id: 'braun-classic-digital-bedside-clock',
+      slug: 'braun-classic-digital-bedside-clock',
+      name: 'Braun Classic Digital Bedside Travel Alarm Clock with Backlight',
+      modelNumber: 'BC08B',
+      brand: 'Braun',
+      category: 'Electronics & Smart Clocks',
+      image: 'https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?w=800&auto=format&fit=crop&q=80',
+      basePriceUSD: 28,
+      rating: 4.6,
+      totalReviews: 4120,
+      tag: 'Value Bedside Pick',
+      budgetTier: 'BUDGET',
+      whyDemandReason: '4,120 verified reviews, Iconic Dieter Rams Minimalist Design, Crescendo Alarm',
+      specs: {
+        'Display': 'High Contrast Negative LCD Display with Backlight',
+        'Alarm': 'Crescendo Beep Alarm with Integrated Snooze',
+        'Operation': 'Quiet Quartz Precision Movement',
+        'Battery': '1x AAA Battery (Included)',
+        'Size': '5.7 x 5.7 x 2.0 cm (Ultra Compact)',
+        'Warranty': '2-Year Official Manufacturer Warranty',
+      },
+    },
+    {
+      id: 'lenovo-smart-clock-essential',
+      slug: 'lenovo-smart-clock-essential',
+      name: 'Lenovo Smart Clock Essential with LED Time & Nightlight',
+      modelNumber: 'CD-4N341Y',
+      brand: 'Lenovo',
+      category: 'Electronics & Smart Clocks',
+      image: 'https://images.unsplash.com/photo-1584824486509-112e4181ff6b?w=800&auto=format&fit=crop&q=80',
+      basePriceUSD: 39,
+      rating: 4.7,
+      totalReviews: 2980,
+      tag: 'Smart Connected Choice',
+      budgetTier: 'BALANCED',
+      whyDemandReason: '2,980 verified reviews, Voice Control, Auto-Dimming LED & Built-in Nightlight',
+      specs: {
+        'Display': '4-Inch Clear LED Display with Weather & Temp Indicators',
+        'Voice Assistant': 'Google Assistant / Alexa Voice Enabled',
+        'Speaker': '3W Full-Range Acoustic Tuned Speaker',
+        'Nightlight': 'Soft 31-Lumen Ambient Nightlight Strip',
+        'Connectivity': 'Wi-Fi 802.11 b/g/n + Bluetooth 5.0',
+        'Microphone': 'Dual Far-Field Mics with Hardware Mute Switch',
+      },
+    },
+  ],
   'sony camera': [
     {
       id: 'sony-alpha-7-iv',
@@ -1757,6 +1851,9 @@ export function getMockResults(query: string): ProductModel[] {
   }
 
   // Check category and brand keywords
+  if (/purelife|alarm clock|alarm-clock|alarmclock|wake up clock|digital clock|bedside clock|\bclock\b/i.test(normalized) && !/overclock|smartwatch|watch/i.test(normalized)) {
+    return CURATED_PRODUCT_DATABASES['alarm clock'];
+  }
   if (normalized.includes('sony') && (normalized.includes('camera') || normalized.includes('alpha') || normalized.includes('zv') || normalized.includes('cam'))) {
     return CURATED_PRODUCT_DATABASES['sony camera'];
   }
@@ -1897,8 +1994,8 @@ export function getMockResults(query: string): ProductModel[] {
   ];
 
   return realTiers.map((tier, idx) => {
-    const verifiedImage = getValidatedCategoryImage(query, undefined, idx);
     const cleanName = sanitizeProductName(`${tier.realModelTitle}`);
+    const verifiedImage = validateProductImageMatch(cleanName, categoryName, undefined, idx);
 
     return {
       id: `${querySlug}-${tier.modelCode.toLowerCase()}`,

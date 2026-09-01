@@ -5,6 +5,14 @@
  */
 
 export const CATEGORY_VERIFIED_IMAGES: Record<string, string[]> = {
+  alarm_clock: [
+    'https://images.unsplash.com/photo-1563861826100-9cb868fdbe1c?w=800&auto=format&fit=crop&q=80', // Twin-bell retro alarm clock
+    'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=800&auto=format&fit=crop&q=80', // Bedside alarm clock on nightstand
+    'https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?w=800&auto=format&fit=crop&q=80', // Minimalist digital bedside clock
+    'https://images.unsplash.com/photo-1584824486509-112e4181ff6b?w=800&auto=format&fit=crop&q=80', // Smart LED digital display clock
+    'https://images.unsplash.com/photo-1508057198894-247b23fe5ade?w=800&auto=format&fit=crop&q=80', // Minimal table alarm clock
+    'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=800&auto=format&fit=crop&q=80', // Modern bedside digital clock
+  ],
   washing_machine: [
     'https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=800&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1610557892470-55d9e80c0bce?w=800&auto=format&fit=crop&q=80',
@@ -151,7 +159,7 @@ export const CATEGORY_VERIFIED_IMAGES: Record<string, string[]> = {
   ],
   general: [
     'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1563861826100-9cb868fdbe1c?w=800&auto=format&fit=crop&q=80', // alarm clock
     'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80',
     'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&auto=format&fit=crop&q=80',
   ]
@@ -162,6 +170,16 @@ export const CATEGORY_VERIFIED_IMAGES: Record<string, string[]> = {
  */
 export function detectCategoryKey(text: string): string {
   const norm = text.toLowerCase();
+  
+  // Strict check for alarm clocks and clocks FIRST
+  if (
+    /alarm clock|alarm-clock|alarmclock|wake up clock|digital clock|bedside clock|wall clock|table clock/i.test(norm) ||
+    (/\balarm\b/i.test(norm) && !/smoke alarm|car alarm/i.test(norm)) ||
+    (/\bclock\b/i.test(norm) && !/overclock|smartwatch|watch/i.test(norm))
+  ) {
+    return 'alarm_clock';
+  }
+
   if (/wash|washing|washer|laundry/i.test(norm)) return 'washing_machine';
   if (/cctv|security camera|smart lock|doorbell|smoke alarm/i.test(norm)) return 'security_smart_home';
   if (/cycle|bicycle|e-bike|scooter|commuter/i.test(norm)) return 'cycles_mobility';
@@ -184,6 +202,69 @@ export function detectCategoryKey(text: string): string {
 }
 
 /**
+ * Strict Image-to-Title Object Validator (CRITICAL ENGINE RULE)
+ * Checks: Does image object = title object?
+ * If title says "Alarm Clock", image MUST be an alarm clock. NEVER show headphones, earbuds, speakers.
+ */
+export function validateProductImageMatch(title: string, category: string, requestedUrl?: string, itemIndex = 0): string {
+  const titleLower = title.toLowerCase();
+  const categoryLower = category.toLowerCase();
+  const combined = `${titleLower} ${categoryLower}`;
+
+  const isAlarmClock = /alarm clock|alarm-clock|alarmclock|wake up clock|digital clock|bedside clock|\bclock\b/i.test(combined);
+  const isAudioHeadphone = /headphone|earphone|earbud|airpod|headset|earphones|headphones/i.test(combined);
+  const isWashingMachine = /washing machine|washer|laundry/i.test(combined);
+  const isAutomotive = /(suv|thar|creta|scorpio|fortuner|brezza|seltos|nexon|grand vitara|xuv700|car|cars|automotive)/i.test(combined) && !/(car charger|car vacuum|car perfume)/i.test(combined);
+
+  // 1. Alarm Clock Validation
+  if (isAlarmClock) {
+    if (requestedUrl) {
+      const urlLower = requestedUrl.toLowerCase();
+      // Check if URL belongs to headphones, earbuds, audio, or the famous yellow headphone photo 505740420928
+      const isBadAudioImage = /505740420928|headphone|earphone|earbud|speaker|soundbar|audio|headset/i.test(urlLower);
+      const isBadOtherCategory = /vacuum|washing|refrigerator|drill|camera|cycle/i.test(urlLower);
+      if (!isBadAudioImage && !isBadOtherCategory && (urlLower.includes('unsplash') || urlLower.includes('amazon') || urlLower.includes('media'))) {
+        return requestedUrl;
+      }
+    }
+    // Return verified alarm clock image from catalog
+    const clockImages = CATEGORY_VERIFIED_IMAGES.alarm_clock;
+    return clockImages[itemIndex % clockImages.length];
+  }
+
+  // 2. Audio & Headphones Validation
+  if (isAudioHeadphone) {
+    if (requestedUrl) {
+      const urlLower = requestedUrl.toLowerCase();
+      const isBadNonAudio = /washing|vacuum|clock|alarm|refrigerator|drill|cycle/i.test(urlLower);
+      if (!isBadNonAudio) return requestedUrl;
+    }
+    const audioImages = CATEGORY_VERIFIED_IMAGES.audio;
+    return audioImages[itemIndex % audioImages.length];
+  }
+
+  // 3. Washing Machine Validation
+  if (isWashingMachine) {
+    if (requestedUrl) {
+      const urlLower = requestedUrl.toLowerCase();
+      const isBad = /505740420928|headphone|earphone|vacuum|watch|mobile|phone/i.test(urlLower);
+      if (!isBad) return requestedUrl;
+    }
+    const washImages = CATEGORY_VERIFIED_IMAGES.washing_machine;
+    return washImages[itemIndex % washImages.length];
+  }
+
+  // 4. Automotive Validation
+  if (isAutomotive) {
+    if (requestedUrl && requestedUrl.length > 10) return requestedUrl;
+    return '';
+  }
+
+  // General Category resolution
+  return getValidatedCategoryImage(combined, requestedUrl, itemIndex);
+}
+
+/**
  * Strict Image Validator:
  * Validates whether an image matches the target category.
  * If there is ANY risk of cross-category contamination (e.g. vacuum or watch image for washing machine),
@@ -197,22 +278,29 @@ export function getValidatedCategoryImage(categoryOrQuery: string, requestedUrl?
   if (requestedUrl && requestedUrl.length > 10) {
     const urlLower = requestedUrl.toLowerCase();
     
-    // If washing machine, reject any image containing vacuum, watch, phone, laptop, audio keywords
-    if (catKey === 'washing_machine') {
-      const isBadForWashingMachine = /vacuum|cleaner|watch|mobile|phone|headphone|earbud|laptop/i.test(urlLower);
+    if (catKey === 'alarm_clock') {
+      const isBad = /505740420928|headphone|earphone|earbud|speaker|audio|vacuum|washing/i.test(urlLower);
+      if (!isBad) return requestedUrl;
+    } else if (catKey === 'washing_machine') {
+      const isBadForWashingMachine = /505740420928|vacuum|cleaner|watch|mobile|phone|headphone|earbud|laptop/i.test(urlLower);
       if (!isBadForWashingMachine && (urlLower.includes('unsplash') || urlLower.includes('amazon') || urlLower.includes('media'))) {
         return requestedUrl;
       }
     } else if (catKey === 'vacuum') {
-      const isBadForVacuum = /washing|washer|watch|phone|mobile|tv/i.test(urlLower);
+      const isBadForVacuum = /505740420928|washing|washer|watch|phone|mobile|tv/i.test(urlLower);
       if (!isBadForVacuum) return requestedUrl;
     } else if (catKey === 'tv') {
-      const isBadForTV = /washing|vacuum|phone|watch/i.test(urlLower);
+      const isBadForTV = /505740420928|washing|vacuum|phone|watch/i.test(urlLower);
       if (!isBadForTV) return requestedUrl;
     } else if (catKey === 'phone') {
-      const isBadForPhone = /washing|vacuum|tv|refrigerator/i.test(urlLower);
+      const isBadForPhone = /505740420928|washing|vacuum|tv|refrigerator/i.test(urlLower);
       if (!isBadForPhone) return requestedUrl;
     } else {
+      // General safety: discard 505740420928 if not specifically an audio query
+      if (urlLower.includes('505740420928') && catKey !== 'audio') {
+        const safeIdx = itemIndex % images.length;
+        return images[safeIdx];
+      }
       return requestedUrl;
     }
   }

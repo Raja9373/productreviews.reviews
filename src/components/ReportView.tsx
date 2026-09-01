@@ -52,6 +52,7 @@ import {
   getHealthcareUrl,
 } from '../lib/amazonGlobal';
 import { isAutoCategory, getAutoVehicleUrl } from '../lib/affiliateRouting';
+import { validateProductImageMatch } from '../utils/categoryImageValidator';
 import { AdUnit } from './AdUnit';
 
 interface ReportViewProps {
@@ -71,6 +72,11 @@ export const ReportView: React.FC<ReportViewProps> = ({
   const [showHreflangModal, setShowHreflangModal] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [imageError, setImageError] = useState(false);
+
+  const validatedImg = !imageError 
+    ? validateProductImageMatch(report.name, report.category, report.image)
+    : '';
 
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
   const currentLangDef = LANGUAGES.find((l) => l.code === currentLang) || LANGUAGES[0];
@@ -268,13 +274,22 @@ export const ReportView: React.FC<ReportViewProps> = ({
           <div className="bg-white rounded-[24px] border border-zinc-200 p-6 sm:p-8 shadow-sm">
             <div className="flex flex-col sm:flex-row gap-6 mb-6">
               {/* Product Thumbnail */}
-              <div className="w-28 h-28 sm:w-32 sm:h-32 bg-zinc-50 rounded-2xl border border-zinc-100 flex items-center justify-center p-3 shrink-0">
-                <img
-                  src={report.image}
-                  alt={report.name}
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-contain"
-                />
+              <div className="w-28 h-28 sm:w-32 sm:h-32 bg-zinc-50 rounded-2xl border border-zinc-100 flex items-center justify-center p-3 shrink-0 overflow-hidden">
+                {validatedImg ? (
+                  <img
+                    src={validatedImg}
+                    alt={report.name}
+                    referrerPolicy="no-referrer"
+                    onError={() => setImageError(true)}
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <div className="text-center p-2">
+                    <span className="text-[10px] font-semibold text-zinc-400 block uppercase">
+                      Image Not Available
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Title & Metadata */}
