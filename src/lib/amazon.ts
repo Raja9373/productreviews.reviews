@@ -1,5 +1,6 @@
 import { ProductModel } from '../types';
 import { getAmazonUrl, detectCountry } from './amazonGlobal';
+import { fetchGroundedProducts } from '../utils/groundedSearchClient';
 
 export { getAmazonUrl, detectCountry };
 
@@ -14,37 +15,16 @@ export interface AmazonSearchResponse {
   fallback: boolean;
   searchUrl: string;
   message: string;
-  items?: ProductModel[];
+  items: ProductModel[];
 }
 
 /**
- * Search Amazon products - strictly no mock products
+ * Search Amazon products - queries backend / PA-API, and seamlessly falls back to Google Search Grounding
+ * with active Amazon affiliate links. NEVER returns 404 or throws.
  */
 export async function searchAmazonProducts(query: string): Promise<AmazonSearchResponse> {
   const searchUrl = getAmazonSearchUrl(query);
 
-  // Check if PA-API keys exist and are not dummy/placeholders
-  const accessKey =
-    (typeof process !== 'undefined' && process.env?.AMAZON_ACCESS_KEY) ||
-    (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_AMAZON_ACCESS_KEY) ||
-    '';
-
-  const hasKeys =
-    Boolean(accessKey) &&
-    accessKey !== 'dummy' &&
-    !accessKey.includes('dummy') &&
-    !accessKey.includes('MY_AMAZON');
-
-  if (!hasKeys) {
-    return {
-      fallback: true,
-      searchUrl,
-      message: 'Have a Look',
-      items: [],
-    };
-  }
-
-  // Else try PA-API backend
   try {
     const res = await fetch('/api/paapi/search', {
       method: 'POST',
@@ -52,28 +32,40 @@ export async function searchAmazonProducts(query: string): Promise<AmazonSearchR
       body: JSON.stringify({ query }),
     });
 
-    if (!res.ok) {
+    if (res.ok) {
+      const data = await res.json();
+      if (data && Array.isArray(data.items) && data.items.length > 0) {
+        return {
+          fallback: !data.isLive,
+          searchUrl: data.amazonDirectUrl || searchUrl,
+          message: data.ctaText || 'Have a Look',
+          items: data.items,
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('[lib/amazon.ts] PA-API search skipped, trying live Grounding fallback:', err);
+  }
+
+  // Live Google Search Grounding Fallback with Affiliate Links
+  try {
+    const grounded = await fetchGroundedProducts(query);
+    if (grounded && grounded.products && grounded.products.length > 0) {
       return {
-        fallback: true,
+        fallback: false,
         searchUrl,
-        message: 'Have a Look',
-        items: [],
+        message: `Have a Look - Explore verified ${query} on Amazon`,
+        items: grounded.products,
       };
     }
-
-    const data = await res.json();
-    return {
-      fallback: !data.isLive,
-      searchUrl: data.amazonDirectUrl || searchUrl,
-      message: data.ctaText || 'Have a Look',
-      items: data.items && data.items.length > 0 ? data.items : [],
-    };
-  } catch {
-    return {
-      fallback: true,
-      searchUrl,
-      message: 'Have a Look',
-      items: [],
-    };
+  } catch (gErr) {
+    console.warn('[lib/amazon.ts] Grounding fallback error:', gErr);
   }
+
+  return {
+    fallback: true,
+    searchUrl,
+    message: 'Have a Look',
+    items: [],
+  };
 }

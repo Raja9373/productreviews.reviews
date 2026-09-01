@@ -39,9 +39,44 @@ export interface SentimentAnalysis {
   redditSentiment: 'Extremely Positive' | 'Mostly Positive' | 'Mixed' | 'Negative';
   redditMentionCount: number;
   redditSummary: string;
+  redditScore?: number;
   youtubeVideosAnalyzed: number;
   youtubeVerdict: string;
+  youtubeScore?: number;
   expertScore: number; // out of 100
+  expertReviewSitesCount?: number;
+}
+
+export interface VideoReviewItem {
+  id: string;
+  title: string;
+  channel: string;
+  duration: string;
+  views: string;
+  summary: string;
+  verdictTag: string;
+  url: string;
+}
+
+export interface FakeReviewAudit {
+  authenticPercent: number;
+  filteredFakePercent: number;
+  burstPatternDetected: boolean;
+  verifiedBuyerRatio: number;
+  statusBadge: string;
+}
+
+export interface GeoPriceOption {
+  countryCode: string;
+  countryName: string;
+  flag: string;
+  currencySymbol: string;
+  priceFormatted: string;
+  rawPrice: number;
+  tag: string;
+  domain: string;
+  affiliateUrl: string;
+  isLowest?: boolean;
 }
 
 export interface ProductModel {
@@ -53,6 +88,8 @@ export interface ProductModel {
   category: string;
   image: string;
   basePriceUSD: number;
+  listPriceUSD?: number;
+  discountPercent?: number;
   rating: number;
   totalReviews: number;
   tag: string; // e.g. "🔥 Aaj Kal Sabse Zyada Bik Raha Hai", "Budget Pick", "Balanced Value", "Premium Flagship"
@@ -62,6 +99,21 @@ export interface ProductModel {
   whyDemandReason?: string; // e.g. "3,450 verified buyers, 88% 5-star"
   specs: { [key: string]: string };
   asin?: string;
+  sourceUrl?: string;
+  consensusScore?: {
+    amazon: number;
+    reddit: number;
+    youtube: number;
+    expert: number;
+    totalSourcesCount: number;
+    amazonReviews: number;
+    redditThreads: number;
+    youtubeReviews: number;
+    expertSites: number;
+  };
+  videoReviews?: VideoReviewItem[];
+  fakeReviewAudit?: FakeReviewAudit;
+  geoPrices?: GeoPriceOption[];
 }
 
 export interface DetailedReport extends ProductModel {

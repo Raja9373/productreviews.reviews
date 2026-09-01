@@ -44,11 +44,19 @@ export async function fetchGroundedProducts(
     });
 
     if (!res.ok) {
-      throw new Error(`Server returned HTTP ${res.status}`);
+      console.warn(`[fetchGroundedProducts] HTTP ${res.status}, returning graceful response.`);
+      return {
+        success: false,
+        isGrounded: false,
+        searchQueriesRun: [],
+        groundingChunks: [],
+        products: [],
+        errorMessage: `Server returned HTTP ${res.status}`,
+      };
     }
 
     const data = await res.json();
-    if (data && data.success && Array.isArray(data.products)) {
+    if (data && data.success && Array.isArray(data.products) && data.products.length > 0) {
       const mappedProducts: ProductModel[] = data.products.map((p: any, idx: number) => {
         const tier: 'TRENDING' | 'BUDGET' | 'BALANCED' | 'PREMIUM' =
           p.budgetTier || (idx === 0 ? 'TRENDING' : idx === 1 ? 'BUDGET' : idx === 2 ? 'BALANCED' : 'PREMIUM');
@@ -56,7 +64,7 @@ export async function fetchGroundedProducts(
         const tag =
           p.tag ||
           (idx === 0
-            ? '🌐 Google Search Grounded #1'
+            ? '🔥 Google Search Grounded #1'
             : idx === 1
             ? '⚡ Best Value Grounded Pick'
             : '✨ Verified Live Product');
@@ -104,7 +112,7 @@ export async function fetchGroundedProducts(
       };
     }
   } catch (err: any) {
-    console.error('[fetchGroundedProducts] Network or API error:', err);
+    console.warn('[fetchGroundedProducts] Notice:', err);
     return {
       success: false,
       isGrounded: false,
@@ -116,5 +124,22 @@ export async function fetchGroundedProducts(
       products: [],
       errorMessage: err?.message || 'Failed to connect to Google Search Grounding engine.',
     };
+  }
+}
+
+/**
+ * Returns verified models using live Google Search Grounding without throwing.
+ * Safe fallback: returns [] if empty, never throws or 404s.
+ */
+export async function getVerifiedModels(
+  query: string,
+  targetLang: LanguageCode = 'en'
+): Promise<ProductModel[]> {
+  try {
+    const res = await fetchGroundedProducts(query, targetLang);
+    return res.products || [];
+  } catch (err) {
+    console.warn('[getVerifiedModels] Handled error, returning empty list:', err);
+    return [];
   }
 }

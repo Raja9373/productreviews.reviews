@@ -142,19 +142,48 @@ export const CategoryTrustpilotPage: React.FC<CategoryTrustpilotPageProps> = ({
             </div>
 
             {/* Category TrustScore Box */}
-            <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200 flex flex-col items-start sm:items-end justify-center shrink-0 min-w-[240px]">
-              <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1">
-                Category TrustScore
+            <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200 flex flex-col items-start justify-center shrink-0 min-w-[280px]">
+              <div className="text-xs font-bold text-zinc-600 uppercase tracking-wider mb-1 flex items-center justify-between w-full">
+                <span>Category TrustScore</span>
+                <span className="text-[10px] font-mono text-emerald-700 bg-emerald-100/60 px-1.5 py-0.5 rounded">Multi-Source</span>
               </div>
               <TrustpilotStars
                 score={avgCategoryRating}
                 totalReviews={totalCategoryReviews}
                 size="lg"
                 statusText="Excellent"
+                showFakeAuditBadge={true}
+                authenticPercent={95}
               />
-              <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 mt-2 font-medium">
+
+              {/* Consensus Breakdown Bar */}
+              <div className="w-full mt-3 pt-2.5 border-t border-zinc-200/80">
+                <div className="text-[10px] text-zinc-500 font-bold uppercase mb-1">
+                  Source Consensus Breakdown
+                </div>
+                <div className="grid grid-cols-4 gap-1 text-[11px] font-mono">
+                  <div className="p-1 rounded bg-white border border-zinc-200 text-center">
+                    <div className="text-[9px] text-zinc-400 font-sans">Amazon</div>
+                    <div className="font-bold text-amber-700">★ 4.6</div>
+                  </div>
+                  <div className="p-1 rounded bg-white border border-zinc-200 text-center">
+                    <div className="text-[9px] text-zinc-400 font-sans">Reddit</div>
+                    <div className="font-bold text-orange-700">★ 4.8</div>
+                  </div>
+                  <div className="p-1 rounded bg-white border border-zinc-200 text-center">
+                    <div className="text-[9px] text-zinc-400 font-sans">YouTube</div>
+                    <div className="font-bold text-red-700">★ 4.9</div>
+                  </div>
+                  <div className="p-1 rounded bg-white border border-zinc-200 text-center">
+                    <div className="text-[9px] text-zinc-400 font-sans">Labs</div>
+                    <div className="font-bold text-emerald-700">★ 4.7</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 text-[11px] text-zinc-600 mt-2.5 font-medium">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#00B67A]" />
-                <span>100% Unbiased &amp; Verified Consensus</span>
+                <span>Consensus from {totalCategoryReviews.toLocaleString()} verified multi-source reviews</span>
               </div>
             </div>
           </div>

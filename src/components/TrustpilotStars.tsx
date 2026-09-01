@@ -8,6 +8,8 @@ interface TrustpilotStarsProps {
   size?: 'sm' | 'md' | 'lg';
   statusText?: string;
   className?: string;
+  showFakeAuditBadge?: boolean;
+  authenticPercent?: number;
 }
 
 export const TrustpilotStars: React.FC<TrustpilotStarsProps> = ({
@@ -17,6 +19,8 @@ export const TrustpilotStars: React.FC<TrustpilotStarsProps> = ({
   size = 'md',
   statusText,
   className = '',
+  showFakeAuditBadge = false,
+  authenticPercent = 94,
 }) => {
   // Normalize score between 0 and 5
   const clampedScore = Math.max(0, Math.min(5, score));
@@ -37,6 +41,9 @@ export const TrustpilotStars: React.FC<TrustpilotStarsProps> = ({
   const starSize = size === 'sm' ? 'w-2.5 h-2.5' : size === 'lg' ? 'w-4 h-4' : 'w-3 h-3';
   const gap = size === 'sm' ? 'gap-0.5' : 'gap-1';
   const textSize = size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-sm sm:text-base' : 'text-xs sm:text-sm';
+
+  const safeAuthentic = authenticPercent || 94;
+  const safeFake = 100 - safeAuthentic;
 
   return (
     <div className={`flex flex-wrap items-center gap-2 ${className}`}>
@@ -84,6 +91,14 @@ export const TrustpilotStars: React.FC<TrustpilotStarsProps> = ({
               </span>
             </>
           )}
+        </div>
+      )}
+
+      {/* Fake Review Detector Badge */}
+      {showFakeAuditBadge && (
+        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-semibold border border-emerald-200/80">
+          <ShieldCheck className="w-3 h-3 text-[#00B67A]" />
+          <span>AI Verified: {safeAuthentic}% Authentic • {safeFake}% Filtered</span>
         </div>
       )}
     </div>

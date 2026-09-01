@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { resolveProductImage } from '../src/utils/productImageRegistry';
 
 export interface AmazonPaapiItem {
   id: string;
@@ -662,6 +663,12 @@ export function generateFallbackItems(query: string, categorySlug: string | unde
     const rating = Number((4.3 + (idx % 4) * 0.15).toFixed(1));
     const reviews = 1200 + idx * 850;
 
+    const resolved = resolveProductImage({
+      name,
+      category: categorySlug || cleanTitle,
+      modelNumber: `${b.toUpperCase()}-${norm.slice(0, 4).toUpperCase()}-${idx + 1}00`,
+    });
+
     return {
       id: asin,
       asin,
@@ -675,7 +682,7 @@ export function generateFallbackItems(query: string, categorySlug: string | unde
       reviewsCount: reviews,
       highlight: `High durability build with 90%+ positive customer sentiment`,
       whyDemandReason: `${reviews.toLocaleString()} verified customer reviews, reliable performance`,
-      imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80',
+      imageUrl: resolved.imageUrl || '',
       productUrl: `https://${marketplace}/s?k=${encodeURIComponent(query)}&tag=${partnerTag}&linkCode=ll2`,
       features: [
         'Premium high-grade materials & ergonomic design',

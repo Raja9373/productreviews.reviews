@@ -19,6 +19,8 @@ import { DisclaimerPage } from './components/pages/DisclaimerPage';
 import { AffiliateSettingsPage } from './components/pages/AffiliateSettingsPage';
 import { FooterGeoAffiliateScript } from './components/FooterGeoAffiliateScript';
 import { AdUnit } from './components/AdUnit';
+import { TrustpilotComparisonBanner } from './components/TrustpilotComparisonBanner';
+import { ProductFinderChat } from './components/ProductFinderChat';
 import { ProductModel, DetailedReport, LanguageCode } from './types';
 import { LANGUAGES } from './data/languages';
 import {
@@ -408,6 +410,8 @@ export default function App() {
               onDetectedLanguageChange={(detected) => setCurrentLang(detected)}
               initialQuery={searchQuery}
             />
+            {/* Trustpilot Killer Comparison Banner (100% Unbiased Guarantee) */}
+            <TrustpilotComparisonBanner />
             <TrendingSearches
               currentLang={currentLang}
               onSelectSearch={(query) => handleSearchSubmit(query)}
@@ -561,6 +565,12 @@ export default function App() {
           <FooterGeoAffiliateScript />
         </div>
       </footer>
+
+      {/* Feature 5: AI Product Finder Interactive Chat Assistant */}
+      <ProductFinderChat
+        currentLang={currentLang}
+        onSearchProduct={(q) => handleSearchSubmit(q)}
+      />
     </div>
   );
 }
