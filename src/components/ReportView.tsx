@@ -612,11 +612,15 @@ export const ReportView: React.FC<ReportViewProps> = ({
           {/* Main Verdict Card */}
           <div
             id="verdict-sticky-card"
-            className={`rounded-[24px] p-8 shadow-lg flex flex-col items-center text-center ${
+            className={`ai-verdict-card rounded-[24px] shadow-lg flex flex-col items-center text-center w-full min-w-[320px] p-6 ${
               isRecommended
                 ? 'bg-emerald-600 text-white'
                 : 'bg-red-600 text-white'
             }`}
+            style={{
+              minWidth: '320px',
+              padding: '24px',
+            }}
           >
             {/* Verdict Header */}
             <span className="text-xs font-bold uppercase tracking-[0.2em] opacity-80 mb-2">
@@ -625,12 +629,14 @@ export const ReportView: React.FC<ReportViewProps> = ({
 
             {/* Verdict Badge */}
             <div
-              className="w-full max-w-full font-black tracking-tight mb-4 break-words text-center"
+              className="verdict-label w-full max-w-full font-black text-center mb-4"
               style={{
-                fontSize: 'clamp(1.5rem, 5.5vw, 2.5rem)',
-                lineHeight: 0.9,
-                overflowWrap: 'anywhere',
-                wordBreak: 'break-word',
+                fontSize: 'clamp(20px, 2.5vw, 28px)',
+                lineHeight: 1.1,
+                whiteSpace: 'nowrap',
+                letterSpacing: '0.5px',
+                wordBreak: 'keep-all',
+                overflowWrap: 'normal',
               }}
             >
               {isRecommended ? t.verdictBuy : t.verdictDontBuy}

@@ -27,3 +27,18 @@
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: #a1a1aa;
 }
+
+/* AI Final Verdict Card Layout & Label Styling */
+.ai-verdict-card {
+  min-width: 320px !important;
+  padding: 24px !important;
+}
+
+.ai-verdict-card .verdict-label {
+  font-size: clamp(20px, 2.5vw, 28px) !important;
+  line-height: 1.1 !important;
+  white-space: nowrap !important;
+  letter-spacing: 0.5px !important;
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+}
