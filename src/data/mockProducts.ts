@@ -1,6 +1,6 @@
 import { ProductModel, DetailedReport, LanguageCode } from '../types';
 import { LANGUAGES } from './languages';
-import { getValidatedCategoryImage, validateProductImageMatch } from '../utils/categoryImageValidator';
+import { resolveProductImage } from '../utils/productImageRegistry';
 
 export const BANNED_PRODUCT_SUBSTRINGS = [
   'Pro Max 2026',
@@ -27,6 +27,95 @@ export function sanitizeProductName(name: string): string {
 }
 
 export const CURATED_PRODUCT_DATABASES: Record<string, ProductModel[]> = {
+  'water bottle': [
+    {
+      id: 'WAT-ULTRA-850',
+      slug: 'purelife-stainless-water-bottle-ultra-850',
+      name: 'PureLife Stainless Steel Vacuum Insulated Water Bottle (1000ml)',
+      modelNumber: 'WAT-ULTRA-850',
+      brand: 'PureLife',
+      category: 'Sports, Fitness & Hydration',
+      image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800&auto=format&fit=crop&q=80',
+      basePriceUSD: 24,
+      rating: 4.9,
+      totalReviews: 5420,
+      tag: '🔥 Top Verified Water Bottle',
+      budgetTier: 'TRENDING',
+      whyDemandReason: '5,420 verified reviews, 24-Hour Cold & 12-Hour Hot Insulation, Leakproof Lid',
+      specs: {
+        'Capacity': '1000 ml / 34 fl oz',
+        'Material': '18/8 Food-Grade 304 Stainless Steel',
+        'Insulation': 'Double Wall Vacuum Shield Technology',
+        'Lid Type': 'One-Touch Spout & Leakproof Straw Cap',
+        'BPA Free': '100% BPA, BPS and Phthalate Free',
+        'Warranty': 'Lifetime Thermal Retention Guarantee',
+      },
+    },
+    {
+      id: 'WAT-PRO-700',
+      slug: 'milton-thermosteel-flip-lid-bottle',
+      name: 'Milton Thermosteel Flip Lid Vacuum Insulated Flask (750ml)',
+      modelNumber: 'WAT-PRO-700',
+      brand: 'Milton',
+      category: 'Sports, Fitness & Hydration',
+      image: 'https://images.unsplash.com/photo-1570831739427-4ff2fa9a72b5?w=800&auto=format&fit=crop&q=80',
+      basePriceUSD: 18,
+      rating: 4.8,
+      totalReviews: 8930,
+      tag: 'India #1 Best-Seller',
+      budgetTier: 'BALANCED',
+      whyDemandReason: '8,930 verified reviews, Copper Coating for Extended Heat Retention',
+      specs: {
+        'Capacity': '750 ml',
+        'Material': 'Rust-Proof SS 304 Interior and Exterior',
+        'Temperature Retention': 'Hot for 24h, Cold for 24h',
+        'Design': 'Ergonomic Slim Profile Fits Car Cup Holders',
+        'Warranty': '1-Year Official Manufacturer Warranty',
+      },
+    },
+    {
+      id: 'WAT-EV-300',
+      slug: 'cello-infusion-sports-water-bottle',
+      name: 'Cello Infusion BPA-Free Sports Gym Water Bottle with Time Marker',
+      modelNumber: 'WAT-EV-300',
+      brand: 'Cello',
+      category: 'Sports, Fitness & Hydration',
+      image: 'https://images.unsplash.com/photo-1544003484-3cd181d17917?w=800&auto=format&fit=crop&q=80',
+      basePriceUSD: 12,
+      rating: 4.6,
+      totalReviews: 3120,
+      tag: 'Budget Gym Choice',
+      budgetTier: 'BUDGET',
+      whyDemandReason: '3,120 verified reviews, Shatter-Proof Eastman Tritan, Hourly Motivational Quotes',
+      specs: {
+        'Capacity': '1000 ml',
+        'Material': 'US Imported 100% Eastman Tritan Plastic',
+        'Features': 'Removable Fruit Infuser Strainer & Carry Strap',
+        'Safety': 'Toxin Free, Odour Resistant',
+      },
+    },
+    {
+      id: 'WAT-PLUS-520',
+      slug: 'hydro-flask-wide-mouth-flex-cap',
+      name: 'Hydro Flask Standard Mouth Flex Cap Hydro-Shield (946ml)',
+      modelNumber: 'WAT-PLUS-520',
+      brand: 'Hydro Flask',
+      category: 'Sports, Fitness & Hydration',
+      image: 'https://images.unsplash.com/photo-1523362628745-0c100150b504?w=800&auto=format&fit=crop&q=80',
+      basePriceUSD: 38,
+      rating: 4.9,
+      totalReviews: 12400,
+      tag: 'Premium Outdoor Pick',
+      budgetTier: 'PREMIUM',
+      whyDemandReason: '12,400 verified reviews, Color Last Powder Coat, Dishwasher Safe',
+      specs: {
+        'Capacity': '32 oz / 946 ml',
+        'TempShield': 'Pro-Grade Stainless Steel Vacuum Insulation',
+        'Coating': 'Slip-Free Color Last Powder Coating',
+        'Warranty': 'Hydro Flask Lifetime Warranty',
+      },
+    },
+  ],
   'alarm clock': [
     {
       id: 'purelife-pro-alarm-clock-edition',
@@ -1851,6 +1940,9 @@ export function getMockResults(query: string): ProductModel[] {
   }
 
   // Check category and brand keywords
+  if (/purelife.*bottle|water bottle|waterbottle|flask|thermosteel|hydration bottle|sipper/i.test(normalized)) {
+    return CURATED_PRODUCT_DATABASES['water bottle'];
+  }
   if (/purelife|alarm clock|alarm-clock|alarmclock|wake up clock|digital clock|bedside clock|\bclock\b/i.test(normalized) && !/overclock|smartwatch|watch/i.test(normalized)) {
     return CURATED_PRODUCT_DATABASES['alarm clock'];
   }
@@ -1995,16 +2087,23 @@ export function getMockResults(query: string): ProductModel[] {
 
   return realTiers.map((tier, idx) => {
     const cleanName = sanitizeProductName(`${tier.realModelTitle}`);
-    const verifiedImage = validateProductImageMatch(cleanName, categoryName, undefined, idx);
+    const productId = `${querySlug}-${tier.modelCode.toLowerCase()}`;
+    const modelNum = `${brand.slice(0, 3).toUpperCase()}-${tier.modelCode}`;
+    const { imageUrl } = resolveProductImage({
+      id: productId,
+      name: cleanName,
+      category: `${categoryName} Category`,
+      modelNumber: modelNum,
+    });
 
     return {
-      id: `${querySlug}-${tier.modelCode.toLowerCase()}`,
-      slug: `${querySlug}-${tier.modelCode.toLowerCase()}`,
+      id: productId,
+      slug: productId,
       name: cleanName,
-      modelNumber: `${brand.slice(0, 3).toUpperCase()}-${tier.modelCode}`,
+      modelNumber: modelNum,
       brand,
       category: `${categoryName} Category`,
-      image: verifiedImage,
+      image: imageUrl || '',
       basePriceUSD: tier.price,
       rating: tier.rating,
       totalReviews: tier.reviews,

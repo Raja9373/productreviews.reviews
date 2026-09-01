@@ -18,6 +18,7 @@ import {
   Search,
 } from 'lucide-react';
 import { LanguageCode } from '../types';
+import { ProductThumbnail } from './ProductThumbnail';
 
 interface TrendingSearchesProps {
   currentLang: LanguageCode;
@@ -385,11 +386,17 @@ export const TrendingSearches: React.FC<TrendingSearchesProps> = ({
               {/* Product Thumbnail + Title */}
               <div className="flex gap-3 items-start">
                 <div className="w-16 h-16 rounded-xl bg-zinc-100 border border-zinc-100 overflow-hidden shrink-0 relative">
-                  <img
-                    src={item.image}
+                  <ProductThumbnail
+                    product={{
+                      id: item.id,
+                      name: item.name,
+                      category: item.category,
+                      image: item.image,
+                    }}
                     alt={item.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
+                    showInitialsLabel={false}
+                    className="w-full h-full"
+                    imageClassName="object-cover group-hover:scale-105"
                   />
                 </div>
 

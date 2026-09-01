@@ -6,6 +6,7 @@ import {
   getOrFetchCategoryProducts,
   resolveSearchIndex,
 } from './server/amazonPaapi';
+import { searchProductsWithGrounding } from './server/geminiSearch';
 import { CATEGORIES } from './src/data/categories';
 
 async function startServer() {
@@ -25,6 +26,46 @@ async function startServer() {
       partnerTag: process.env.AMAZON_TAG_IN || process.env.AMAZON_PARTNER_TAG || 'jaiguruji00-21',
       creatorsApiEnabled: false,
     });
+  });
+
+  // API Route: Google Search Grounded Discovery Engine
+  // Runs 1) query + " best product buy online 2025" and 2) query + " Amazon bestseller" with Google Search Grounding
+  app.post('/api/gemini/grounded-search', async (req, res) => {
+    try {
+      const { query, targetLang = 'en' } = req.body;
+      if (!query || typeof query !== 'string') {
+        return res.status(400).json({ error: 'Query string is required' });
+      }
+
+      console.log(`[Google Search Grounding] Running grounded live search for: "${query}"...`);
+      const result = await searchProductsWithGrounding(query, targetLang);
+      return res.json(result);
+    } catch (err: any) {
+      console.error('[API /api/gemini/grounded-search] Error:', err);
+      return res.status(500).json({
+        success: false,
+        error: err?.message || 'Failed to execute Google Search Grounding',
+      });
+    }
+  });
+
+  app.get('/api/gemini/grounded-search', async (req, res) => {
+    try {
+      const query = (req.query.q as string) || '';
+      const targetLang = (req.query.lang as string) || 'en';
+      if (!query) {
+        return res.status(400).json({ error: 'Query parameter q is required' });
+      }
+
+      const result = await searchProductsWithGrounding(query, targetLang);
+      return res.json(result);
+    } catch (err: any) {
+      console.error('[API GET /api/gemini/grounded-search] Error:', err);
+      return res.status(500).json({
+        success: false,
+        error: err?.message || 'Failed to execute Google Search Grounding',
+      });
+    }
   });
 
   // API Route: Amazon PA-API Live Search

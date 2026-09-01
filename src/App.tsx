@@ -29,6 +29,7 @@ import { getMockResults, generateDetailedReport, CURATED_PRODUCT_DATABASES } fro
 import { CATEGORIES, Category, SubCategory, matchCategoryFromQuery } from './data/categories';
 import { EdgeRedisCache } from './utils/cacheManager';
 import { searchAmazonProducts, fetchCategoryProducts } from './utils/paapiClient';
+import { fetchGroundedProducts, GroundingSource } from './utils/groundedSearchClient';
 import { getAffiliatePartner } from './lib/smartRouter';
 
 type AppScreen =
@@ -52,6 +53,10 @@ export default function App() {
   const [matchingModels, setMatchingModels] = useState<ProductModel[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<ProductModel | null>(null);
   const [activeReport, setActiveReport] = useState<DetailedReport | null>(null);
+  const [isGroundedSearching, setIsGroundedSearching] = useState(false);
+  const [groundingChunks, setGroundingChunks] = useState<GroundingSource[]>([]);
+  const [searchQueriesRun, setSearchQueriesRun] = useState<string[]>([]);
+  const [groundingError, setGroundingError] = useState<string | undefined>(undefined);
 
   // Sync RTL / LTR and document lang tag
   useEffect(() => {
@@ -265,19 +270,17 @@ export default function App() {
     setScreen('CATEGORY');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // Live PA-API fetch ONLY if this category routes to Amazon
-    if (category.ctaType === 'amazon' || !category.ctaType) {
-      fetchCategoryProducts(category.slug).then((res) => {
-        if (res && res.items && res.items.length > 0) {
-          setMatchingModels(res.items);
-        }
-      }).catch((err) => {
-        console.warn('[App] Category PA-API fetch notice:', err);
-      });
-    }
+    // Live Google Search Grounding for Category discovery
+    fetchGroundedProducts(searchTarget, currentLang).then((res) => {
+      if (res && res.success && res.products.length > 0) {
+        setMatchingModels(res.products);
+      }
+    }).catch((err) => {
+      console.warn('[App] Category Grounded fetch notice:', err);
+    });
   };
 
-  // Search Submission Handler
+  // Search Submission Handler - Google Search Grounding Powered
   const handleSearchSubmit = (query: string, queryDetectedLang?: LanguageCode) => {
     const targetLang = queryDetectedLang || currentLang;
     if (queryDetectedLang && queryDetectedLang !== currentLang) {
@@ -285,6 +288,8 @@ export default function App() {
     }
 
     const trimmed = query.trim();
+    if (!trimmed) return;
+
     setSearchQuery(trimmed);
 
     // Check matched category if any
@@ -292,39 +297,44 @@ export default function App() {
     const matchedCategory = matchResult?.category || null;
     setSelectedCategory(matchedCategory);
 
-    // Immediate display with initial curated catalog
-    const initialModels = getMockResults(trimmed);
+    // Enter Model Selector screen with active Google Search Grounding loading status
+    setMatchingModels([]);
+    setIsGroundedSearching(true);
+    setGroundingError(undefined);
+    setSearchQueriesRun([
+      `${trimmed} best product buy online 2025`,
+      `${trimmed} Amazon bestseller`,
+    ]);
+    setGroundingChunks([]);
+    setScreen('MODEL_SELECTOR');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // If query was exact match or only 1 model found or user searched exact slug
-    const normalized = trimmed.toLowerCase();
-    const exactMatch = initialModels.find(
-      (m) =>
-        m.name.toLowerCase() === normalized ||
-        m.modelNumber.toLowerCase() === normalized ||
-        m.slug === normalized
-    );
-
-    if (exactMatch) {
-      // Direct jump to 5-7s scan
-      handleSelectModel(exactMatch, targetLang);
-    } else {
-      // Show models selector
-      setMatchingModels(initialModels);
-      setScreen('MODEL_SELECTOR');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-
-      // Check affiliate partner: ONLY call Amazon PA-API if partner is Amazon
-      const partner = getAffiliatePartner(trimmed, matchedCategory?.slug);
-      if (partner === 'amazon') {
-        searchAmazonProducts(trimmed).then((res) => {
-          if (res && res.items && res.items.length > 0) {
-            setMatchingModels(res.items);
-          }
-        }).catch((err) => {
-          console.warn('[App] Search PA-API notice:', err);
-        });
-      }
-    }
+    // Execute server-side Google Search Grounding tool
+    fetchGroundedProducts(trimmed, targetLang)
+      .then((res) => {
+        setIsGroundedSearching(false);
+        if (res.success && res.products.length > 0) {
+          setMatchingModels(res.products);
+          setGroundingChunks(res.groundingChunks || []);
+          setSearchQueriesRun(res.searchQueriesRun || [
+            `${trimmed} best product buy online 2025`,
+            `${trimmed} Amazon bestseller`,
+          ]);
+        } else {
+          // If no real products found, do NOT invent fake ones.
+          setMatchingModels([]);
+          setGroundingError(
+            res.errorMessage || `No real products found online for "${trimmed}".`
+          );
+          setGroundingChunks(res.groundingChunks || []);
+        }
+      })
+      .catch((err) => {
+        console.error('[App] Google Search Grounding error:', err);
+        setIsGroundedSearching(false);
+        setMatchingModels([]);
+        setGroundingError(`No real products found online for "${trimmed}".`);
+      });
   };
 
   // Model Selection Handler
@@ -416,6 +426,10 @@ export default function App() {
             onSelectModel={(m) => handleSelectModel(m)}
             onBackToSearch={handleResetToHome}
             categoryContext={selectedCategory}
+            isLoadingGrounded={isGroundedSearching}
+            groundingChunks={groundingChunks}
+            searchQueriesRun={searchQueriesRun}
+            groundingErrorMessage={groundingError}
           />
         )}
 

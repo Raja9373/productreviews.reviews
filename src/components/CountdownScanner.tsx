@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ProductModel, LanguageCode } from '../types';
 import { TRANSLATIONS } from '../data/languages';
 import { Sparkles, ShoppingBag, Youtube, MessageSquare, Tag, ShieldCheck } from 'lucide-react';
+import { ProductThumbnail } from './ProductThumbnail';
 
 interface CountdownScannerProps {
   product: ProductModel;
@@ -98,12 +99,14 @@ export const CountdownScanner: React.FC<CountdownScannerProps> = ({
     <div className="w-full max-w-2xl mx-auto px-4 py-16 sm:py-24 flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-300">
       {/* Product Mini Header */}
       <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-white border border-zinc-200 shadow-xs mb-10">
-        <img
-          src={product.image}
-          alt={product.name}
-          referrerPolicy="no-referrer"
-          className="w-8 h-8 object-contain rounded-full bg-zinc-50"
-        />
+        <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
+          <ProductThumbnail
+            product={product}
+            alt={product.name}
+            showInitialsLabel={false}
+            className="w-full h-full"
+          />
+        </div>
         <div className="text-left">
           <div className="text-[10px] font-mono text-zinc-400 uppercase">{product.modelNumber}</div>
           <div className="text-xs font-semibold text-zinc-900 truncate max-w-xs">{product.name}</div>

@@ -28,7 +28,7 @@ import {
   getFinanceUrl,
   getRealEstateUrl,
 } from '../lib/amazonGlobal';
-import { validateProductImageMatch } from '../utils/categoryImageValidator';
+import { ProductThumbnail } from './ProductThumbnail';
 
 interface TrustpilotProductCardProps {
   product: ProductModel;
@@ -46,14 +46,9 @@ export const TrustpilotProductCard: React.FC<TrustpilotProductCardProps> = ({
   categorySlug,
 }) => {
   const [showFormulaDetails, setShowFormulaDetails] = useState(false);
-  const [imageFailed, setImageFailed] = useState(false);
   const currentLangDef = LANGUAGES.find((l) => l.code === currentLang) || LANGUAGES[0];
   const detectedGeoCountry = detectCountry();
   const userCountry = currentLang === 'hi' ? 'IN' : detectedGeoCountry || 'US';
-
-  const validatedImage = !imageFailed
-    ? validateProductImageMatch(product.name, product.category || categorySlug || '', product.image, index)
-    : '';
 
   const routing = resolveAffiliateDestination(product.name, product.category || categorySlug, userCountry);
 
@@ -147,9 +142,22 @@ export const TrustpilotProductCard: React.FC<TrustpilotProductCardProps> = ({
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5 text-xs text-zinc-500 font-medium">
-          <ShieldCheck className="w-3.5 h-3.5 text-[#00B67A]" />
-          <span>Verified Review Consensus</span>
+        <div className="flex items-center gap-2">
+          {product.sourceUrl && (
+            <a
+              href={product.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[10px] text-blue-600 hover:text-blue-800 bg-blue-50/80 px-2 py-0.5 rounded border border-blue-200 transition-colors"
+            >
+              <ExternalLink className="w-2.5 h-2.5" />
+              <span>Grounded Source</span>
+            </a>
+          )}
+          <div className="flex items-center gap-1.5 text-xs text-zinc-500 font-medium">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#00B67A]" />
+            <span>Verified Review Consensus</span>
+          </div>
         </div>
       </div>
 
@@ -159,27 +167,14 @@ export const TrustpilotProductCard: React.FC<TrustpilotProductCardProps> = ({
         <div className="w-full lg:w-48 xl:w-56 shrink-0 flex flex-col items-center">
           <div
             onClick={() => onSelectProduct(product)}
-            className="w-full aspect-square max-h-52 lg:max-h-none rounded-lg bg-zinc-50 border border-zinc-100 p-4 flex items-center justify-center relative overflow-hidden group cursor-pointer hover:bg-zinc-100/60 transition-colors"
+            className="w-full aspect-square max-h-52 lg:max-h-none rounded-lg bg-zinc-50 border border-zinc-100 p-2 flex items-center justify-center relative overflow-hidden group cursor-pointer hover:bg-zinc-100/60 transition-colors"
           >
-            {validatedImage ? (
-              <img
-                src={validatedImage}
-                alt={product.name}
-                referrerPolicy="no-referrer"
-                onError={() => setImageFailed(true)}
-                className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-              />
-            ) : (
-              <div className="text-center p-4 flex flex-col items-center justify-center">
-                <ShoppingBag className="w-8 h-8 text-zinc-300 mx-auto mb-1.5" />
-                <span className="text-[11px] font-semibold text-zinc-400 block uppercase tracking-wider">
-                  Image Not Available
-                </span>
-                <span className="text-[10px] text-zinc-400 block mt-0.5">
-                  Verified ASIN/SKU photo pending
-                </span>
-              </div>
-            )}
+            <ProductThumbnail
+              product={product}
+              alt={product.name}
+              className="w-full h-full"
+              imageClassName="group-hover:scale-105"
+            />
             <span className="absolute bottom-2 right-2 text-[10px] bg-black/60 backdrop-blur-xs text-white px-2 py-0.5 rounded font-mono">
               {product.brand}
             </span>
