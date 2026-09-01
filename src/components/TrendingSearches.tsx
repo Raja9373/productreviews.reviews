@@ -431,26 +431,26 @@ export const TrendingSearches: React.FC<TrendingSearchesProps> = ({
         ))}
       </div>
 
-      {/* Live Market Insights Ticker / Banner */}
-      <div className="mt-8 p-4 rounded-2xl bg-zinc-900 text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
-        <div className="flex items-center gap-3 text-center sm:text-left">
-          <div className="p-2 rounded-xl bg-white/10 shrink-0">
-            <ShieldCheck className="w-5 h-5 text-emerald-400" />
+      {/* Live Market Insights Ticker / Banner in Clean Trustpilot Style */}
+      <div className="mt-8 p-5 sm:p-6 rounded-2xl bg-white border border-zinc-200 text-zinc-900 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
+        <div className="flex items-center gap-3.5 text-center sm:text-left">
+          <div className="w-10 h-10 rounded-full bg-[#E8F8F2] flex items-center justify-center shrink-0">
+            <ShieldCheck className="w-5 h-5 text-[#00B67A]" />
           </div>
           <div>
-            <h4 className="text-xs sm:text-sm font-bold">
+            <h4 className="text-xs sm:text-sm font-bold text-zinc-900">
               Unbiased AI Verdicts Across 40+ Regional Languages
             </h4>
-            <p className="text-[11px] text-zinc-400 mt-0.5">
-              We aggregate verified Amazon customer sentiment, Reddit community threads, and YouTube teardowns without sponsored bias.
+            <p className="text-[11px] text-zinc-500 mt-0.5">
+              We aggregate verified customer sentiment, Reddit community threads, and teardowns with TrustScore consensus.
             </p>
           </div>
         </div>
 
         <button
           id="trending-explore-all-btn"
-          onClick={() => onSelectSearch('best electronics 2024')}
-          className="px-4 py-2 bg-white hover:bg-zinc-100 text-zinc-900 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 shadow-xs"
+          onClick={() => onSelectSearch('best electronics 2026')}
+          className="px-4.5 py-2.5 bg-[#00B67A] hover:bg-[#008254] text-white rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 shadow-2xs cursor-pointer"
         >
           <span>Explore All Reviews</span>
           <ArrowRight className="w-3.5 h-3.5" />

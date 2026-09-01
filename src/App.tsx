@@ -8,6 +8,7 @@ import { Header } from './components/Header';
 import { HeroSearch } from './components/HeroSearch';
 import { TrendingSearches } from './components/TrendingSearches';
 import { ModelSelector } from './components/ModelSelector';
+import { CategoryTrustpilotPage } from './components/CategoryTrustpilotPage';
 import { CountdownScanner } from './components/CountdownScanner';
 import { ReportView } from './components/ReportView';
 import { AboutPage } from './components/pages/AboutPage';
@@ -33,6 +34,7 @@ import { getAffiliatePartner } from './lib/smartRouter';
 type AppScreen =
   | 'HERO'
   | 'MODEL_SELECTOR'
+  | 'CATEGORY'
   | 'SCANNING'
   | 'REPORT'
   | 'ABOUT'
@@ -122,7 +124,7 @@ export default function App() {
             setSearchQuery(matchedCat.name);
             const models = getMockResults(matchedCat.name);
             setMatchingModels(models);
-            setScreen('MODEL_SELECTOR');
+            setScreen('CATEGORY');
             return;
           }
         }
@@ -217,7 +219,7 @@ export default function App() {
       if (window.location.hash !== newHash) {
         window.history.pushState(null, '', newHash);
       }
-    } else if (screen === 'MODEL_SELECTOR' && selectedCategory) {
+    } else if ((screen === 'CATEGORY' || screen === 'MODEL_SELECTOR') && selectedCategory) {
       window.history.pushState(null, '', `#/category/${selectedCategory.slug}`);
     } else if (screen === 'ABOUT') {
       window.history.pushState(null, '', `#/about`);
@@ -260,7 +262,7 @@ export default function App() {
     // Instant local results
     const initialModels = getMockResults(searchTarget);
     setMatchingModels(initialModels);
-    setScreen('MODEL_SELECTOR');
+    setScreen('CATEGORY');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     // Live PA-API fetch ONLY if this category routes to Amazon
@@ -394,6 +396,16 @@ export default function App() {
             {/* Ad: Homepage placement - 1 ad AFTER TrendingSearches (format auto, max 1) */}
             <AdUnit id="ad-homepage-after-trending" format="auto" responsive={true} className="mb-8" />
           </>
+        )}
+
+        {screen === 'CATEGORY' && selectedCategory && (
+          <CategoryTrustpilotPage
+            category={selectedCategory}
+            models={matchingModels}
+            currentLang={currentLang}
+            onSelectModel={(m) => handleSelectModel(m)}
+            onBackToHome={handleResetToHome}
+          />
         )}
 
         {screen === 'MODEL_SELECTOR' && (

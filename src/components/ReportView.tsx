@@ -36,6 +36,7 @@ import {
 import confetti from 'canvas-confetti';
 import { DetailedReport, LanguageCode } from '../types';
 import { LANGUAGES, TRANSLATIONS } from '../data/languages';
+import { TrustpilotStars } from './TrustpilotStars';
 import { EdgeRedisCache } from '../utils/cacheManager';
 import { buildAmazonAffiliateUrl } from '../utils/affiliateManager';
 import { resolveAffiliateDestination } from '../lib/smartRouter';
@@ -298,19 +299,17 @@ export const ReportView: React.FC<ReportViewProps> = ({
                   {report.category} • Analyzed via 3,500+ Multi-Source Community &amp; Benchmark Data Points
                 </p>
 
-                {/* Star Rating and Score */}
+                {/* Star Rating and Score in Trustpilot Style */}
                 <div className="flex flex-wrap items-center gap-4 text-xs">
-                  <div className="flex items-center gap-1 text-amber-500 font-bold">
-                    <Star className="w-4 h-4 fill-amber-400 stroke-amber-500" />
-                    <span>{report.rating} / 5.0</span>
-                    <span className="text-zinc-400 font-normal font-mono">
-                      ({report.totalReviews.toLocaleString()} verified ratings)
-                    </span>
-                  </div>
+                  <TrustpilotStars
+                    score={report.rating}
+                    totalReviews={report.totalReviews}
+                    size="md"
+                  />
 
-                  <div className="flex items-center gap-1.5 text-zinc-600 bg-zinc-100 px-2.5 py-1 rounded-full text-[11px] font-medium">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Confidence Score: {report.confidenceScore}%</span>
+                  <div className="flex items-center gap-1.5 text-[#005128] bg-[#E8F8F2] px-2.5 py-1 rounded-full text-[11px] font-semibold border border-[#00B67A]/30">
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#00B67A]" />
+                    <span>AI Confidence: {report.confidenceScore}%</span>
                   </div>
                 </div>
               </div>
@@ -614,7 +613,7 @@ export const ReportView: React.FC<ReportViewProps> = ({
             id="verdict-sticky-card"
             className={`ai-verdict-card rounded-[24px] shadow-lg flex flex-col items-center text-center w-full min-w-[320px] p-6 ${
               isRecommended
-                ? 'bg-emerald-600 text-white'
+                ? 'bg-[#00B67A] text-white'
                 : 'bg-red-600 text-white'
             }`}
             style={{

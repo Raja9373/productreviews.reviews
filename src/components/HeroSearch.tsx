@@ -121,41 +121,41 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
       {/* Brand Eyebrow Badge */}
       <div
         id="hero-engine-badge"
-        className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-100 text-zinc-800 text-xs font-semibold tracking-wide mb-6 animate-in fade-in slide-in-from-bottom-2 duration-300"
+        className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E8F8F2] border border-[#00B67A]/30 text-[#005128] text-xs font-semibold tracking-wide mb-6 animate-in fade-in slide-in-from-bottom-2 duration-300"
       >
-        <Sparkles className="w-3.5 h-3.5 text-zinc-600" />
+        <ShieldCheck className="w-3.5 h-3.5 text-[#00B67A]" />
         <span>productreviews.review</span>
-        <span className="w-1 h-1 rounded-full bg-zinc-300" />
-        <span className="text-zinc-500 font-mono text-[11px]">40 Languages • AI Engine</span>
+        <span className="w-1 h-1 rounded-full bg-[#00B67A]/40" />
+        <span className="text-[#005128] font-medium text-[11px]">TrustScore 4.9 • 40 Languages</span>
       </div>
 
       {/* Hero Headline & Prompt */}
-      <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-zinc-900 tracking-tight max-w-2xl leading-[1.12]">
+      <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-zinc-900 tracking-tight max-w-3xl leading-[1.12]">
         {currentLang === 'hi' ? (
           <>
-            किस प्रोडक्ट का <span className="text-zinc-900 underline decoration-zinc-300 underline-offset-8">रिव्यू</span> चाहिए?
+            प्रोडक्ट का नाम दें, <span className="text-[#00B67A]">ऑनेस्ट रिव्यू</span> और डिस्काउंट कूपन पाएं
           </>
         ) : currentLang === 'ja' ? (
           <>
-            どの商品の <span className="text-zinc-900 underline decoration-zinc-300 underline-offset-8">AIレビュー</span> をお探しですか？
+            商品名を入力するだけ。<span className="text-[#00B67A]">本物のAIレビュー</span>とクーポンを即座にお届け
           </>
         ) : currentLang === 'es' ? (
           <>
-            ¿De qué producto necesitas una <span className="text-zinc-900 underline decoration-zinc-300 underline-offset-8">reseña</span>?
+            Nombra el producto. Obtén <span className="text-[#00B67A]">reseñas honestas</span> y cupones en segundos.
           </>
         ) : currentLang === 'ar' ? (
           <>
-            ما هو المنتج الذي تريد <span className="text-zinc-900 underline decoration-zinc-300 underline-offset-8">مراجعته</span>؟
+            اذكر أي منتج، واحصل على <span className="text-[#00B67A]">مراجعة صادقة</span> وكوبونات في ثوانٍ
           </>
         ) : (
           <>
-            What product do you need a <span className="text-zinc-900 underline decoration-zinc-300 underline-offset-8">review</span> for?
+            Name Any Product. Get <span className="text-[#00B67A]">Honest Reviews</span> &amp; Deals in Seconds.
           </>
         )}
       </h1>
 
-      <p className="mt-4 text-sm sm:text-base text-zinc-500 max-w-xl font-normal leading-relaxed">
-        {t.analyzingSubtitle}
+      <p className="mt-4 text-sm sm:text-base text-zinc-600 max-w-2xl font-normal leading-relaxed">
+        {t.analyzingSubtitle} Multi-source consensus synthesized from Amazon verified buyers, YouTube teardowns, Reddit communities, and live coupon databases.
       </p>
 
       {/* Main Search Input Box */}
@@ -165,14 +165,14 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
         className="w-full max-w-2xl mt-8 relative"
       >
         <div
-          className={`group relative flex items-center w-full bg-white rounded-2xl border transition-all duration-200 shadow-sm ${
+          className={`group relative flex items-center w-full bg-white rounded-2xl border transition-all duration-200 shadow-xs ${
             isListening
               ? 'border-red-500 ring-2 ring-red-100'
-              : 'border-zinc-200 hover:border-zinc-300 focus-within:border-zinc-900 focus-within:ring-2 focus-within:ring-zinc-900/10'
+              : 'border-zinc-300 hover:border-zinc-400 focus-within:border-[#00B67A] focus-within:ring-2 focus-within:ring-[#00B67A]/20'
           }`}
         >
           {/* Left Search Icon */}
-          <div className="pl-4 sm:pl-5 text-zinc-400 group-focus-within:text-zinc-900 transition-colors">
+          <div className="pl-4 sm:pl-5 text-zinc-400 group-focus-within:text-[#00B67A] transition-colors">
             <Search className="w-5 h-5" />
           </div>
 
@@ -208,12 +208,12 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
               )}
             </button>
 
-            {/* Submit Arrow Button */}
+            {/* Submit Button */}
             <button
               id="submit-search-btn"
               type="submit"
               disabled={!query.trim()}
-              className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 disabled:hover:bg-zinc-900 text-white rounded-xl font-medium text-sm transition-all flex items-center gap-1.5 shadow-xs"
+              className="px-4.5 py-2.5 bg-[#00B67A] hover:bg-[#008254] disabled:opacity-40 disabled:hover:bg-[#00B67A] text-white rounded-xl font-bold text-sm transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
             >
               <span>Search</span>
               <ArrowRight className="w-3.5 h-3.5" />

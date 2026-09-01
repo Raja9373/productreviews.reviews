@@ -70,8 +70,29 @@ export const Header: React.FC<HeaderProps> = ({
             <div
               id="header-brand"
               onClick={onResetToHome}
-              className="flex items-center gap-3 cursor-pointer select-none"
+              className="flex items-center gap-2.5 cursor-pointer select-none group"
             >
+              {/* Minimal 2D Emerald Iris Favicon Mark */}
+              <div className="w-7 h-7 rounded-full bg-white border border-zinc-200 p-0.5 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform shrink-0">
+                <svg viewBox="0 0 64 64" className="w-full h-full">
+                  <circle cx="32" cy="32" r="26" fill="#00B67A" stroke="#008254" strokeWidth="1.5" />
+                  <circle cx="32" cy="32" r="18" fill="none" stroke="#00D08C" strokeWidth="2" opacity="0.6" />
+                  <g fill="#FFD036" opacity="0.9">
+                    <circle cx="32" cy="18" r="1.5" />
+                    <circle cx="42" cy="22" r="1.3" />
+                    <circle cx="46" cy="32" r="1.5" />
+                    <circle cx="42" cy="42" r="1.3" />
+                    <circle cx="32" cy="46" r="1.5" />
+                    <circle cx="22" cy="42" r="1.3" />
+                    <circle cx="18" cy="32" r="1.5" />
+                    <circle cx="22" cy="22" r="1.3" />
+                    <path d="M32 20 L32 23 M44 32 L41 32 M32 44 L32 41 M20 32 L23 32" stroke="#FFE066" strokeWidth="1.2" strokeLinecap="round" />
+                  </g>
+                  <circle cx="32" cy="32" r="11" fill="none" stroke="#FFD036" strokeWidth="1" opacity="0.75" />
+                  <circle cx="32" cy="32" r="6.5" fill="#000000" />
+                </svg>
+              </div>
+
               <div className="text-xl font-bold tracking-tighter text-zinc-900">
                 productreviews<span className="text-zinc-400">.review</span>
               </div>
