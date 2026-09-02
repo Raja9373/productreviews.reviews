@@ -428,6 +428,7 @@ export default function App() {
             currentLang={currentLang}
             onSelectModel={(m) => handleSelectModel(m)}
             onBackToHome={handleResetToHome}
+            onRetry={() => handleSelectCategory(selectedCategory)}
             isLoading={isCategorySearching}
           />
         )}
@@ -439,6 +440,7 @@ export default function App() {
             currentLang={currentLang}
             onSelectModel={(m) => handleSelectModel(m)}
             onBackToSearch={handleResetToHome}
+            onRetry={() => handleSearchSubmit(searchQuery, currentLang)}
             categoryContext={selectedCategory}
             isLoadingGrounded={isGroundedSearching}
             groundingChunks={groundingChunks}

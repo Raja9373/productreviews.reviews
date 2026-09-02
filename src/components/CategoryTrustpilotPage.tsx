@@ -11,6 +11,7 @@ import {
   Sparkles,
   ArrowLeft,
   ShoppingBag,
+  RefreshCw,
 } from 'lucide-react';
 import { ProductModel, LanguageCode } from '../types';
 import { Category, SubCategory } from '../data/categories';
@@ -26,6 +27,7 @@ interface CategoryTrustpilotPageProps {
   onSelectModel: (model: ProductModel) => void;
   onBackToHome: () => void;
   onSelectSubcategory?: (sub: SubCategory) => void;
+  onRetry?: () => void;
   isLoading?: boolean;
 }
 
@@ -36,6 +38,7 @@ export const CategoryTrustpilotPage: React.FC<CategoryTrustpilotPageProps> = ({
   onSelectModel,
   onBackToHome,
   onSelectSubcategory,
+  onRetry,
   isLoading = false,
 }) => {
   const [selectedSubTab, setSelectedSubTab] = useState<string>('all');
@@ -306,18 +309,29 @@ export const CategoryTrustpilotPage: React.FC<CategoryTrustpilotPageProps> = ({
               <h3 className="text-base font-bold text-zinc-800 mb-1">
                 No real products found online for this search query
               </h3>
-              <p className="text-xs text-zinc-500 mb-4">
-                We strictly enforce zero fake or placeholder data. Try adjusting your search keywords or browsing other categories.
+              <p className="text-xs text-zinc-500 mb-4 max-w-md mx-auto">
+                We strictly enforce zero fake or placeholder data. Try refreshing with live Google Search Grounding or browsing other subcategories.
               </p>
-              <button
-                onClick={() => {
-                  setSelectedSubTab('all');
-                  setSearchFilter('');
-                }}
-                className="px-4 py-2 bg-[#00B67A] text-white text-xs font-bold rounded-lg hover:bg-[#008254] transition-colors"
-              >
-                Reset Filters
-              </button>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                {onRetry && (
+                  <button
+                    onClick={onRetry}
+                    className="px-4 py-2 bg-[#00B67A] text-white text-xs font-bold rounded-lg hover:bg-[#008254] transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Retry Category Grounding</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setSelectedSubTab('all');
+                    setSearchFilter('');
+                  }}
+                  className="px-4 py-2 bg-zinc-100 text-zinc-800 text-xs font-semibold rounded-lg hover:bg-zinc-200 transition-colors"
+                >
+                  Reset Filters
+                </button>
+              </div>
             </div>
           )}
         </div>

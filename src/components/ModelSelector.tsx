@@ -12,6 +12,7 @@ import {
   Loader2,
   AlertCircle,
   Link as LinkIcon,
+  RefreshCw,
 } from 'lucide-react';
 import { ProductModel, LanguageCode } from '../types';
 import { LANGUAGES, TRANSLATIONS } from '../data/languages';
@@ -27,6 +28,7 @@ interface ModelSelectorProps {
   currentLang: LanguageCode;
   onSelectModel: (model: ProductModel) => void;
   onBackToSearch: () => void;
+  onRetry?: () => void;
   categoryContext?: Category | null;
   isLoadingGrounded?: boolean;
   groundingChunks?: Array<{ title: string; uri: string }>;
@@ -40,6 +42,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   currentLang,
   onSelectModel,
   onBackToSearch,
+  onRetry,
   categoryContext,
   isLoadingGrounded = false,
   groundingChunks = [],
@@ -322,10 +325,20 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                     {groundingErrorMessage ||
                       `Google Search Grounding did not return verified commercial items for "${query}". Under strict authenticity rules, fake placeholder products are never generated.`}
                   </p>
-                  <div className="flex items-center justify-center gap-3">
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    {onRetry && (
+                      <button
+                        onClick={onRetry}
+                        disabled={isLoadingGrounded}
+                        className="px-4 py-2 bg-[#00B67A] hover:bg-[#008254] text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${isLoadingGrounded ? 'animate-spin' : ''}`} />
+                        <span>{isLoadingGrounded ? 'Retrying Search...' : 'Retry Search Grounding'}</span>
+                      </button>
+                    )}
                     <button
                       onClick={onBackToSearch}
-                      className="px-4 py-2 bg-[#00B67A] hover:bg-[#008254] text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5"
+                      className="px-4 py-2 bg-zinc-800 hover:bg-zinc-950 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5"
                     >
                       <ArrowLeft className="w-3.5 h-3.5" />
                       <span>Search Another Product</span>
