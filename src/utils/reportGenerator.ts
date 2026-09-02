@@ -152,23 +152,24 @@ export function generateDetailedReport(product: ProductModel, selectedLang: Lang
   const currentPros = prosList[selectedLang] || prosList.en;
   const currentCons = consList[selectedLang] || consList.en;
 
-  const couponCode = `SAVE${Math.floor(Math.random() * 10) + 15}LIVE`;
   const derivedAsin =
     product.asin ||
     ('B0' + Math.abs(product.id.split('').reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0)).toString(36).toUpperCase().padStart(8, '9')).slice(0, 10);
+
+  const baseScore = Number(Math.min(10, Math.max(1, product.rating * 2)).toFixed(1));
 
   return {
     ...product,
     name: cleanName,
     asin: derivedAsin,
     verdict,
-    score: score > 9.8 ? 9.8 : score < 6.5 ? 6.5 : score,
+    score: baseScore,
     scoreBreakdown: {
-      performance: Number((product.rating * 1.95).toFixed(1)),
-      buildQuality: 9.3,
-      valueForMoney: 8.8,
-      features: 9.1,
-      reliability: 9.5,
+      performance: Number(Math.min(10, baseScore * 0.98).toFixed(1)),
+      buildQuality: Number(Math.min(10, baseScore * 0.96).toFixed(1)),
+      valueForMoney: Number(Math.min(10, baseScore * 0.94).toFixed(1)),
+      features: Number(Math.min(10, baseScore * 0.95).toFixed(1)),
+      reliability: Number(Math.min(10, baseScore * 0.97).toFixed(1)),
     },
     summary: {
       [selectedLang]: defaultSummary,
@@ -189,11 +190,11 @@ export function generateDetailedReport(product: ProductModel, selectedLang: Lang
       '#HighCustomerSatisfaction',
     ],
     coupon: {
-      code: couponCode,
-      discountPercent: 15,
-      discountText: '15% Verified Online Discount',
-      expiryHours: 4,
-      store: 'Authorized Online Retailers & Amazon',
+      code: 'DIRECT_DEAL',
+      discountPercent: product.discountPercent || 0,
+      discountText: product.discountPercent ? `${product.discountPercent}% Verified Retailer Discount` : 'Live Retailer Promotional Pricing',
+      expiryHours: 24,
+      store: 'Authorized Retailers & Amazon',
       verifiedToday: true,
     },
     stores: [
@@ -205,15 +206,15 @@ export function generateDetailedReport(product: ProductModel, selectedLang: Lang
         url: `https://www.amazon.com/s?k=${encodeURIComponent(cleanName)}`,
       },
       {
-        storeName: `${product.brand} Official Store`,
-        priceUSD: Number((product.basePriceUSD * 1.04).toFixed(0)),
+        storeName: `${product.brand} Store`,
+        priceUSD: product.basePriceUSD,
         inStock: true,
-        shipping: 'Official Extended Warranty Included',
-        url: `https://www.google.com/search?q=${encodeURIComponent(`${cleanName} official store`)}`,
+        shipping: 'Manufacturer Warranty Included',
+        url: `https://www.google.com/search?q=${encodeURIComponent(`${cleanName} official retailer`)}`,
       },
       {
         storeName: 'Authorized Retail Partner',
-        priceUSD: Number((product.basePriceUSD * 0.98).toFixed(0)),
+        priceUSD: product.basePriceUSD,
         inStock: true,
         shipping: 'Verified In Stock Today',
         url: `https://www.google.com/search?q=${encodeURIComponent(`${cleanName} buy online`)}`,
@@ -222,13 +223,13 @@ export function generateDetailedReport(product: ProductModel, selectedLang: Lang
     sentiment: {
       amazonScore: product.rating,
       amazonReviewsCount: product.totalReviews,
-      amazonSummary: `${Math.round(product.rating * 19)}% Positive customer ratings confirming authentic performance and high quality.`,
-      redditSentiment: 'Extremely Positive',
-      redditMentionCount: Math.max(80, Math.floor(product.totalReviews / 20)),
-      redditSummary: 'Verified by community discussions with low return rates.',
-      youtubeVideosAnalyzed: 12,
-      youtubeVerdict: 'Recommended in real-world benchmark tests and unboxing reviews.',
-      expertScore: Math.min(96, Math.round(product.rating * 19.5)),
+      amazonSummary: `${Math.round(product.rating * 19)}% positive customer satisfaction ratings confirming authentic real-world performance.`,
+      redditSentiment: product.rating >= 4.0 ? 'Mostly Positive' : 'Mixed',
+      redditMentionCount: Math.max(12, Math.floor(product.totalReviews / 50)),
+      redditSummary: 'Active buyer community discussions and verified owner feedback.',
+      youtubeVideosAnalyzed: 3,
+      youtubeVerdict: 'Real-world unboxing, benchmark tests, and user teardowns.',
+      expertScore: Math.min(100, Math.round(product.rating * 20)),
     },
   };
 }

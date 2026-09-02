@@ -93,12 +93,13 @@ export const TrustpilotProductCard: React.FC<TrustpilotProductCardProps> = ({
     product.videoReviews ||
     generateVideoReviews(product.name, product.category);
 
-  // Compute multi-region geo pricing
+  // Multi-region geo pricing
   const multiGeo = getMultiRegionPricing(product.basePriceUSD, product.name, product.asin);
 
-  // Live Deal & Discount Calculation
-  const discountPercent = product.discountPercent || (15 + (Math.abs(product.name.length * 7) % 18));
-  const listPriceUSD = product.listPriceUSD || Math.round(product.basePriceUSD * (1 + discountPercent / 100));
+  // Live Deal & Discount Calculation - only display if genuine or grounded
+  const hasRealDiscount = typeof product.discountPercent === 'number' && product.discountPercent > 0;
+  const discountPercent = product.discountPercent || 0;
+  const listPriceUSD = product.listPriceUSD || (hasRealDiscount ? Math.round(product.basePriceUSD * (1 + discountPercent / 100)) : product.basePriceUSD);
 
   // Get Trustpilot-styled badge
   const getBadge = () => {
@@ -178,11 +179,13 @@ export const TrustpilotProductCard: React.FC<TrustpilotProductCardProps> = ({
           <span className="text-xs text-zinc-500 font-mono font-medium">
             {product.modelNumber || product.brand}
           </span>
-          {/* Live Discount Tag */}
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 text-[10px] font-bold border border-rose-200">
-            <Flame className="w-3 h-3 text-rose-600 animate-pulse" />
-            <span>{discountPercent}% OFF Today</span>
-          </span>
+          {/* Live Discount Tag (if available) */}
+          {hasRealDiscount && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 text-[10px] font-bold border border-rose-200">
+              <Flame className="w-3 h-3 text-rose-600 animate-pulse" />
+              <span>{discountPercent}% OFF Today</span>
+            </span>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -401,7 +404,7 @@ export const TrustpilotProductCard: React.FC<TrustpilotProductCardProps> = ({
                     <Globe className="w-3.5 h-3.5 text-blue-600" />
                     Live Multi-Country Deal Comparison (Direct Affiliate Links)
                   </span>
-                  <span className="text-[10px] text-zinc-500 font-mono">100% Lowest Guaranteed</span>
+                  <span className="text-[10px] text-zinc-500 font-mono">Direct Marketplace Links</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -534,14 +537,18 @@ export const TrustpilotProductCard: React.FC<TrustpilotProductCardProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">
-              {routing.partnerKey === 'cardekho' ? 'Price Range' : 'Live Deal Price'}
+              {routing.partnerKey === 'cardekho' ? 'Price Range' : 'Live Verified Price'}
             </span>
-            <span className="text-xs line-through text-zinc-400">
-              {formatPrice(listPriceUSD)}
-            </span>
-            <span className="text-[11px] font-bold text-emerald-600">
-              Save {discountPercent}%
-            </span>
+            {hasRealDiscount && (
+              <>
+                <span className="text-xs line-through text-zinc-400">
+                  {formatPrice(listPriceUSD)}
+                </span>
+                <span className="text-[11px] font-bold text-emerald-600">
+                  Save {discountPercent}%
+                </span>
+              </>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xl sm:text-2xl font-black text-zinc-900">

@@ -83,7 +83,7 @@ export const TrendingSearches: React.FC<TrendingSearchesProps> = ({
       rating: 4.8,
       reviews: '4,890',
       subtitle: '33MP Exmor R CMOS & 4K 60p 10-Bit Video',
-      searchVolume: '14.2k scans today',
+      searchVolume: 'Full-Frame Mirrorless',
       tagType: 'hot',
     },
     {
@@ -97,7 +97,7 @@ export const TrendingSearches: React.FC<TrendingSearchesProps> = ({
       rating: 4.9,
       reviews: '18,400',
       subtitle: 'Titanium chassis, A17 Pro & 5x optical telephoto',
-      searchVolume: '28.5k scans today',
+      searchVolume: 'A17 Pro Titanium Flagship',
       tagType: 'top',
     },
     {
@@ -111,7 +111,7 @@ export const TrendingSearches: React.FC<TrendingSearchesProps> = ({
       rating: 4.8,
       reviews: '12,300',
       subtitle: 'Snapdragon 8 Gen 3, 200MP camera & built-in S-Pen',
-      searchVolume: '19.8k scans today',
+      searchVolume: 'Galaxy AI Flagship',
       tagType: 'hot',
     },
     {
@@ -125,7 +125,7 @@ export const TrendingSearches: React.FC<TrendingSearchesProps> = ({
       rating: 4.9,
       reviews: '3,250',
       subtitle: '16-Core CPU, Liquid Retina XDR & 22h battery life',
-      searchVolume: '9.4k scans today',
+      searchVolume: 'Liquid Retina XDR Pro',
       tagType: 'top',
     },
     {
@@ -139,7 +139,7 @@ export const TrendingSearches: React.FC<TrendingSearchesProps> = ({
       rating: 4.7,
       reviews: '8,920',
       subtitle: 'Piezo sensor particle counter & 230AW suction',
-      searchVolume: '11.1k scans today',
+      searchVolume: 'Cordless Smart Home Vacuum',
       tagType: 'value',
     },
     {
@@ -153,7 +153,7 @@ export const TrendingSearches: React.FC<TrendingSearchesProps> = ({
       rating: 4.8,
       reviews: '5,120',
       subtitle: 'HCX Pro AI Processor, Dolby Vision IQ & Atmos',
-      searchVolume: '8.7k scans today',
+      searchVolume: '4K HCX Pro AI OLED',
       tagType: 'top',
     },
     {
@@ -167,7 +167,7 @@ export const TrendingSearches: React.FC<TrendingSearchesProps> = ({
       rating: 4.8,
       reviews: '24,100',
       subtitle: 'Auto NC Optimizer, 8 microphones & 30h battery',
-      searchVolume: '16.3k scans today',
+      searchVolume: 'Active Noise Cancelling',
       tagType: 'hot',
     },
     {
@@ -181,7 +181,7 @@ export const TrendingSearches: React.FC<TrendingSearchesProps> = ({
       rating: 4.8,
       reviews: '1,420 specs',
       subtitle: 'Panoramic Sunroof, Level-2 ADAS & mStallion Turbo',
-      searchVolume: '32.1k queries today',
+      searchVolume: '4x4 Ladder-Frame SUV',
       tagType: 'new',
     },
     {
@@ -195,7 +195,7 @@ export const TrendingSearches: React.FC<TrendingSearchesProps> = ({
       rating: 4.7,
       reviews: '2,900 specs',
       subtitle: 'J-Series 349cc Engine, Dual Channel ABS & Classic Styling',
-      searchVolume: '18.4k queries today',
+      searchVolume: '349cc J-Series Cruiser',
       tagType: 'top',
     },
     {
@@ -209,7 +209,7 @@ export const TrendingSearches: React.FC<TrendingSearchesProps> = ({
       rating: 4.7,
       reviews: '7,400',
       subtitle: 'AI Control with smart Wi-Fi integration & hygiene steam',
-      searchVolume: '10.5k scans today',
+      searchVolume: 'Front Load AI Washer',
       tagType: 'value',
     },
     {
@@ -223,7 +223,7 @@ export const TrendingSearches: React.FC<TrendingSearchesProps> = ({
       rating: 4.6,
       reviews: '8,340',
       subtitle: 'Product Showcase mode & Directional 3-capsule mic',
-      searchVolume: '7.9k scans today',
+      searchVolume: '4K Creator Vlog Camera',
       tagType: 'hot',
     },
     {
@@ -237,7 +237,7 @@ export const TrendingSearches: React.FC<TrendingSearchesProps> = ({
       rating: 4.8,
       reviews: '1,980',
       subtitle: 'Intel Core Ultra 9, 2.5K OLED 240Hz & CNC Aluminium',
-      searchVolume: '6.4k scans today',
+      searchVolume: 'RTX 4080 Gaming Series',
       tagType: 'new',
     },
   ];
@@ -295,14 +295,13 @@ export const TrendingSearches: React.FC<TrendingSearchesProps> = ({
           </p>
         </div>
 
-        {/* Real-time Counter Badge */}
+        {/* Real-time Directory Status */}
         <div className="flex items-center gap-2 self-start md:self-auto px-3.5 py-2 bg-zinc-900 text-white rounded-xl text-xs font-medium shadow-xs">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
-          <span className="font-mono text-zinc-300">1,420+</span>
-          <span>models analyzed today</span>
+          <span className="font-medium text-zinc-100">Live Multi-Source Index</span>
         </div>
       </div>
 

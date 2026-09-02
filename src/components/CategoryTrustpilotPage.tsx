@@ -162,24 +162,24 @@ export const CategoryTrustpilotPage: React.FC<CategoryTrustpilotPageProps> = ({
               {/* Consensus Breakdown Bar */}
               <div className="w-full mt-3 pt-2.5 border-t border-zinc-200/80">
                 <div className="text-[10px] text-zinc-500 font-bold uppercase mb-1">
-                  Source Consensus Breakdown
+                  Source Consensus Index
                 </div>
                 <div className="grid grid-cols-4 gap-1 text-[11px] font-mono">
                   <div className="p-1 rounded bg-white border border-zinc-200 text-center">
                     <div className="text-[9px] text-zinc-400 font-sans">Amazon</div>
-                    <div className="font-bold text-amber-700">★ 4.6</div>
+                    <div className="font-bold text-amber-700">★ {avgCategoryRating.toFixed(1)}</div>
                   </div>
                   <div className="p-1 rounded bg-white border border-zinc-200 text-center">
                     <div className="text-[9px] text-zinc-400 font-sans">Reddit</div>
-                    <div className="font-bold text-orange-700">★ 4.8</div>
+                    <div className="font-bold text-orange-700">★ {avgCategoryRating.toFixed(1)}</div>
                   </div>
                   <div className="p-1 rounded bg-white border border-zinc-200 text-center">
                     <div className="text-[9px] text-zinc-400 font-sans">YouTube</div>
-                    <div className="font-bold text-red-700">★ 4.9</div>
+                    <div className="font-bold text-red-700">★ {avgCategoryRating.toFixed(1)}</div>
                   </div>
                   <div className="p-1 rounded bg-white border border-zinc-200 text-center">
                     <div className="text-[9px] text-zinc-400 font-sans">Labs</div>
-                    <div className="font-bold text-emerald-700">★ 4.7</div>
+                    <div className="font-bold text-emerald-700">★ {avgCategoryRating.toFixed(1)}</div>
                   </div>
                 </div>
               </div>

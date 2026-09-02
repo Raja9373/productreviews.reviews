@@ -611,51 +611,47 @@ export const ReportView: React.FC<ReportViewProps> = ({
           {/* Main Verdict Card */}
           <div
             id="verdict-sticky-card"
-            className={`ai-verdict-card rounded-[24px] shadow-lg flex flex-col items-center text-center w-full min-w-[320px] p-6 ${
+            className={`ai-verdict-card rounded-2xl shadow-sm border flex flex-col items-center text-center w-full p-6 transition-all ${
               isRecommended
-                ? 'bg-[#00B67A] text-white'
-                : 'bg-red-600 text-white'
+                ? 'bg-emerald-900 text-white border-emerald-800'
+                : 'bg-zinc-900 text-white border-zinc-800'
             }`}
-            style={{
-              minWidth: '320px',
-              padding: '24px',
-            }}
           >
             {/* Verdict Header */}
-            <span className="text-xs font-bold uppercase tracking-[0.2em] opacity-80 mb-2">
-              AI Final Verdict
-            </span>
+            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-300/90 mb-3">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+              <span>ProductReviews Verdict</span>
+            </div>
 
             {/* Verdict Badge */}
             <div
-              className="verdict-label w-full max-w-full font-black text-center mb-4"
-              style={{
-                fontSize: 'clamp(20px, 2.5vw, 28px)',
-                lineHeight: 1.1,
-                whiteSpace: 'nowrap',
-                letterSpacing: '0.5px',
-                wordBreak: 'keep-all',
-                overflowWrap: 'normal',
-              }}
+              className={`inline-flex items-center justify-center px-4 py-1.5 rounded-full text-sm sm:text-base font-extrabold tracking-wide mb-4 ${
+                isRecommended
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-red-500 text-white'
+              }`}
             >
               {isRecommended ? t.verdictBuy : t.verdictDontBuy}
             </div>
 
-            <div className="h-px w-full bg-white/20 mb-4" />
+            <div className="h-px w-full bg-white/10 mb-4" />
 
             {/* Price */}
-            <div className="text-3xl font-bold mb-1">
+            <div className="text-2xl sm:text-3xl font-black text-white mb-1">
               {formatPrice(report.basePriceUSD)}
             </div>
+            <span className="text-[11px] text-zinc-400 font-medium mb-3">
+              Verified Retailer Reference Price
+            </span>
 
             {/* Star Rating */}
-            <div className="flex items-center gap-1 text-yellow-300 mb-6 text-sm font-semibold">
+            <div className="flex items-center gap-1.5 text-amber-400 mb-5 text-sm font-semibold">
               <div className="flex">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className="w-4 h-4 fill-current" />
                 ))}
               </div>
-              <span className="ml-1 text-white font-normal text-xs">({report.totalReviews.toLocaleString()})</span>
+              <span className="text-zinc-300 font-normal text-xs">({report.totalReviews.toLocaleString()} reviews)</span>
             </div>
 
             {/* View Deal CTA Button (Smart Affiliate / CarDekho / Booking / Amazon) */}
@@ -664,14 +660,14 @@ export const ReportView: React.FC<ReportViewProps> = ({
               href={finalCtaUrl}
               target="_blank"
               rel="nofollow sponsored"
-              className={`w-full py-4 px-4 bg-white rounded-xl font-extrabold text-sm sm:text-base shadow-md hover:scale-[1.02] transition-transform active:scale-95 flex flex-col items-center justify-center gap-0.5 ${
-                isRecommended ? 'text-emerald-700' : 'text-red-700'
+              className={`w-full py-3.5 px-4 rounded-xl font-extrabold text-sm shadow-xs hover:opacity-95 transition-opacity active:scale-[0.99] flex items-center justify-center gap-1.5 ${
+                isRecommended
+                  ? 'bg-[#00B67A] hover:bg-[#008254] text-white'
+                  : 'bg-white text-zinc-900 hover:bg-zinc-100'
               }`}
             >
-              <div className="flex items-center gap-1.5 font-black tracking-tight">
-                <span>{finalButtonText}</span>
-                <ExternalLink className="w-4 h-4 shrink-0" />
-              </div>
+              <span>{finalButtonText}</span>
+              <ExternalLink className="w-4 h-4 shrink-0 opacity-90" />
             </a>
 
             {/* Secondary Amazon Accessories button if Auto category */}
@@ -681,7 +677,7 @@ export const ReportView: React.FC<ReportViewProps> = ({
                 href={getAmazonUrl(`${report.name} accessories`, userCountry)}
                 target="_blank"
                 rel="nofollow sponsored"
-                className="mt-2.5 w-full py-2.5 px-3 bg-white/15 hover:bg-white/25 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-white/30 backdrop-blur-xs"
+                className="mt-2.5 w-full py-2.5 px-3 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 border border-white/20"
               >
                 <ShoppingBag className="w-3.5 h-3.5" />
                 <span>Buy Accessories on Amazon</span>
@@ -690,13 +686,13 @@ export const ReportView: React.FC<ReportViewProps> = ({
             )}
 
             {/* Small Geo Notice under button */}
-            <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-white/95 font-medium leading-tight">
+            <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-zinc-400 font-medium leading-tight">
               {isAuto ? (
                 <span>Official CarDekho / BikeDekho price breakup &amp; deals</span>
               ) : routing.partnerKey === 'amazon' ? (
-                <span>We found best price in your country — <strong>{amazonGeoData.geoTarget.shipsToText}</strong></span>
+                <span>Best price in your region — <strong>{amazonGeoData.geoTarget.shipsToText}</strong></span>
               ) : (
-                <span>Verified ratings &amp; real customer consensus</span>
+                <span>Verified ratings &amp; customer consensus</span>
               )}
             </div>
           </div>
@@ -713,28 +709,39 @@ export const ReportView: React.FC<ReportViewProps> = ({
               </span>
             </div>
 
-            {/* Coupon Code Container */}
-            <div className="p-4 border-2 border-dashed border-zinc-200 rounded-xl flex items-center justify-between">
-              <div>
-                <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">
-                  Promo Code
-                </span>
-                <span className="text-lg font-bold text-zinc-900 font-mono tracking-wider">
-                  {report.coupon.code}
-                </span>
+            {/* Coupon / Deal Container */}
+            {report.coupon.code && report.coupon.code !== 'DIRECT_DEAL' && report.coupon.code !== 'NO_ACTIVE_CODE' ? (
+              <div className="p-4 border-2 border-dashed border-zinc-200 rounded-xl flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">
+                    Promo Code
+                  </span>
+                  <span className="text-lg font-bold text-zinc-900 font-mono tracking-wider">
+                    {report.coupon.code}
+                  </span>
+                </div>
+                <button
+                  id="copy-coupon-btn"
+                  onClick={handleCopyCoupon}
+                  className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-bold tracking-tight transition-colors cursor-pointer"
+                >
+                  {copiedCoupon ? 'COPIED' : 'COPY'}
+                </button>
               </div>
-              <button
-                id="copy-coupon-btn"
-                onClick={handleCopyCoupon}
-                className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-bold tracking-tight transition-colors"
-              >
-                {copiedCoupon ? 'COPIED' : 'COPY'}
-              </button>
-            </div>
+            ) : (
+              <div className="p-4 bg-zinc-50 rounded-xl border border-zinc-200/80">
+                <span className="text-xs font-semibold text-zinc-800 block mb-1">
+                  Direct Retailer Pricing
+                </span>
+                <p className="text-[11px] text-zinc-500 leading-relaxed">
+                  No separate promo coupon required. Current active promotions and warranty benefits are applied directly at partner checkout.
+                </p>
+              </div>
+            )}
 
             <div className="mt-4 text-center">
-              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
-                Confirmed {report.coupon.discountText}
+              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200/80">
+                {report.coupon.discountText}
               </span>
             </div>
           </div>
