@@ -7,11 +7,14 @@ export interface GroundingSource {
 
 export interface GroundedClientResponse {
   success: boolean;
+  status?: 'RESULTS_FOUND' | 'NO_RESULTS' | 'PARTIAL_RESULTS' | 'ERROR';
   isGrounded: boolean;
+  isRateLimited?: boolean;
   searchQueriesRun: string[];
   groundingChunks: GroundingSource[];
   products: ProductModel[];
   errorMessage?: string;
+  retrievedAt?: string;
 }
 
 /**
@@ -28,7 +31,7 @@ export function generateIntentAwareQueries(userQuery: string): string[] {
     ];
   }
 
-  if (/\b(under|below|budget|cheap|affordable|\$|₹|rs|inr|usd)\b/i.test(lower)) {
+  if (/\b(under|below|budget|cheap|affordable|\$|₹|rs|inr|usd|lakh)\b/i.test(lower)) {
     return [
       `${q} top models reviews`,
       `${q} models price comparison`,
@@ -57,6 +60,9 @@ export function generateIntentAwareQueries(userQuery: string): string[] {
 
 /**
  * Client service to call the server-side Google Search Grounding discovery API.
+ * Adheres strictly to genuine data integrity:
+ * - Never synthesizes fake products or mock databases on API error/429
+ * - Preserves zero-result states for non-existent entities
  */
 export async function fetchGroundedProducts(
   query: string,
@@ -67,17 +73,18 @@ export async function fetchGroundedProducts(
 
   if (!trimmed) {
     return {
-      success: false,
+      success: true,
+      status: 'NO_RESULTS',
       isGrounded: false,
       searchQueriesRun: [],
       groundingChunks: [],
       products: [],
-      errorMessage: 'Query is empty',
+      errorMessage: undefined,
     };
   }
 
   try {
-    let res = await fetch('/api/gemini/grounded-search', {
+    const res = await fetch('/api/gemini/grounded-search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: trimmed, targetLang }),
@@ -86,9 +93,51 @@ export async function fetchGroundedProducts(
     let data: any = null;
     if (res.ok) {
       data = await res.json();
+    } else {
+      return {
+        success: false,
+        status: 'ERROR',
+        isGrounded: false,
+        isRateLimited: res.status === 429,
+        searchQueriesRun: defaultQueries,
+        groundingChunks: [],
+        products: [],
+        errorMessage: res.status === 429
+          ? 'Search provider is temporarily rate-limited. Please retry shortly.'
+          : 'Search service unavailable. Please retry in a few moments.',
+      };
     }
 
-    // If Gemini grounded search returned products, map and return them
+    // 1. If API explicitly reported ERROR or Rate Limit
+    if (data && data.status === 'ERROR') {
+      return {
+        success: false,
+        status: 'ERROR',
+        isGrounded: false,
+        isRateLimited: data.isRateLimited === true,
+        searchQueriesRun: data.searchQueriesRun || defaultQueries,
+        groundingChunks: [],
+        products: [],
+        errorMessage: data.errorMessage || 'Search service is temporarily busy. Please retry in a moment.',
+        retrievedAt: data.retrievedAt,
+      };
+    }
+
+    // 2. If API reported NO_RESULTS (clean zero result)
+    if (data && (data.status === 'NO_RESULTS' || (data.success && (!data.products || data.products.length === 0)))) {
+      return {
+        success: true,
+        status: 'NO_RESULTS',
+        isGrounded: data.isGrounded !== false,
+        searchQueriesRun: data.searchQueriesRun || defaultQueries,
+        groundingChunks: data.groundingChunks || [],
+        products: [],
+        errorMessage: data.errorMessage || `No reliable evidence found for "${trimmed}".`,
+        retrievedAt: data.retrievedAt,
+      };
+    }
+
+    // 3. If Gemini grounded search returned real grounded products, map and return them
     if (data && data.success && Array.isArray(data.products) && data.products.length > 0) {
       const mappedProducts: ProductModel[] = data.products.map((p: any, idx: number) => {
         const tier: 'TRENDING' | 'BUDGET' | 'BALANCED' | 'PREMIUM' =
@@ -106,9 +155,9 @@ export async function fetchGroundedProducts(
           id: p.id || `grounded-${idx}`,
           slug: p.slug || `product-${idx}`,
           name: p.name,
-          modelNumber: p.modelNumber || `SKU-${idx + 100}`,
+          modelNumber: p.modelNumber || '',
           brand: p.brand || 'Verified Brand',
-          category: p.category || `${trimmed} Category`,
+          category: p.category || `${trimmed}`,
           image: p.image || '',
           basePriceUSD: typeof p.basePriceUSD === 'number' && p.basePriceUSD > 0 ? p.basePriceUSD : 0,
           rating: typeof p.rating === 'number' && p.rating > 0 ? p.rating : 0,
@@ -126,82 +175,41 @@ export async function fetchGroundedProducts(
 
       return {
         success: true,
+        status: 'RESULTS_FOUND',
         isGrounded: data.isGrounded === true || (data.groundingChunks && data.groundingChunks.length > 0),
         searchQueriesRun: data.searchQueriesRun || defaultQueries,
         groundingChunks: data.groundingChunks || [],
         products: mappedProducts,
+        retrievedAt: data.retrievedAt,
       };
     }
 
-    // Secondary fallback: Call PA-API curated/live search
-    try {
-      const paapiRes = await fetch('/api/paapi/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: trimmed }),
-      });
-      if (paapiRes.ok) {
-        const paapiData = await paapiRes.json();
-        if (paapiData && paapiData.items && paapiData.items.length > 0) {
-          const paapiProducts: ProductModel[] = paapiData.items.map((item: any, idx: number) => ({
-            id: item.asin || item.id || `item-${idx}`,
-            slug: item.slug || `item-${idx}`,
-            name: item.name,
-            modelNumber: item.modelNumber || `SKU-${idx + 1}`,
-            brand: item.brand || 'Verified Brand',
-            category: item.category || `${trimmed} Category`,
-            image: item.imageUrl || '',
-            basePriceUSD: typeof item.basePriceUSD === 'number' ? item.basePriceUSD : 0,
-            rating: typeof item.rating === 'number' ? item.rating : 0,
-            totalReviews: typeof item.reviewsCount === 'number' ? item.reviewsCount : 0,
-            tag: idx === 0 ? '🔥 Top Verified Choice' : '✨ Verified Product',
-            budgetTier: idx === 0 ? 'TRENDING' : idx === 1 ? 'BUDGET' : idx === 2 ? 'BALANCED' : 'PREMIUM',
-            whyDemandReason: item.whyDemandReason || 'High customer satisfaction and verified ratings.',
-            specs: {
-              Brand: item.brand || 'Verified Brand',
-              Model: item.modelNumber || 'Standard',
-              Source: 'Amazon Verified Bestseller',
-            },
-            asin: item.asin,
-          }));
-
-          return {
-            success: true,
-            isGrounded: true,
-            searchQueriesRun: defaultQueries,
-            groundingChunks: [],
-            products: paapiProducts,
-          };
-        }
-      }
-    } catch {
-      // ignore
-    }
-
     return {
-      success: false,
+      success: true,
+      status: 'NO_RESULTS',
       isGrounded: false,
       searchQueriesRun: data?.searchQueriesRun || defaultQueries,
       groundingChunks: [],
       products: [],
-      errorMessage: `No reliable results found for "${trimmed}".`,
+      errorMessage: `No reliable evidence found for "${trimmed}".`,
     };
   } catch (err: any) {
     console.warn('[fetchGroundedProducts] Notice:', err);
     return {
       success: false,
+      status: 'ERROR',
       isGrounded: false,
       searchQueriesRun: defaultQueries,
       groundingChunks: [],
       products: [],
-      errorMessage: 'Unable to complete search at this moment. Please try again.',
+      errorMessage: 'Unable to connect to search service. Please try again.',
     };
   }
 }
 
 /**
  * Returns verified models using live Google Search Grounding without throwing.
- * Safe fallback: returns [] if empty, never throws or 404s.
+ * Safe fallback: returns [] if empty or error.
  */
 export async function getVerifiedModels(
   query: string,
