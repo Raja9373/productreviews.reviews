@@ -39,10 +39,10 @@ async function startServer() {
   });
 
   // API Route: Google Search Grounded Discovery Engine
-  // Runs 1) query + " best product buy online 2025" and 2) query + " Amazon bestseller" with Google Search Grounding
-  app.post('/api/gemini/grounded-search', async (req, res) => {
+  // Serves /api/gemini/grounded-search, /api/grounded-search, and /grounded-search
+  const handleGroundedSearchPost = async (req: express.Request, res: express.Response) => {
     try {
-      const { query, targetLang = 'en' } = req.body;
+      const { query, targetLang = 'en' } = req.body || {};
       if (!query || typeof query !== 'string') {
         return res.status(400).json({ error: 'Query string is required' });
       }
@@ -51,18 +51,19 @@ async function startServer() {
       const result = await searchProductsWithGrounding(query, targetLang);
       return res.json(result);
     } catch (err: any) {
-      console.error('[API /api/gemini/grounded-search] Error:', err);
+      console.error('[API Grounded Search POST] Error:', err);
       return res.status(500).json({
         success: false,
+        status: 'ERROR',
         error: err?.message || 'Failed to execute Google Search Grounding',
       });
     }
-  });
+  };
 
-  app.get('/api/gemini/grounded-search', async (req, res) => {
+  const handleGroundedSearchGet = async (req: express.Request, res: express.Response) => {
     try {
-      const query = (req.query.q as string) || '';
-      const targetLang = (req.query.lang as string) || 'en';
+      const query = (req.query.q as string) || (req.query.query as string) || '';
+      const targetLang = (req.query.lang as string) || (req.query.targetLang as string) || 'en';
       if (!query) {
         return res.status(400).json({ error: 'Query parameter q is required' });
       }
@@ -70,13 +71,22 @@ async function startServer() {
       const result = await searchProductsWithGrounding(query, targetLang);
       return res.json(result);
     } catch (err: any) {
-      console.error('[API GET /api/gemini/grounded-search] Error:', err);
+      console.error('[API Grounded Search GET] Error:', err);
       return res.status(500).json({
         success: false,
+        status: 'ERROR',
         error: err?.message || 'Failed to execute Google Search Grounding',
       });
     }
-  });
+  };
+
+  app.post('/api/gemini/grounded-search', handleGroundedSearchPost);
+  app.post('/api/grounded-search', handleGroundedSearchPost);
+  app.post('/grounded-search', handleGroundedSearchPost);
+
+  app.get('/api/gemini/grounded-search', handleGroundedSearchGet);
+  app.get('/api/grounded-search', handleGroundedSearchGet);
+  app.get('/grounded-search', handleGroundedSearchGet);
 
   // API Route: Amazon PA-API Live Search
   app.post('/api/paapi/search', async (req, res) => {

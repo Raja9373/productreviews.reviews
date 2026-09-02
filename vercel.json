@@ -3,6 +3,14 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/grounded-search",
+      "destination": "/api/gemini/grounded-search"
+    },
+    {
+      "source": "/api/grounded-search",
+      "destination": "/api/gemini/grounded-search"
+    },
+    {
       "source": "/sitemap.xml",
       "destination": "/sitemap.xml"
     },
@@ -15,7 +23,7 @@
       "destination": "/ads.txt"
     },
     {
-      "source": "/((?!api/|.*\\..*).*)",
+      "source": "/((?!api/|grounded-search|.*\\..*).*)",
       "destination": "/index.html"
     }
   ],
