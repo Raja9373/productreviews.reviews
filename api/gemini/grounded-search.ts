@@ -1,3 +1,5 @@
+import { GoogleGenAI } from '@google/genai';
+
 export default async function handler(req: any, res: any) {
   // CORS support
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -8,6 +10,7 @@ export default async function handler(req: any, res: any) {
     return res.status(200).end();
   }
 
+  // STEP 4 Isolation Test: Import @google/genai verified
   return res.status(200).json({
     success: true,
     status: 'HEALTHY',
