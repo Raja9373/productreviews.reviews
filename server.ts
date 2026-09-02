@@ -16,6 +16,16 @@ async function startServer() {
   // Middlewares
   app.use(express.json());
 
+  // Canonical Domain Normalization (WWW to non-WWW 301 redirect)
+  app.use((req, res, next) => {
+    const host = req.headers.host || '';
+    if (host.toLowerCase().startsWith('www.productreviews.review')) {
+      const targetUrl = `https://productreviews.review${req.originalUrl}`;
+      return res.redirect(301, targetUrl);
+    }
+    next();
+  });
+
   // API Route: Healthcheck
   app.get('/api/health', (req, res) => {
     res.json({
@@ -185,8 +195,17 @@ async function startServer() {
   } else {
     // Production static serving
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
+    app.use(
+      express.static(distPath, {
+        maxAge: '1y',
+        immutable: true,
+        index: false,
+      })
+    );
     app.all('*', (req, res) => {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

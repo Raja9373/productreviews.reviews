@@ -6,7 +6,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Header } from './components/Header';
 import { HeroSearch } from './components/HeroSearch';
-import { TrendingSearches } from './components/TrendingSearches';
 import { ModelSelector } from './components/ModelSelector';
 import { CategoryTrustpilotPage } from './components/CategoryTrustpilotPage';
 import { CountdownScanner } from './components/CountdownScanner';
@@ -19,7 +18,6 @@ import { DisclaimerPage } from './components/pages/DisclaimerPage';
 import { AffiliateSettingsPage } from './components/pages/AffiliateSettingsPage';
 import { FooterGeoAffiliateScript } from './components/FooterGeoAffiliateScript';
 import { AdUnit } from './components/AdUnit';
-import { TrustpilotComparisonBanner } from './components/TrustpilotComparisonBanner';
 import { ProductFinderChat } from './components/ProductFinderChat';
 import { ProductModel, DetailedReport, LanguageCode } from './types';
 import { LANGUAGES } from './data/languages';
@@ -398,22 +396,22 @@ export default function App() {
       {/* Main Content Body */}
       <main className="flex-1 flex flex-col items-center justify-start w-full">
         {screen === 'HERO' && (
-          <>
+          <div className="w-full flex flex-col items-center">
             <HeroSearch
               currentLang={currentLang}
               onSearchSubmit={handleSearchSubmit}
               onDetectedLanguageChange={(detected) => setCurrentLang(detected)}
               initialQuery={searchQuery}
             />
-            {/* Trustpilot Killer Comparison Banner (100% Unbiased Guarantee) */}
-            <TrustpilotComparisonBanner />
-            <TrendingSearches
-              currentLang={currentLang}
-              onSelectSearch={(query) => handleSearchSubmit(query)}
-            />
-            {/* Ad: Homepage placement - 1 ad AFTER TrendingSearches (format auto, max 1) */}
-            <AdUnit id="ad-homepage-after-trending" format="auto" responsive={true} className="mb-8" />
-          </>
+            {/* Clean empty discovery prompt */}
+            <div className="w-full max-w-2xl mx-auto px-4 mt-2 mb-8 text-center">
+              <p className="text-xs text-zinc-400 font-medium">
+                Search a product, service, software or business to get started.
+              </p>
+            </div>
+            {/* Ad: Homepage placement (format auto, max 1) */}
+            <AdUnit id="ad-homepage-decision" format="auto" responsive={true} className="mb-8" />
+          </div>
         )}
 
         {screen === 'CATEGORY' && selectedCategory && (
@@ -541,16 +539,14 @@ export default function App() {
             </nav>
           </div>
 
-          {/* Bottom Footer Row: Technology badges & Copyright */}
+          {/* Bottom Footer Row: Badges & Copyright */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-400">
             <div className="flex flex-wrap items-center justify-center gap-3 text-[11px]">
-              <span>⚡ Edge Redis Cached</span>
+              <span>Decision Engine</span>
               <span>•</span>
-              <span>33 Categories Live Grounding</span>
+              <span>Evidence Synthesis</span>
               <span>•</span>
-              <span>40 Languages Pre-translated</span>
-              <span>•</span>
-              <span>Zero Affiliate Bias</span>
+              <span>Zero Merchant Bias</span>
             </div>
 
             <div className="text-[11px] font-mono text-zinc-400">

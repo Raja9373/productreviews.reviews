@@ -64,20 +64,20 @@ export const ProductFinderChat: React.FC<ProductFinderChatProps> = ({
 
     // Formulate intelligent AI reply with direct grounded search action
     setTimeout(() => {
-      let replyText = `I analyzed multi-source consensus for "${text}". Found top verified models with 4.7+ rating, verified fake review audit, and active live deals.`;
+      let replyText = `I can help synthesize evidence for "${text}". Click below to explore grounded decision insights, trade-offs, and ratings.`;
       let searchAction = text;
 
       if (text.toLowerCase().includes('tv') || text.toLowerCase().includes('oled')) {
-        replyText = `For 4K OLEDs, multi-source testing ranks the LG C3/C4 and Sony Bravia XR highest for color accuracy and low input lag.`;
+        replyText = `For 4K OLED displays, top models like LG C-Series and Sony Bravia XR offer high color accuracy and low input lag.`;
         searchAction = 'LG OLED TV';
       } else if (text.toLowerCase().includes('phone') || text.toLowerCase().includes('camera')) {
-        replyText = `Based on 12,000+ camera tests & Reddit tech feedback, iPhone 15 Pro and Samsung Galaxy S24 Ultra offer class-leading dynamic range.`;
+        replyText = `For flagship mobile cameras, models like iPhone 15 Pro and Samsung Galaxy S24 Ultra offer high dynamic range and video stability.`;
         searchAction = 'iPhone 15 Pro';
       } else if (text.toLowerCase().includes('suv') || text.toLowerCase().includes('car')) {
-        replyText = `For family SUVs with 5-star Bharat NCAP safety and high resale value, Tata Nexon and Hyundai Creta lead real-world consumer satisfaction.`;
+        replyText = `For compact and mid-size SUVs, models like Tata Nexon and Hyundai Creta are popular for safety features and high resale value.`;
         searchAction = 'Tata Nexon';
       } else if (text.toLowerCase().includes('headphone') || text.toLowerCase().includes('audio') || text.toLowerCase().includes('noise')) {
-        replyText = `Sony WH-1000XM5 and Bose QuietComfort Ultra dominate ANC benchmarks with over 92% authentic positive buyer scores.`;
+        replyText = `For noise cancelling headphones, Sony WH-1000XM5 and Bose QuietComfort Ultra are consistently recognized for ANC performance.`;
         searchAction = 'Sony WH-1000XM5';
       }
 
@@ -86,7 +86,7 @@ export const ProductFinderChat: React.FC<ProductFinderChatProps> = ({
         sender: 'ai',
         text: replyText,
         suggestedAction: {
-          label: `View Verified Multi-Source Report for "${searchAction}"`,
+          label: `Search Decision Report for "${searchAction}"`,
           query: searchAction,
         },
       };

@@ -131,6 +131,14 @@ export const ReportView: React.FC<ReportViewProps> = ({
       ? getAmazonUrl(report.name, userCountry)
       : routing.partnerKey === 'cardekho'
       ? getCarUrl(report.name, userCountry).url
+      : routing.partnerKey === 'software'
+      ? routing.url || `https://www.google.com/search?q=${encodeURIComponent(report.name + ' official site')}`
+      : routing.partnerKey === 'employers'
+      ? routing.url || `https://www.google.com/search?q=${encodeURIComponent(report.name + ' employee reviews')}`
+      : routing.partnerKey === 'education'
+      ? routing.url || `https://www.shiksha.com/search?q=${encodeURIComponent(report.name)}`
+      : routing.partnerKey === 'services' || routing.partnerKey === 'professionals'
+      ? routing.url || `https://www.google.com/search?q=${encodeURIComponent(report.name + ' contact details')}`
       : routing.partnerKey === 'hotels' || routing.partnerKey === 'resorts'
       ? getHotelUrl(report.name).url
       : routing.partnerKey === 'flights'
@@ -150,6 +158,16 @@ export const ReportView: React.FC<ReportViewProps> = ({
       ? 'Have a Look'
       : routing.partnerKey === 'cardekho'
       ? 'Check On-Road Price'
+      : routing.partnerKey === 'software'
+      ? 'Visit Official Site'
+      : routing.partnerKey === 'employers'
+      ? 'View Workplace Reviews'
+      : routing.partnerKey === 'education'
+      ? 'Explore Courses & Rankings'
+      : routing.partnerKey === 'services'
+      ? 'View Details & Contact'
+      : routing.partnerKey === 'professionals'
+      ? 'View Profile & Contact'
       : routing.partnerKey === 'hotels' || routing.partnerKey === 'resorts'
       ? 'Check Availability'
       : routing.partnerKey === 'restaurants' || routing.partnerKey === 'cafes'

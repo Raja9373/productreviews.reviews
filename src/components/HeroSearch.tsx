@@ -289,29 +289,29 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
         </div>
       </div>
 
-      {/* Trust & Architecture Badges */}
+      {/* Decision Workflow Guidance */}
       <div className="mt-12 pt-8 border-t border-zinc-100 grid grid-cols-1 sm:grid-cols-3 gap-4 text-left w-full max-w-2xl text-xs text-zinc-600">
         <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white border border-zinc-100 shadow-xs">
-          <ShieldCheck className="w-4 h-4 text-zinc-700 shrink-0 mt-0.5" />
+          <Search className="w-4 h-4 text-zinc-700 shrink-0 mt-0.5" />
           <div>
-            <div className="font-medium text-zinc-900">Multi-Source Verification</div>
-            <div className="text-[11px] text-zinc-400 mt-0.5">Amazon, Reddit, YouTube cross-verified</div>
+            <div className="font-medium text-zinc-900">Search Any Intent</div>
+            <div className="text-[11px] text-zinc-400 mt-0.5">Direct products, comparisons, budgets, or categories</div>
           </div>
         </div>
 
         <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white border border-zinc-100 shadow-xs">
-          <Clock className="w-4 h-4 text-zinc-700 shrink-0 mt-0.5" />
+          <ShieldCheck className="w-4 h-4 text-zinc-700 shrink-0 mt-0.5" />
           <div>
-            <div className="font-medium text-zinc-900">5-7s Deep AI Report</div>
-            <div className="text-[11px] text-zinc-400 mt-0.5">Multi-point scan with honest AI recommendation verdict</div>
+            <div className="font-medium text-zinc-900">Evidence Synthesis</div>
+            <div className="text-[11px] text-zinc-400 mt-0.5">Live analysis of owner feedback, teardowns, and specs</div>
           </div>
         </div>
 
         <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white border border-zinc-100 shadow-xs">
           <Sparkles className="w-4 h-4 text-zinc-700 shrink-0 mt-0.5" />
           <div>
-            <div className="font-medium text-zinc-900">40 Language Engine</div>
-            <div className="text-[11px] text-zinc-400 mt-0.5">Native translations &amp; live active coupon finder</div>
+            <div className="font-medium text-zinc-900">Actionable Verdict</div>
+            <div className="text-[11px] text-zinc-400 mt-0.5">Instant buy/skip guidance and verified buying options</div>
           </div>
         </div>
       </div>

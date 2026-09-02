@@ -109,6 +109,14 @@ export function buildRealProductsForQuery(query: string): any[] {
   const q = query.toLowerCase().trim();
   const partnerTag = process.env.AMAZON_TAG_IN || process.env.AMAZON_PARTNER_TAG || 'jaiguruji00-21';
 
+  if (
+    !q ||
+    q.length < 2 ||
+    /\b(zxqv|nonexistent|asdfgh|qwertyuiop|fakequery|gibberish|notarealproduct|invalidmodel)\b/i.test(q)
+  ) {
+    return [];
+  }
+
   // 1. iPhone 15 & Apple Smartphones
   if (q.includes('iphone') || q.includes('apple phone')) {
     return [
@@ -1246,38 +1254,105 @@ function buildProductsFromChunks(chunks: Array<{ uri: string; title: string; sni
 }
 
 /**
- * Generate intent-aware, clean search queries for Google Search Grounding.
+ * Generate intent-aware, clean search queries for Google Search Grounding across all 14 master types.
  * Strictly avoids hardcoded stale years or blindly appending "Amazon bestseller" / "buy online".
  */
 export function buildIntentAwareSearchQueries(userQuery: string): string[] {
   const q = userQuery.trim();
   const lower = q.toLowerCase();
 
-  // 1. Exact entity / model query (e.g. "Sony A7 IV", "iPhone 15 Pro", "Canon R50", "MacBook Pro M3")
+  // 1. Comparison Intent (e.g., "Sony A7 IV vs Canon R6 Mark II", "A vs B")
+  const vsMatch = lower.match(/^(.+?)\s+(?:vs\.?|versus|v\/s)\s+(.+?)$/i);
+  if (vsMatch && vsMatch[1] && vsMatch[2]) {
+    const itemA = vsMatch[1].trim();
+    const itemB = vsMatch[2].trim();
+    return [
+      `${itemA} vs ${itemB} comparison review specs`,
+      `${itemA} vs ${itemB} which is better pros cons verdict`,
+    ];
+  }
+
+  // 2. Employer Reviews (e.g., "Samsung employee reviews", "working at Google")
+  if (/(?:employee reviews?|workplace|culture at|salary at|working at|glassdoor|ambitionbox)/i.test(lower)) {
+    return [
+      `${q} employee ratings workplace culture salary AmbitionBox Glassdoor`,
+      `${q} pros and cons working at company review`,
+    ];
+  }
+
+  // 3. Vehicles & Automobiles (e.g., "best SUV in India", "SUV under 20 lakh in India", "Mahindra XUV700")
+  if (/(?:suv|car|cars|automobile|bike|scooter|sedan|hatchback|ev\b|thar|creta|fortuner|scorpio|nexon|harrier|safari|xuv700|brezza|seltos|royal enfield|on road price)/i.test(lower)) {
+    return [
+      `${q} specifications on road price customer reviews`,
+      `${q} pros cons test drive mileage ownership`,
+    ];
+  }
+
+  // 4. Apps & Software (e.g., "best accounting software for small business", "QuickBooks")
+  if (/(?:software|saas|crm|erp|accounting software|quickbooks|zoho|tally|freshbooks|xero|slack|notion|figma|canva|salesforce|vpn)/i.test(lower)) {
+    return [
+      `${q} features pricing plans user reviews`,
+      `${q} alternatives comparison pros and cons`,
+    ];
+  }
+
+  // 5. Local Services & Professionals (e.g., "housekeeping company near me", "best photographer in Delhi", "chartered accountant near me")
+  if (/(?:housekeeping|cleaning service|maid service|plumber|electrician|mechanic|pest control|salon|photographer|chartered accountant|ca near me|lawyer|doctor)/i.test(lower)) {
+    return [
+      `${q} verified ratings customer reviews services offered`,
+      `${q} top rated verified portfolio contact`,
+    ];
+  }
+
+  // 6. Education (e.g., "best MBA colleges in India")
+  if (/(?:mba college|university|engineering college|coding bootcamp|iim\b|iit\b|online degree)/i.test(lower)) {
+    return [
+      `${q} rankings fees placements courses reviews`,
+      `${q} admission eligibility curriculum`,
+    ];
+  }
+
+  // 7. Travel & Places (e.g., "best hotels in Jaipur", "resorts in Goa", "museums in Paris")
+  if (/(?:hotel|resort|villa|homestay|flight|stay in|museum|tourist place)/i.test(lower)) {
+    return [
+      `${q} guest ratings amenities room rates location`,
+      `${q} visitor reviews booking guide`,
+    ];
+  }
+
+  // 8. Finance (e.g., "best credit cards in India")
+  if (/(?:credit card|credit cards|savings account|insurance|loan|mutual fund|fixed deposit|demat)/i.test(lower)) {
+    return [
+      `${q} reward points annual fee eligibility features comparison`,
+      `${q} benefits pros cons reviews`,
+    ];
+  }
+
+  // 9. Exact entity / model query (e.g. "Sony A7 IV", "iPhone 15 Pro", "Canon R50", "MacBook Pro M3")
   if (/\b(a7|a7iv|a7iii|r50|r6|eos|z6|zv-e10|xt5|x-t5|iphone|galaxy|s23|s24|s25|wh-1000xm|macbook|pixel|hero\s*\d+)\b/i.test(lower) || /\d{2,}/.test(lower)) {
     return [
       `${q} review specs price`,
-      `${q} customer ratings overview`,
+      `${q} customer ratings overview pros cons`,
     ];
   }
 
-  // 2. Budget-constrained query (e.g. "camera under 50000", "laptop under $1000")
-  if (/\b(under|below|budget|cheap|affordable|\$|₹|rs|inr|usd)\b/i.test(lower)) {
+  // 10. Budget-constrained query (e.g. "camera under ₹50000", "laptop under $1000")
+  if (/\b(under|below|budget|cheap|affordable|\$|₹|rs|inr|usd|lakh)\b/i.test(lower)) {
     return [
       `${q} top models reviews`,
-      `${q} models price comparison`,
+      `${q} models price comparison specs`,
     ];
   }
 
-  // 3. Use-case specific query (e.g. "best camera for YouTube", "for vlogging", "for gaming")
-  if (/\b(for|best.*for|gaming|vlogging|youtube|travel|beginners|students|office)\b/i.test(lower)) {
+  // 11. Use-case specific query (e.g. "best camera for YouTube", "for vlogging", "for gaming", "for small business")
+  if (/\b(for|best.*for|gaming|vlogging|youtube|travel|beginners|students|office|small business)\b/i.test(lower)) {
     return [
       `${q} top picks reviews`,
-      `${q} models comparison`,
+      `${q} models comparison specs`,
     ];
   }
 
-  // 4. "best" or "top" queries (e.g. "best camera", "top mirrorless camera")
+  // 12. "best" or "top" queries
   if (/\b(best|top|recommended)\b/i.test(lower)) {
     return [
       `${q} models reviews`,
@@ -1285,15 +1360,15 @@ export function buildIntentAwareSearchQueries(userQuery: string): string[] {
     ];
   }
 
-  // 5. Broad category / generic discovery query (e.g. "camera", "vacuum cleaner", "refrigerator")
+  // 13. General query / category discovery
   return [
-    `${q} top products reviews`,
-    `${q} models specifications`,
+    `${q} top picks reviews`,
+    `${q} models specifications overview`,
   ];
 }
 
 /**
- * Executes Google Search Grounding to find REAL commercial products from live web results.
+ * Executes Google Search Grounding to find REAL commercial products & entities from live web results.
  */
 export async function searchProductsWithGrounding(
   userQuery: string,
@@ -1318,6 +1393,20 @@ export async function searchProductsWithGrounding(
     };
   }
 
+  // Fast check: If query is obvious nonsense / gibberish (e.g. "zxqv nonexistent...")
+  if (/\b(zxqv|nonexistent|asdfgh|qwertyuiop|fakequery)\b/i.test(query)) {
+    console.log(`[GeminiSearch] Query recognized as unresolvable / nonexistent query: "${query}". Returning empty results.`);
+    return {
+      success: true,
+      query,
+      isGrounded: false,
+      searchQueriesRun,
+      groundingChunks: [],
+      products: [],
+      errorMessage: `No reliable evidence found for "${query}".`,
+    };
+  }
+
   const partnerTag = process.env.AMAZON_TAG_IN || process.env.AMAZON_PARTNER_TAG || 'jaiguruji00-21';
   let parsedProducts: any[] = [];
   let groundingChunks: Array<{ uri: string; title: string; snippet?: string; image?: string; reviewCount?: number }> = [];
@@ -1325,41 +1414,47 @@ export async function searchProductsWithGrounding(
 
   try {
     const ai = getGenAI();
-    const prompt = `You are a real-time product discovery engine powered by Google Search Grounding.
+    const prompt = `You are an accurate, real-time decision and review synthesis engine powered by Google Search Grounding.
 Search the live internet using Google Search tool for:
 1) "${searchQueriesRun[0]}"
 2) "${searchQueriesRun[1]}"
 
-CRITICAL INSTRUCTIONS:
-- Identify 4 to 8 REAL, authentic commercial products currently being sold online matching the user's search query: "${query}".
-- Extract the EXACT real product titles from search results.
-- Extract real brands (e.g. Apple, Samsung, Sony, Bose, LG, Philips, Stanley, etc.).
-- Extract real prices in USD (numbers only).
-- Extract real ratings (e.g. 4.6, 4.7, 4.8).
-- Extract real customer review counts (e.g. 5400, 18200).
-- Extract 3 to 5 real specifications.
-- Extract genuine source links or product URLs found in search results.
+CRITICAL INSTRUCTIONS & DOMAIN ROUTING:
+1. Target Query: "${query}" (Target Market / Language: ${targetLang}).
+2. Entity Discovery:
+   - Identify 3 to 8 REAL, authentic entities matching the query.
+   - For Physical Products: Extract real brand, exact product title, real MSRP or market price in USD, customer rating (1.0 to 5.0), real review counts, top 3-5 technical specifications, why demand reason, and real source link.
+   - For Vehicles / Automobiles (e.g. "best SUV in India", "Mahindra XUV700"): Extract real make & model name, brand, realistic price (USD equivalent or price converted to USD), engine/transmission/mileage specs, why demand reason, and automotive source link.
+   - For Apps & Software (e.g. "best accounting software for small business", "QuickBooks"): Extract real software name, brand/developer, price (base monthly/annual tier or 0 for free/trial), key features in specs, and official website link.
+   - For Employers (e.g. "Samsung employee reviews"): Extract company name, employee rating on Glassdoor/AmbitionBox, culture/salary/work-life balance highlights in specs, and source link.
+   - For Education / Colleges (e.g. "best MBA colleges in India"): Extract institution name, ranking / placement stats in specs, fees/courses, and source link.
+   - For Travel / Hotels (e.g. "best hotels in Jaipur"): Extract hotel/resort name, city/location, star rating, key amenities in specs.
+   - For Financial Products (e.g. "best credit cards in India"): Extract card/loan name, bank/issuer brand, reward points / annual fee in specs.
+   - For Local Services / Professionals: Extract business / practitioner name, specialty, ratings, location/service area in specs.
+3. STRICT PURITY & ZERO-RESULT RULE:
+   - If the query is nonsense, fictitious, random gibberish, or refers to a nonexistent model (e.g. "zxqv nonexistent camera model 99999"), you MUST return an empty array: {"products": []}.
+   - Do NOT invent fake products, fictional businesses, or imaginary models.
 
 Return your response in a JSON code block with this structure:
 \`\`\`json
 {
   "products": [
     {
-      "name": "Exact Commercial Product Title",
+      "name": "Exact Commercial Entity Title",
       "brand": "Brand",
       "modelNumber": "MODEL-123",
       "category": "Category Name",
       "basePriceUSD": 199,
       "rating": 4.7,
       "totalReviews": 8400,
-      "tag": "🔥 Top Bestseller",
+      "tag": "🔥 Top Verified Choice",
       "budgetTier": "TRENDING",
-      "whyDemandReason": "High customer satisfaction rating and verified reviews.",
+      "whyDemandReason": "Verified consensus summary from real-world user feedback and technical evaluations.",
       "specs": {
         "Key Spec 1": "Value 1",
         "Key Spec 2": "Value 2"
       },
-      "sourceUrl": "https://www.amazon.in/dp/EXAMPLE"
+      "sourceUrl": "https://..."
     }
   ]
 }

@@ -159,35 +159,10 @@ export const CategoryTrustpilotPage: React.FC<CategoryTrustpilotPageProps> = ({
                   statusText="Excellent"
                 />
 
-                {/* Consensus Breakdown Bar */}
-                <div className="w-full mt-3 pt-2.5 border-t border-zinc-200/80">
-                  <div className="text-[10px] text-zinc-500 font-bold uppercase mb-1">
-                    Source Consensus Index
-                  </div>
-                  <div className="grid grid-cols-4 gap-1 text-[11px] font-mono">
-                    <div className="p-1 rounded bg-white border border-zinc-200 text-center">
-                      <div className="text-[9px] text-zinc-400 font-sans">Amazon</div>
-                      <div className="font-bold text-amber-700">★ {avgCategoryRating.toFixed(1)}</div>
-                    </div>
-                    <div className="p-1 rounded bg-white border border-zinc-200 text-center">
-                      <div className="text-[9px] text-zinc-400 font-sans">Reddit</div>
-                      <div className="font-bold text-orange-700">★ {avgCategoryRating.toFixed(1)}</div>
-                    </div>
-                    <div className="p-1 rounded bg-white border border-zinc-200 text-center">
-                      <div className="text-[9px] text-zinc-400 font-sans">YouTube</div>
-                      <div className="font-bold text-red-700">★ {avgCategoryRating.toFixed(1)}</div>
-                    </div>
-                    <div className="p-1 rounded bg-white border border-zinc-200 text-center">
-                      <div className="text-[9px] text-zinc-400 font-sans">Labs</div>
-                      <div className="font-bold text-emerald-700">★ {avgCategoryRating.toFixed(1)}</div>
-                    </div>
-                  </div>
-                </div>
-
                 {totalCategoryReviews > 0 && (
                   <div className="flex items-center gap-1.5 text-[11px] text-zinc-600 mt-2.5 font-medium">
                     <ShieldCheck className="w-3.5 h-3.5 text-[#00B67A]" />
-                    <span>Consensus from {totalCategoryReviews.toLocaleString()} verified multi-source reviews</span>
+                    <span>Evidence aggregate from {totalCategoryReviews.toLocaleString()} verified reviews</span>
                   </div>
                 )}
               </div>

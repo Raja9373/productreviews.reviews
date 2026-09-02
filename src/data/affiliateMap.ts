@@ -1,6 +1,6 @@
 /**
  * Global Affiliate Map and Routing Matrix
- * Maps product and service categories to appropriate high-intent affiliate partners
+ * Maps product and service categories and master types to appropriate high-intent partners
  * with country-aware dynamic resolution (IN, US, UK, Global).
  */
 
@@ -52,11 +52,11 @@ export const AFFILIATE_MAP: Record<string, AffiliatePartnerConfig> = {
     button: 'Have a Look',
     secondaryButton: 'Explore on Amazon',
     url: (q: string, country = 'IN') => getAmazonUrl(q, country),
-    globalFallbackNote: '9 Countries supported: IN (jaiguruji00-21), US (jaiguruji00-20), UK (jaiguruji0002-21), JP (jaiguruji00-22), DE, FR, ES, IT, CA',
+    globalFallbackNote: '9 Countries supported: IN, US, UK, JP, DE, FR, ES, IT, CA',
   },
 
   cardekho: {
-    name: 'Car Deals & Comparison',
+    name: 'Auto Deals & On-Road Price',
     keywords: [
       'suv',
       'car',
@@ -90,6 +90,65 @@ export const AFFILIATE_MAP: Record<string, AffiliatePartnerConfig> = {
     globalFallbackNote: 'IN=CarDekho, US=CarGurus, UK=AutoTrader, CA=AutoTrader CA, EU=AutoScout24',
   },
 
+  software: {
+    name: 'Official Product Website',
+    keywords: [
+      'software',
+      'quickbooks',
+      'zoho',
+      'tally',
+      'freshbooks',
+      'xero',
+      'crm',
+      'slack',
+      'notion',
+      'figma',
+      'canva',
+      'saas',
+      'vpn',
+    ],
+    button: 'Visit Official Site',
+    secondaryButton: 'View Pricing & Plans',
+    url: (q: string) => {
+      const cleanQ = q.replace(/(?:best|top|software|pricing|for small business)/gi, '').trim();
+      return `https://www.google.com/search?q=${encodeURIComponent(cleanQ + ' official site pricing')}`;
+    },
+    infoOnly: true,
+  },
+
+  employers: {
+    name: 'Workplace & Salary Insights',
+    keywords: ['employee reviews', 'glassdoor', 'ambitionbox', 'culture at', 'working at'],
+    button: 'View Workplace Reviews',
+    secondaryButton: 'Salary & Culture Insights',
+    url: (q: string, country = 'IN') => {
+      const company = q.replace(/(?:employee reviews?|workplace|culture|salary|working at|glassdoor)/gi, '').trim() || q;
+      if (country === 'IN') {
+        return `https://www.ambitionbox.com/overview/${encodeURIComponent(company)}-overview`;
+      }
+      return `https://www.glassdoor.com/Reviews/${encodeURIComponent(company)}-reviews-SRCH_KE0,${company.length}.htm`;
+    },
+    infoOnly: true,
+  },
+
+  professionals: {
+    name: 'Verified Professional Profile',
+    keywords: ['chartered accountant', 'ca near me', 'lawyer', 'advocate', 'architect', 'doctor', 'photographer'],
+    button: 'View Profile & Contact',
+    secondaryButton: 'Check Credentials',
+    url: (q: string) => `https://www.google.com/search?q=${encodeURIComponent(q + ' verified contact')}`,
+    infoOnly: true,
+  },
+
+  services: {
+    name: 'Local Service Directory',
+    keywords: ['housekeeping', 'cleaning service', 'plumber', 'electrician', 'mechanic', 'carpenter', 'pest control'],
+    button: 'View Details & Contact',
+    secondaryButton: 'Check Reputation',
+    url: (q: string) => `https://www.google.com/search?q=${encodeURIComponent(q + ' contact details reviews')}`,
+    infoOnly: true,
+  },
+
   flights: {
     name: 'Skyscanner',
     keywords: ['flight', 'air ticket', 'airlines', 'mumbai to delhi', 'delhi to goa', 'cheap flight', 'airline tickets'],
@@ -101,11 +160,11 @@ export const AFFILIATE_MAP: Record<string, AffiliatePartnerConfig> = {
 
   hotels: {
     name: 'Booking.com',
-    keywords: ['hotel', 'oyo', '5 star hotel', 'hotel in goa', 'hotel in delhi', 'luxury hotel', 'taj hotel', 'marriott', 'hyatt'],
+    keywords: ['hotel', 'oyo', '5 star hotel', 'hotel in goa', 'hotel in delhi', 'luxury hotel', 'taj hotel', 'marriott', 'hyatt', 'hotels in'],
     button: 'Check Availability',
     secondaryButton: 'View Guest Reviews',
     url: (q: string) => getHotelUrl(q).url,
-    globalFallbackNote: 'Global: Booking.com (aid=304142)',
+    globalFallbackNote: 'Global: Booking.com',
   },
 
   resorts: {
@@ -157,11 +216,11 @@ export const AFFILIATE_MAP: Record<string, AffiliatePartnerConfig> = {
 
   finance: {
     name: 'Finance & Cards',
-    keywords: ['best bank', 'credit card', 'insurance', 'loan', 'mutual fund', 'fixed deposit', 'demat account', 'home loan', 'personal loan'],
+    keywords: ['best bank', 'credit card', 'credit cards', 'insurance', 'loan', 'mutual fund', 'fixed deposit', 'demat account', 'home loan', 'personal loan'],
     button: 'Compare Offers',
     secondaryButton: 'Check Eligibility',
     url: (q: string, country = 'IN') => getFinanceUrl(q, country).url,
-    globalFallbackNote: 'IN: BankBazaar, US: NerdWallet, UK: MoneySavingExpert',
+    globalFallbackNote: 'IN: BankBazaar / Paisabazaar, US: NerdWallet, UK: MoneySavingExpert',
   },
 
   healthcare: {
@@ -184,11 +243,29 @@ export const AFFILIATE_MAP: Record<string, AffiliatePartnerConfig> = {
   },
 
   education: {
-    name: 'Shiksha & Higher Education',
-    keywords: ['mba college', 'engineering college', 'coaching', 'online course', 'upsc coaching', 'neet coaching', 'study abroad'],
-    button: 'Explore Courses',
+    name: 'Education & Admissions Portal',
+    keywords: ['mba college', 'engineering college', 'coaching', 'online course', 'upsc coaching', 'neet coaching', 'study abroad', 'university'],
+    button: 'Explore Courses & Rankings',
     secondaryButton: 'Fee Structure & Placements',
     url: (q: string) => `https://www.shiksha.com/search?q=${encodeURIComponent(q)}`,
-    globalFallbackNote: 'IN: Shiksha, Global: Coursera',
+    globalFallbackNote: 'IN: Shiksha, Global: Coursera / US News',
+  },
+
+  places: {
+    name: 'Visitor Guide & Places',
+    keywords: ['museum', 'things to do', 'tourist place', 'monument', 'sightseeing'],
+    button: 'Explore Experience',
+    secondaryButton: 'Timings & Tickets',
+    url: (q: string) => `https://www.google.com/search?q=${encodeURIComponent(q + ' visitor guide tickets timings')}`,
+    infoOnly: true,
+  },
+
+  brands: {
+    name: 'Official Company Profile',
+    keywords: ['company profile', 'brand history'],
+    button: 'Official Website',
+    secondaryButton: 'Company Overview',
+    url: (q: string) => `https://www.google.com/search?q=${encodeURIComponent(q + ' official website company profile')}`,
+    infoOnly: true,
   },
 };
