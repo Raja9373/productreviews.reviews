@@ -84,48 +84,16 @@ export async function fetchGroundedProducts(
   }
 
   try {
-    const endpoints = [
-      '/api/gemini/grounded-search',
-      '/grounded-search',
-      '/api/grounded-search',
-    ];
+    const res = await fetch('/api/gemini/grounded-search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: trimmed, targetLang }),
+    });
 
-    let res: Response | null = null;
     let data: any = null;
-
-    for (const endpoint of endpoints) {
-      try {
-        const attempt = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: trimmed, targetLang }),
-        });
-        if (attempt.status !== 404) {
-          res = attempt;
-          if (res.ok) {
-            data = await res.json();
-          }
-          break;
-        }
-      } catch (e) {
-        // Continue to next endpoint if network failed
-      }
-    }
-
-    if (!res) {
-      return {
-        success: false,
-        status: 'ERROR',
-        isGrounded: false,
-        isRateLimited: false,
-        searchQueriesRun: defaultQueries,
-        groundingChunks: [],
-        products: [],
-        errorMessage: 'Unable to reach search endpoint. Please try again.',
-      };
-    }
-
-    if (!res.ok) {
+    if (res.ok) {
+      data = await res.json();
+    } else {
       return {
         success: false,
         status: 'ERROR',
