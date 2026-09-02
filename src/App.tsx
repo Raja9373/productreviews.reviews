@@ -30,7 +30,7 @@ import {
 import { generateDetailedReport } from './utils/reportGenerator';
 import { CATEGORIES, Category, SubCategory, matchCategoryFromQuery } from './data/categories';
 import { EdgeRedisCache } from './utils/cacheManager';
-import { fetchGroundedProducts, GroundingSource } from './utils/groundedSearchClient';
+import { fetchGroundedProducts, GroundingSource, generateIntentAwareQueries } from './utils/groundedSearchClient';
 
 type AppScreen =
   | 'HERO'
@@ -312,10 +312,8 @@ export default function App() {
     setMatchingModels([]);
     setIsGroundedSearching(true);
     setGroundingError(undefined);
-    setSearchQueriesRun([
-      `${trimmed} best product buy online 2025`,
-      `${trimmed} Amazon bestseller`,
-    ]);
+    const initialQueries = generateIntentAwareQueries(trimmed);
+    setSearchQueriesRun(initialQueries);
     setGroundingChunks([]);
     setScreen('MODEL_SELECTOR');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -327,10 +325,7 @@ export default function App() {
         if (res.success && res.products.length > 0) {
           setMatchingModels(res.products);
           setGroundingChunks(res.groundingChunks || []);
-          setSearchQueriesRun(res.searchQueriesRun || [
-            `${trimmed} best product buy online 2025`,
-            `${trimmed} Amazon bestseller`,
-          ]);
+          setSearchQueriesRun(res.searchQueriesRun || initialQueries);
         } else {
           // If no real products found, strictly show empty state without mock data
           setMatchingModels([]);

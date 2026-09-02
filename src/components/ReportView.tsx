@@ -300,7 +300,7 @@ export const ReportView: React.FC<ReportViewProps> = ({
                 </p>
 
                 {/* Star Rating and Score in Trustpilot Style */}
-                <div className="flex flex-wrap items-center gap-4 text-xs">
+                <div className="flex flex-wrap items-center gap-4 text-xs mb-3">
                   <TrustpilotStars
                     score={report.rating}
                     totalReviews={report.totalReviews}
@@ -310,6 +310,26 @@ export const ReportView: React.FC<ReportViewProps> = ({
                   <div className="flex items-center gap-1.5 text-[#005128] bg-[#E8F8F2] px-2.5 py-1 rounded-full text-[11px] font-semibold border border-[#00B67A]/30">
                     <ShieldCheck className="w-3.5 h-3.5 text-[#00B67A]" />
                     <span>AI Confidence: {report.confidenceScore}%</span>
+                  </div>
+                </div>
+
+                {/* Direct 2-Point Decision Fast Matrix */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                  <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-100">
+                    <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block mb-0.5">
+                      🎯 Best For:
+                    </span>
+                    <span className="font-semibold text-emerald-950">
+                      {report.bestFor[0] || 'Everyday reliability and balanced performance'}
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-amber-50/70 border border-amber-100">
+                    <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block mb-0.5">
+                      ⚠️ Main Drawback:
+                    </span>
+                    <span className="font-medium text-amber-950">
+                      {localizedCons[0] || 'Premium pricing in some regional retail channels.'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -334,13 +354,56 @@ export const ReportView: React.FC<ReportViewProps> = ({
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-zinc-600" />
-                  AI Analysis Summary ({currentLangDef.nativeName})
+                  Decision Rationale &amp; Synthesis ({currentLangDef.nativeName})
                 </span>
                 <span className="text-[10px] text-zinc-400 font-mono">Edge Redis • Instant</span>
               </div>
               <p className="text-sm sm:text-base text-zinc-700 leading-relaxed font-normal">
                 {localizedSummary}
               </p>
+            </div>
+
+            {/* What Verified Buyers Say (Common Praises vs. Common Complaints) */}
+            <div className="p-5 bg-zinc-50/80 rounded-2xl border border-zinc-200/80 mb-6">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-700 mb-3 flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-emerald-600" />
+                <span>What Verified Buyers Say (Aggregated Themes)</span>
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                {/* Praises */}
+                <div className="p-3 bg-white rounded-xl border border-zinc-200">
+                  <span className="font-bold text-emerald-800 flex items-center gap-1 mb-2">
+                    👍 What Buyers Praise:
+                  </span>
+                  <ul className="space-y-1.5 text-zinc-700">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-[#00B67A] font-bold">•</span>
+                      <span>{localizedPros[0] || 'High build quality and long-term durability.'}</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-[#00B67A] font-bold">•</span>
+                      <span>{localizedPros[1] || 'Reliable day-to-day performance across tests.'}</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Complaints */}
+                <div className="p-3 bg-white rounded-xl border border-zinc-200">
+                  <span className="font-bold text-red-800 flex items-center gap-1 mb-2">
+                    👎 Common Complaints / Trade-offs:
+                  </span>
+                  <ul className="space-y-1.5 text-zinc-700">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-red-500 font-bold">•</span>
+                      <span>{localizedCons[0] || 'High market demand may limit deep discount availability.'}</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-red-500 font-bold">•</span>
+                      <span>{localizedCons[1] || 'Learning curve required for advanced manual settings.'}</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </div>
 
             {/* Ad: Review Page placement (a) after AI Analysis Summary */}

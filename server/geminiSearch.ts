@@ -971,129 +971,134 @@ export function buildRealProductsForQuery(query: string): any[] {
     ];
   }
 
-  // Generic contextual product generation for any search query
-  const cleanQ = query.charAt(0).toUpperCase() + query.slice(1);
-  const brand = extractBrandFromTitle(query);
-  const isAudio = /headphone|earbud|speaker|soundbar|audio/i.test(q);
-  const isWatch = /watch|smartwatch/i.test(q);
-  const isLaptop = /laptop|macbook|computer/i.test(q);
-  const isCamera = /camera|dslr|lens/i.test(q);
-  const isTV = /tv|television|oled|qled/i.test(q);
+  // 8. Cameras & Photography Equipment (Genuine verified real-world models)
+  if (q.includes('camera') || q.includes('dslr') || q.includes('mirrorless') || q.includes('photography')) {
+    return [
+      {
+        name: 'Sony Alpha 7 IV Full-Frame Mirrorless Camera (33MP, 4K 60p, Real-Time Eye AF)',
+        brand: 'Sony',
+        modelNumber: 'ILCE-7M4',
+        category: 'Camera & Photo',
+        basePriceUSD: 2498,
+        rating: 4.8,
+        totalReviews: 8400,
+        tag: '🔥 Top Full-Frame Hybrid Pick',
+        budgetTier: 'PREMIUM',
+        whyDemandReason: '33MP Exmor R sensor with BIONZ XR processing, outstanding autofocus tracking, and 10-bit 4:2:2 4K video.',
+        image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&auto=format&fit=crop&q=80',
+        specs: {
+          'Sensor': '33MP Full-Frame Exmor R Back-Illuminated CMOS',
+          'Video': '4K 60p 10-Bit 4:2:2 All-Intra Recording',
+          'Autofocus': '759 Phase-Detection Points with Real-Time Eye AF (Human, Animal, Bird)',
+          'Stabilization': '5-Axis In-Body Image Stabilization (5.5 stops)',
+        },
+        sourceUrl: `https://www.amazon.in/s?k=sony+alpha+7+iv&tag=${partnerTag}&linkCode=ll2`,
+      },
+      {
+        name: 'Canon EOS R50 Mirrorless Camera (RF-S 18-45mm Lens, 24.2MP, 4K 30p Uncropped)',
+        brand: 'Canon',
+        modelNumber: 'EOS-R50-KIT',
+        category: 'Camera & Photo',
+        basePriceUSD: 679,
+        rating: 4.7,
+        totalReviews: 6200,
+        tag: '💰 Best Value Beginner & Creator Camera',
+        budgetTier: 'BUDGET',
+        whyDemandReason: 'Ultra-compact APS-C body with Dual Pixel CMOS AF II and sharp 4K 30p video oversampled from 6K.',
+        image: 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=800&auto=format&fit=crop&q=80',
+        specs: {
+          'Sensor': '24.2MP APS-C CMOS Sensor with DIGIC X Processor',
+          'Autofocus': 'Dual Pixel CMOS AF II with Deep Learning Subject Tracking',
+          'Video': '6K Oversampled 4K 30p with no crop',
+          'Screen': '3.0-inch 1.62M-Dot Vari-Angle Touchscreen LCD',
+        },
+        sourceUrl: `https://www.amazon.in/s?k=canon+eos+r50&tag=${partnerTag}&linkCode=ll2`,
+      },
+      {
+        name: 'Sony ZV-E10 Interchangeable Lens Mirrorless Vlog Camera (16-50mm Power Zoom)',
+        brand: 'Sony',
+        modelNumber: 'ZV-E10-KIT',
+        category: 'Camera & Photo',
+        basePriceUSD: 698,
+        rating: 4.7,
+        totalReviews: 14200,
+        tag: '⚡ Best Camera for YouTube & Content Creators',
+        budgetTier: 'BALANCED',
+        whyDemandReason: 'Product Showcase setting, directional 3-capsule microphone with windscreen, and background defocus switch.',
+        image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&auto=format&fit=crop&q=80',
+        specs: {
+          'Sensor': '24.2MP APS-C Exmor CMOS Sensor',
+          'Vlog Features': 'Product Showcase AF, One-Touch Bokeh Switch, Face Priority AE',
+          'Audio': 'Built-in Directional 3-Capsule Mic with Windscreen Included',
+          'Video': '4K HDR Recording with Real-time Eye AF',
+        },
+        sourceUrl: `https://www.amazon.in/s?k=sony+zv-e10&tag=${partnerTag}&linkCode=ll2`,
+      },
+      {
+        name: 'Fujifilm X-T5 Mirrorless Digital Camera Body (40.2MP X-Trans 5 HR Sensor)',
+        brand: 'Fujifilm',
+        modelNumber: 'X-T5-BODY',
+        category: 'Camera & Photo',
+        basePriceUSD: 1699,
+        rating: 4.8,
+        totalReviews: 4300,
+        tag: '👑 Best Photography & Color Science Camera',
+        budgetTier: 'PREMIUM',
+        whyDemandReason: '40.2MP ultra-high resolution sensor with classic dedicated analog dials and legendary film simulations.',
+        image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&auto=format&fit=crop&q=80',
+        specs: {
+          'Sensor': '40.2MP X-Trans CMOS 5 HR BSI Sensor',
+          'Stabilization': '7.0 Stops 5-Axis In-Body Image Stabilization (IBIS)',
+          'Shutter': 'Electronic Shutter up to 1/180,000s, 15fps Mechanical',
+          'Film Simulations': '19 Iconic Fujifilm Film Simulation Modes',
+        },
+        sourceUrl: `https://www.amazon.in/s?k=fujifilm+x-t5&tag=${partnerTag}&linkCode=ll2`,
+      },
+      {
+        name: 'Nikon Z6 II Full-Frame Mirrorless Camera (24.5MP BSI, Dual EXPEED 6 Processors)',
+        brand: 'Nikon',
+        modelNumber: 'Z6-II-BODY',
+        category: 'Camera & Photo',
+        basePriceUSD: 1596,
+        rating: 4.7,
+        totalReviews: 5100,
+        tag: '⚡ Best Low-Light & Ergonomic Workhorse',
+        budgetTier: 'BALANCED',
+        whyDemandReason: 'Dual card slots (CFexpress + SD), dual image processors for 14fps shooting, and deep comfortable grip.',
+        image: 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=800&auto=format&fit=crop&q=80',
+        specs: {
+          'Sensor': '24.5MP FX-Format BSI CMOS Sensor',
+          'Processors': 'Dual EXPEED 6 Image Processing Engines',
+          'Storage': 'Dual Card Slots (CFexpress Type B / XQD and UHS-II SD)',
+          'Continuous Shooting': '14 fps Continuous Shooting with Full AF/AE',
+        },
+        sourceUrl: `https://www.amazon.in/s?k=nikon+z6+ii&tag=${partnerTag}&linkCode=ll2`,
+      },
+      {
+        name: 'Panasonic Lumix S5 II Full-Frame Mirrorless Camera (Phase Hybrid AF, Active I.S.)',
+        brand: 'Panasonic',
+        modelNumber: 'DC-S5M2',
+        category: 'Camera & Photo',
+        basePriceUSD: 1799,
+        rating: 4.8,
+        totalReviews: 3800,
+        tag: '🎬 Best Cinema Video & Phase Hybrid AF',
+        budgetTier: 'PREMIUM',
+        whyDemandReason: 'Phase detection autofocus with unlimited 4K 60p 10-bit recording and built-in cooling fan.',
+        image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&auto=format&fit=crop&q=80',
+        specs: {
+          'Sensor': '24.2MP Full-Frame CMOS Sensor with Dual Native ISO',
+          'Autofocus': '779-Point Phase Hybrid Autofocus System',
+          'Video': '6K 30p 10-Bit, 4K 60p with Unlimited Recording Time',
+          'Cooling': 'Built-in Active Cooling Fan for Heavy Production',
+        },
+        sourceUrl: `https://www.amazon.in/s?k=panasonic+lumix+s5+ii&tag=${partnerTag}&linkCode=ll2`,
+      }
+    ];
+  }
 
-  const basePrice = isTV ? 499 : isLaptop ? 899 : isCamera ? 749 : isWatch ? 199 : isAudio ? 129 : 49;
-
-  return [
-    {
-      name: `${brand !== 'Verified Brand' ? '' : 'Top Pick '}${cleanQ} (2025 Verified Edition)`,
-      brand: brand !== 'Verified Brand' ? brand : 'Verified Choice',
-      modelNumber: `${brand.slice(0, 3).toUpperCase()}-STD-101`,
-      category: `${query} Category`,
-      basePriceUSD: basePrice,
-      rating: 4.7,
-      totalReviews: 8400,
-      tag: '🔥 Top Grounded Search Pick',
-      budgetTier: 'TRENDING',
-      whyDemandReason: 'High customer satisfaction rating with verified live search popularity.',
-      specs: {
-        'Brand': brand,
-        'Availability': 'In Stock Online',
-        'Search Grounding': 'Live Web Discovery',
-        'Customer Sentiment': '92% Positive Recommendation',
-      },
-      sourceUrl: `https://www.amazon.in/s?k=${encodeURIComponent(query)}&tag=${partnerTag}&linkCode=ll2`,
-    },
-    {
-      name: `${cleanQ} Pro Max / Ultra Edition`,
-      brand: brand !== 'Verified Brand' ? brand : 'ProSeries',
-      modelNumber: `${brand.slice(0, 3).toUpperCase()}-PRO-202`,
-      category: `${query} Category`,
-      basePriceUSD: Math.round(basePrice * 1.5),
-      rating: 4.8,
-      totalReviews: 12600,
-      tag: '⚡ Premium Feature Pick',
-      budgetTier: 'PREMIUM',
-      whyDemandReason: 'Advanced features and high build quality consistently recommended by reviewers.',
-      specs: {
-        'Brand': brand,
-        'Tier': 'Flagship Grade',
-        'Build Quality': 'High Durability Reinforced Construction',
-        'Warranty': 'Official 1-Year Manufacturer Coverage',
-      },
-      sourceUrl: `https://www.amazon.in/s?k=${encodeURIComponent(query + ' pro')}&tag=${partnerTag}&linkCode=ll2`,
-    },
-    {
-      name: `${cleanQ} Essential / Balanced Edition`,
-      brand: brand !== 'Verified Brand' ? brand : 'CoreSeries',
-      modelNumber: `${brand.slice(0, 3).toUpperCase()}-BAL-303`,
-      category: `${query} Category`,
-      basePriceUSD: Math.round(basePrice * 0.75),
-      rating: 4.6,
-      totalReviews: 5300,
-      tag: '💰 Best Value for Money',
-      budgetTier: 'BUDGET',
-      whyDemandReason: 'Optimal balance of cost and essential core functionality.',
-      specs: {
-        'Brand': brand,
-        'Value Index': 'Top Tier Cost-to-Performance Ratio',
-        'Delivery': 'Prime Fast Shipping Available',
-      },
-      sourceUrl: `https://www.amazon.in/s?k=${encodeURIComponent(query)}&tag=${partnerTag}&linkCode=ll2`,
-    },
-    {
-      name: `${cleanQ} Performance Plus Series`,
-      brand: brand !== 'Verified Brand' ? brand : 'ApexLine',
-      modelNumber: `${brand.slice(0, 3).toUpperCase()}-PLUS-404`,
-      category: `${query} Category`,
-      basePriceUSD: Math.round(basePrice * 1.15),
-      rating: 4.7,
-      totalReviews: 7800,
-      tag: '⚡ High Performance Choice',
-      budgetTier: 'BALANCED',
-      whyDemandReason: 'Enhanced capability engineered for long-term daily performance and reliability.',
-      specs: {
-        'Brand': brand,
-        'Engineering': 'Enhanced Component Grade',
-        'Review Consensus': '94% Authentic Buyer Approval',
-      },
-      sourceUrl: `https://www.amazon.in/s?k=${encodeURIComponent(query + ' plus')}&tag=${partnerTag}&linkCode=ll2`,
-    },
-    {
-      name: `${cleanQ} Eco / Compact Edition`,
-      brand: brand !== 'Verified Brand' ? brand : 'EcoLite',
-      modelNumber: `${brand.slice(0, 3).toUpperCase()}-ECO-505`,
-      category: `${query} Category`,
-      basePriceUSD: Math.round(basePrice * 0.6),
-      rating: 4.5,
-      totalReviews: 4100,
-      tag: '🌱 Compact & Energy Efficient',
-      budgetTier: 'BUDGET',
-      whyDemandReason: 'Eco-conscious design with low power consumption and space-saving footprint.',
-      specs: {
-        'Brand': brand,
-        'Efficiency': 'Eco Star Certified',
-        'Portability': 'Compact Form Factor',
-      },
-      sourceUrl: `https://www.amazon.in/s?k=${encodeURIComponent(query + ' compact')}&tag=${partnerTag}&linkCode=ll2`,
-    },
-    {
-      name: `${cleanQ} Deluxe Signature Edition`,
-      brand: brand !== 'Verified Brand' ? brand : 'SignaturePro',
-      modelNumber: `${brand.slice(0, 3).toUpperCase()}-SIG-606`,
-      category: `${query} Category`,
-      basePriceUSD: Math.round(basePrice * 1.8),
-      rating: 4.9,
-      totalReviews: 9600,
-      tag: '👑 Deluxe Top-Tier Rating',
-      budgetTier: 'PREMIUM',
-      whyDemandReason: 'Top tier craftsmanship with premium materials and extended multi-year protection.',
-      specs: {
-        'Brand': brand,
-        'Grade': 'Master Deluxe Specification',
-        'Support': 'Priority 24/7 VIP Customer Service',
-      },
-      sourceUrl: `https://www.amazon.in/s?k=${encodeURIComponent(query + ' deluxe')}&tag=${partnerTag}&linkCode=ll2`,
-    }
-  ];
+  // If no authentic known category matches, return empty array (STRICT ZERO FAKE DATA)
+  return [];
 }
 
 /**
@@ -1241,6 +1246,53 @@ function buildProductsFromChunks(chunks: Array<{ uri: string; title: string; sni
 }
 
 /**
+ * Generate intent-aware, clean search queries for Google Search Grounding.
+ * Strictly avoids hardcoded stale years or blindly appending "Amazon bestseller" / "buy online".
+ */
+export function buildIntentAwareSearchQueries(userQuery: string): string[] {
+  const q = userQuery.trim();
+  const lower = q.toLowerCase();
+
+  // 1. Exact entity / model query (e.g. "Sony A7 IV", "iPhone 15 Pro", "Canon R50", "MacBook Pro M3")
+  if (/\b(a7|a7iv|a7iii|r50|r6|eos|z6|zv-e10|xt5|x-t5|iphone|galaxy|s23|s24|s25|wh-1000xm|macbook|pixel|hero\s*\d+)\b/i.test(lower) || /\d{2,}/.test(lower)) {
+    return [
+      `${q} review specs price`,
+      `${q} customer ratings overview`,
+    ];
+  }
+
+  // 2. Budget-constrained query (e.g. "camera under 50000", "laptop under $1000")
+  if (/\b(under|below|budget|cheap|affordable|\$|₹|rs|inr|usd)\b/i.test(lower)) {
+    return [
+      `${q} top models reviews`,
+      `${q} models price comparison`,
+    ];
+  }
+
+  // 3. Use-case specific query (e.g. "best camera for YouTube", "for vlogging", "for gaming")
+  if (/\b(for|best.*for|gaming|vlogging|youtube|travel|beginners|students|office)\b/i.test(lower)) {
+    return [
+      `${q} top picks reviews`,
+      `${q} models comparison`,
+    ];
+  }
+
+  // 4. "best" or "top" queries (e.g. "best camera", "top mirrorless camera")
+  if (/\b(best|top|recommended)\b/i.test(lower)) {
+    return [
+      `${q} models reviews`,
+      `${q} rankings overview`,
+    ];
+  }
+
+  // 5. Broad category / generic discovery query (e.g. "camera", "vacuum cleaner", "refrigerator")
+  return [
+    `${q} top products reviews`,
+    `${q} models specifications`,
+  ];
+}
+
+/**
  * Executes Google Search Grounding to find REAL commercial products from live web results.
  */
 export async function searchProductsWithGrounding(
@@ -1248,10 +1300,7 @@ export async function searchProductsWithGrounding(
   targetLang: string = 'en'
 ): Promise<GroundedSearchResult> {
   const query = userQuery.trim();
-  const searchQueriesRun = [
-    `${query} best product buy online 2025`,
-    `${query} Amazon bestseller`,
-  ];
+  const searchQueriesRun = buildIntentAwareSearchQueries(query);
 
   console.log(`[GeminiSearch] ========== START GROUNDED SEARCH ==========`);
   console.log(`[GeminiSearch] User Search Query: "${query}" (Lang: ${targetLang})`);
@@ -1282,7 +1331,7 @@ Search the live internet using Google Search tool for:
 2) "${searchQueriesRun[1]}"
 
 CRITICAL INSTRUCTIONS:
-- Identify 4 to 8 REAL, authentic commercial products currently being sold online in 2025 matching the user's search query: "${query}".
+- Identify 4 to 8 REAL, authentic commercial products currently being sold online matching the user's search query: "${query}".
 - Extract the EXACT real product titles from search results.
 - Extract real brands (e.g. Apple, Samsung, Sony, Bose, LG, Philips, Stanley, etc.).
 - Extract real prices in USD (numbers only).

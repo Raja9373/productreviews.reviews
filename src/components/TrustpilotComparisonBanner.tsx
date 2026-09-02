@@ -16,14 +16,14 @@ export const TrustpilotComparisonBanner: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <h4 className="text-sm font-bold text-zinc-900">
-                  100% Independent &amp; Unbiased Review Consensus
+                  Independent Multi-Source Review Consensus
                 </h4>
                 <span className="text-[10px] font-extrabold uppercase tracking-wider bg-[#00B67A] text-white px-2 py-0.5 rounded-full">
                   Anti-Paywall
                 </span>
               </div>
               <p className="text-xs text-zinc-600">
-                Unlike Trustpilot, companies <strong>CANNOT pay to delete bad reviews</strong> or boost sponsored ratings.
+                Unlike closed-loop review sites, merchants <strong>cannot pay to suppress negative reviews</strong> or artificially inflate ratings.
               </p>
             </div>
           </div>
@@ -88,7 +88,7 @@ export const TrustpilotComparisonBanner: React.FC = () => {
                     <td className="py-3.5 font-bold text-emerald-800 bg-emerald-50/60 px-3">
                       <span className="flex items-center gap-1.5 text-[#00B67A]">
                         <CheckCircle2 className="w-4 h-4 shrink-0" />
-                        <span>100% IMPOSSIBLE — Zero Paid Removals</span>
+                        <span>No Paid Removals Permitted</span>
                       </span>
                     </td>
                   </tr>

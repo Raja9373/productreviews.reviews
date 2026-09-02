@@ -22,6 +22,15 @@ export const TrustpilotStars: React.FC<TrustpilotStarsProps> = ({
   showFakeAuditBadge = false,
   authenticPercent = 94,
 }) => {
+  // If score is invalid or zero, render clean fallback or nothing
+  if (score <= 0 || isNaN(score)) {
+    return (
+      <div className={`flex items-center gap-1.5 text-xs text-zinc-500 italic ${className}`}>
+        <span>Rating unavailable</span>
+      </div>
+    );
+  }
+
   // Normalize score between 0 and 5
   const clampedScore = Math.max(0, Math.min(5, score));
 
@@ -41,9 +50,6 @@ export const TrustpilotStars: React.FC<TrustpilotStarsProps> = ({
   const starSize = size === 'sm' ? 'w-2.5 h-2.5' : size === 'lg' ? 'w-4 h-4' : 'w-3 h-3';
   const gap = size === 'sm' ? 'gap-0.5' : 'gap-1';
   const textSize = size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-sm sm:text-base' : 'text-xs sm:text-sm';
-
-  const safeAuthentic = authenticPercent || 94;
-  const safeFake = 100 - safeAuthentic;
 
   return (
     <div className={`flex flex-wrap items-center gap-2 ${className}`}>
@@ -83,7 +89,7 @@ export const TrustpilotStars: React.FC<TrustpilotStarsProps> = ({
           <span className="font-semibold text-[#005128] bg-[#E8F8F2] px-1.5 py-0.5 rounded text-[11px]">
             {tier}
           </span>
-          {totalReviews !== undefined && (
+          {typeof totalReviews === 'number' && totalReviews > 0 && (
             <>
               <span className="text-zinc-300">•</span>
               <span className="text-zinc-500 font-normal">
@@ -94,11 +100,11 @@ export const TrustpilotStars: React.FC<TrustpilotStarsProps> = ({
         </div>
       )}
 
-      {/* Fake Review Detector Badge */}
+      {/* Verified badge if enabled and rating exists */}
       {showFakeAuditBadge && (
         <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-semibold border border-emerald-200/80">
           <ShieldCheck className="w-3 h-3 text-[#00B67A]" />
-          <span>AI Verified: {safeAuthentic}% Authentic • {safeFake}% Filtered</span>
+          <span>Verified Multi-Source Consensus</span>
         </div>
       )}
     </div>

@@ -28,12 +28,12 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
   const currentLangDef = LANGUAGES.find((l) => l.code === currentLang) || LANGUAGES[0];
 
   const popularSearches = [
-    { label: 'Panasonic TV', query: 'panasonic tv', badge: '6 Models' },
-    { label: 'Panasonic Juicer', query: 'panasonic juicer', badge: '6 Models' },
-    { label: 'iPhone 15', query: 'iphone 15', badge: 'Flagship' },
-    { label: 'Sony WH-1000XM5', query: 'sony headphones', badge: 'Top Audio' },
-    { label: 'Dyson V15 Detect', query: 'dyson vacuum', badge: 'Smart Home' },
-    { label: 'MacBook Pro M3', query: 'macbook pro', badge: 'Pro Workstation' },
+    { label: 'Sony Alpha 7 IV', query: 'Sony Alpha 7 IV', badge: 'Exact Product' },
+    { label: 'Best camera for YouTube', query: 'best camera for YouTube', badge: 'Use Case' },
+    { label: 'Best laptop for students', query: 'best laptop for students', badge: 'Budget Pick' },
+    { label: 'Sony A7 IV vs Canon R6 II', query: 'Sony A7 IV vs Canon R6 II', badge: 'Comparison' },
+    { label: 'Best SUV under ₹20 Lakh', query: 'best SUV under 20 lakh', badge: 'Automotive' },
+    { label: 'Housekeeping near me', query: 'housekeeping company near me', badge: 'Local Service' },
   ];
 
   // Auto-detect language while user types
@@ -126,36 +126,36 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
         <ShieldCheck className="w-3.5 h-3.5 text-[#00B67A]" />
         <span>productreviews.review</span>
         <span className="w-1 h-1 rounded-full bg-[#00B67A]/40" />
-        <span className="text-[#005128] font-medium text-[11px]">TrustScore 4.9 • 40 Languages</span>
+        <span className="text-[#005128] font-medium text-[11px]">AI-Powered Decision Engine</span>
       </div>
 
       {/* Hero Headline & Prompt */}
       <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-zinc-900 tracking-tight max-w-3xl leading-[1.12]">
         {currentLang === 'hi' ? (
           <>
-            प्रोडक्ट का नाम दें, <span className="text-[#00B67A]">ऑनेस्ट रिव्यू</span> और डिस्काउंट कूपन पाएं
+            सर्च करें. तुलना करें. <span className="text-[#00B67A]">सही निर्णय लें</span>
           </>
         ) : currentLang === 'ja' ? (
           <>
-            商品名を入力するだけ。<span className="text-[#00B67A]">本物のAIレビュー</span>とクーポンを即座にお届け
+            検索して、比較して、<span className="text-[#00B67A]">最適な決断を</span>
           </>
         ) : currentLang === 'es' ? (
           <>
-            Nombra el producto. Obtén <span className="text-[#00B67A]">reseñas honestas</span> y cupones en segundos.
+            Busca. Compara. <span className="text-[#00B67A]">Decide con certeza</span>.
           </>
         ) : currentLang === 'ar' ? (
           <>
-            اذكر أي منتج، واحصل على <span className="text-[#00B67A]">مراجعة صادقة</span> وكوبونات في ثوانٍ
+            ابحث. قارن. <span className="text-[#00B67A]">اتخذ القرار الأفضل</span>
           </>
         ) : (
           <>
-            Name Any Product. Get <span className="text-[#00B67A]">Honest Reviews</span> &amp; Deals in Seconds.
+            Search. Compare. <span className="text-[#00B67A]">Decide with Confidence</span>.
           </>
         )}
       </h1>
 
       <p className="mt-4 text-sm sm:text-base text-zinc-600 max-w-2xl font-normal leading-relaxed">
-        {t.analyzingSubtitle} Multi-source consensus synthesized from Amazon verified buyers, YouTube teardowns, Reddit communities, and live coupon databases.
+        Enter any product, category, budget, or comparison. Get an instant evidence-based verdict, key trade-offs, and verified buying options.
       </p>
 
       {/* Main Search Input Box */}
