@@ -10,7 +10,21 @@ export default async function handler(req: any, res: any) {
     return res.status(200).end();
   }
 
-  // STEP 4 Isolation Test: Import @google/genai verified
+  // STEP 5: Gemini Client Initialization without API call
+  const apiKey = process.env.GEMINI_API_KEY;
+  
+  if (apiKey) {
+    try {
+      // Test initialization of the GoogleGenAI client
+      const ai = new GoogleGenAI({ apiKey });
+      if (!ai) {
+        throw new Error('Client creation returned null');
+      }
+    } catch (err: any) {
+      console.error('[Step 5 Error] Failed to initialize GoogleGenAI client:', err?.message);
+    }
+  }
+
   return res.status(200).json({
     success: true,
     status: 'HEALTHY',
