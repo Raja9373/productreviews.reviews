@@ -31,6 +31,7 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('HOME');
   const [query, setQuery] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loadingStage, setLoadingStage] = useState<'searching' | 'finding' | 'comparing'>('searching');
   const [decisionResult, setDecisionResult] = useState<DecisionResult | null>(null);
   const [selectedEntity, setSelectedEntity] = useState<EntityItem | null>(null);
 
@@ -116,14 +117,24 @@ export default function App() {
     async (searchQuery: string, marketOverride?: MarketCode) => {
       const targetMarket = marketOverride || currentMarket;
       setIsLoading(true);
+      setLoadingStage('searching');
       setQuery(searchQuery);
       setScreen('SEARCH');
       setSelectedEntity(null);
       window.location.hash = `#/search?q=${encodeURIComponent(searchQuery)}`;
 
+      // Step-by-step loading progression per Phase 3 Section 16
+      const stageTimer1 = setTimeout(() => {
+        setLoadingStage('finding');
+      }, 700);
+
+      const stageTimer2 = setTimeout(() => {
+        setLoadingStage('comparing');
+      }, 1600);
+
       updateDocumentMeta({
         title: searchQuery,
-        description: `Verified decision results, objective pros and cons for "${searchQuery}" on ProductReviews.review.`,
+        description: `Objective decision results, pros and cons for "${searchQuery}" on ProductReviews.review.`,
         canonicalPath: `/search?q=${encodeURIComponent(searchQuery)}`,
       });
 
@@ -132,11 +143,27 @@ export default function App() {
       try {
         const res = await executeSearch(searchQuery, targetMarket, currentLang);
         setDecisionResult(res);
+        if (res.parsedQuery?.market && res.parsedQuery.market !== targetMarket) {
+          setCurrentMarket(res.parsedQuery.market);
+        }
+
+        // SEO Safety: Do not index thin, failed, or insufficient-data search results
+        updateDocumentMeta({
+          title: searchQuery,
+          description: `Objective decision results, pros and cons for "${searchQuery}" on ProductReviews.review.`,
+          canonicalPath: `/search?q=${encodeURIComponent(searchQuery)}`,
+          noIndex: res.status !== 'SUCCESS' || res.items.length === 0,
+        });
+
         trackEvent({
           name: 'search_completed',
           params: { query: searchQuery, status: res.status, count: res.items.length },
         });
       } catch (err) {
+        updateDocumentMeta({
+          title: searchQuery,
+          noIndex: true,
+        });
         setDecisionResult({
           parsedQuery: {
             rawQuery: searchQuery,
@@ -153,6 +180,8 @@ export default function App() {
           retrievedAt: new Date().toISOString(),
         });
       } finally {
+        clearTimeout(stageTimer1);
+        clearTimeout(stageTimer2);
         setIsLoading(false);
       }
     },
@@ -276,12 +305,17 @@ export default function App() {
               </form>
             </div>
 
-            {/* Loading Indicator */}
+            {/* Loading Indicator with Step Progression per Phase 3 Section 16 */}
             {isLoading && (
               <div className="py-20 flex flex-col items-center justify-center text-center">
                 <div className="w-8 h-8 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin mb-4" />
-                <span className="text-sm font-medium text-zinc-600">
-                  Synthesizing verified specifications &amp; evidence...
+                <span className="text-base font-semibold text-zinc-900 mb-1">
+                  {loadingStage === 'searching' && 'Searching...'}
+                  {loadingStage === 'finding' && 'Finding relevant options...'}
+                  {loadingStage === 'comparing' && 'Comparing available information...'}
+                </span>
+                <span className="text-xs text-zinc-500">
+                  Consulting permitted public sources &amp; directory records
                 </span>
               </div>
             )}
@@ -313,11 +347,11 @@ export default function App() {
                           Decision Recommendations
                         </h1>
                         <p className="text-xs text-zinc-500 mt-1">
-                          Showing {decisionResult.items.length} verified options for &ldquo;
+                          Showing {decisionResult.items.length} options for &ldquo;
                           <span className="font-semibold text-zinc-800">
                             {decisionResult.parsedQuery.cleanQuery}
                           </span>
-                          &rdquo; in {currentMarket}
+                          &rdquo; in {decisionResult.parsedQuery.market}
                         </p>
                       </div>
                       <span className="text-[11px] font-mono text-zinc-400">
@@ -331,6 +365,7 @@ export default function App() {
                           key={item.id}
                           item={item}
                           currentLang={currentLang}
+                          market={decisionResult.parsedQuery.market}
                           onSelectEntity={(ent) => {
                             setSelectedEntity(ent);
                             setScreen('DETAIL');
@@ -344,7 +379,25 @@ export default function App() {
                   <EmptyState
                     query={decisionResult.parsedQuery.cleanQuery}
                     currentLang={currentLang}
+                    parsedQuery={decisionResult.parsedQuery}
+                    customMessage={decisionResult.message}
                     onSelectSuggestion={(sug) => handleSearch(sug)}
+                    onRetry={() => handleSearch(query)}
+                    onChangeQuery={() => {
+                      const input =
+                        (document.getElementById('search-input-header') as HTMLInputElement) ||
+                        (document.getElementById('search-input-home') as HTMLInputElement);
+                      if (input) {
+                        input.focus();
+                        input.select();
+                      }
+                    }}
+                    onChangeMarket={() => {
+                      const select = document.getElementById('market-selector') as HTMLSelectElement;
+                      if (select) {
+                        select.focus();
+                      }
+                    }}
                   />
                 )}
               </div>

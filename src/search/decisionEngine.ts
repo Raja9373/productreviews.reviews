@@ -1,16 +1,20 @@
 import { DecisionResult, LanguageCode, MarketCode } from '../types';
 import { parseSearchQuery } from './queryParser';
-import {
-  getVerifiedComparison,
-  getVerifiedExactEntity,
-  getVerifiedRecommendations,
-} from './verifiedKnowledge';
-import { buildAmazonMarketUrl } from '../affiliate/amazonRouter';
+import { sourceRouter } from '../sources/sourceRouter';
+import { EvidenceRankingEngine } from '../sources/ranking';
+import { EvidenceComparisonEngine } from '../sources/comparisonEngine';
+
+export interface SearchOptions {
+  bypassCache?: boolean;
+  timeoutMs?: number;
+  disableExternalDiscovery?: boolean;
+}
 
 export async function executeSearch(
   query: string,
   userMarket?: MarketCode,
-  userLang: LanguageCode = 'en'
+  userLang: LanguageCode = 'en',
+  options?: SearchOptions
 ): Promise<DecisionResult> {
   const parsed = parseSearchQuery(query, userMarket, userLang);
 
@@ -24,10 +28,27 @@ export async function executeSearch(
     };
   }
 
-  // 1. Comparison Intent
+  // Absolute Test & Emergency Mode: If external discovery is explicitly disabled
+  if (options?.disableExternalDiscovery || (typeof window !== 'undefined' && (window as any).__DISABLE_EXTERNAL_DISCOVERY__)) {
+    return {
+      parsedQuery: parsed,
+      status: 'NO_RESULTS',
+      items: [],
+      message: 'We couldn’t find enough reliable current information for this search.',
+      retrievedAt: new Date().toISOString(),
+    };
+  }
+
+  // 1. Comparison Intent (e.g. "iPhone vs Samsung", "Sony A7 IV vs Canon R6")
   if (parsed.intent === 'COMPARISON' && parsed.constraints.comparisonEntities) {
     const [nameA, nameB] = parsed.constraints.comparisonEntities;
-    const comparison = getVerifiedComparison(nameA, nameB, parsed.market);
+    const comparison = await EvidenceComparisonEngine.compare(
+      nameA,
+      nameB,
+      parsed.market,
+      parsed.language
+    );
+
     if (comparison) {
       return {
         parsedQuery: parsed,
@@ -39,105 +60,76 @@ export async function executeSearch(
     }
   }
 
-  // 2. Exact Entity Intent
-  if (parsed.intent === 'EXACT_ENTITY') {
-    const entity = getVerifiedExactEntity(parsed.cleanQuery, parsed.market);
-    if (entity) {
-      return {
-        parsedQuery: parsed,
-        status: 'SUCCESS',
-        items: [entity],
-        retrievedAt: new Date().toISOString(),
-      };
-    }
-  }
-
-  // 3. Recommendation / Category / Local Discovery
-  const recommendations = getVerifiedRecommendations(
-    parsed.cleanQuery,
-    parsed.market,
-    parsed.constraints.budget
-  );
-
-  if (recommendations.length > 0) {
-    return {
-      parsedQuery: parsed,
-      status: 'SUCCESS',
-      items: recommendations,
-      retrievedAt: new Date().toISOString(),
-    };
-  }
-
-  // 4. If query is a single recognized brand/entity not in static cache, check if exact entity matches
-  const fallbackExact = getVerifiedExactEntity(parsed.cleanQuery, parsed.market);
-  if (fallbackExact) {
-    return {
-      parsedQuery: parsed,
-      status: 'SUCCESS',
-      items: [fallbackExact],
-      retrievedAt: new Date().toISOString(),
-    };
-  }
-
-  // 5. If genuine live search endpoint is available on server, attempt live grounding
+  // 2. Standard and Category Discovery via Source Adapters
   try {
-    const apiRes = await fetch('/api/gemini/grounded-search', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: parsed.cleanQuery,
-        targetLang: parsed.language,
-      }),
-    });
-    if (apiRes.ok) {
-      const data = await apiRes.json();
-      if (data.success && Array.isArray(data.products) && data.products.length > 0) {
-        // Map any verified products from provider
-        const mapped = data.products.map((p: any) => ({
-          id: p.id || p.slug || `live-${Math.random().toString(36).substring(7)}`,
-          slug: p.slug || p.id,
-          name: p.name || p.title,
-          brand: p.brand,
-          domain: parsed.domain,
-          badge: p.badge || p.tag,
-          explanation: p.explanation || p.summary || 'Verified product match from search evidence.',
-          pros: Array.isArray(p.pros) ? p.pros : [],
-          drawback: p.cons?.[0] || p.drawback,
-          price: {
-            currency: parsed.constraints.currency || '$',
-            isVerified: false,
-            note: 'Verify live price at retailer.',
-          },
-          action: {
-            type: 'CHECK_PRICE',
-            label: 'Check Live Retailer Price',
-            url: buildAmazonMarketUrl({ query: p.name || parsed.cleanQuery, market: parsed.market }).url,
-            isAffiliate: true,
-            merchant: 'Amazon',
-          },
-          sources: Array.isArray(p.sources)
-            ? p.sources.map((s: any) => ({ title: s.title || s.domain, domain: s.domain || s.url }))
-            : [{ title: 'Verified Web Grounding', domain: 'google.com' }],
-        }));
+    const discoveredEntities = await sourceRouter.discoverEntities(
+      parsed.cleanQuery,
+      parsed.domain,
+      parsed.market,
+      parsed.language,
+      {
+        bypassCache: options?.bypassCache,
+        timeoutMs: options?.timeoutMs || 3500,
+        budget: parsed.constraints.budget,
+      }
+    );
 
+    if (discoveredEntities.length > 0) {
+      // Rank and map to EntityItem
+      const rankedItems = EvidenceRankingEngine.rankAndMapToEntityItems(
+        discoveredEntities,
+        parsed
+      );
+
+      // If a budget constraint was specified (e.g. under ₹50,000 / under ₹30,000)
+      // and items have verified prices exceeding the budget, filter them conservatively.
+      // If none match or no price is verified for a strict budget query, acknowledge insufficiency.
+      if (parsed.constraints.budget) {
+        const verifiedMatchingBudget = rankedItems.filter((item) => {
+          if (!item.price.isVerified || !item.price.amount) {
+            return false; // Price not verified
+          }
+          return item.price.amount <= parsed.constraints.budget!;
+        });
+
+        if (verifiedMatchingBudget.length > 0) {
+          return {
+            parsedQuery: parsed,
+            status: 'SUCCESS',
+            items: verifiedMatchingBudget,
+            retrievedAt: new Date().toISOString(),
+          };
+        } else {
+          // No current verified prices within budget from permitted sources
+          return {
+            parsedQuery: parsed,
+            status: 'NO_RESULTS',
+            items: [],
+            message: `We couldn’t find enough reliable current information for this search under ${parsed.constraints.currency || ''}${parsed.constraints.budget.toLocaleString()}.`,
+            retrievedAt: new Date().toISOString(),
+          };
+        }
+      }
+
+      if (rankedItems.length > 0) {
         return {
           parsedQuery: parsed,
           status: 'SUCCESS',
-          items: mapped,
+          items: rankedItems,
           retrievedAt: new Date().toISOString(),
         };
       }
     }
   } catch (err) {
-    // Network/live lookup silently ignored; fallback to strict clean NO_RESULTS
+    console.warn('[Decision Engine] Handled source discovery notice:', err);
   }
 
-  // 6. Strict Data Integrity: If no verified evidence, return clean NO_RESULTS
+  // 3. Strict Data Integrity: If external discovery found no reliable evidence
   return {
     parsedQuery: parsed,
     status: 'NO_RESULTS',
     items: [],
-    message: 'We couldn’t verify suitable results for this search.',
+    message: 'We couldn’t find enough reliable current information for this search.',
     retrievedAt: new Date().toISOString(),
   };
 }

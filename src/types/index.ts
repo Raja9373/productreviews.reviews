@@ -20,7 +20,41 @@ export type DecisionDomain =
   | 'LOCAL'
   | 'EDUCATION'
   | 'VEHICLE'
+  | 'FINANCIAL'
   | 'GENERAL';
+
+export type SourceType =
+  | 'OFFICIAL'
+  | 'RETAILER'
+  | 'AFFILIATE'
+  | 'EDITORIAL'
+  | 'BUSINESS_DIRECTORY'
+  | 'TRAVEL'
+  | 'AUTOMOTIVE'
+  | 'SOFTWARE'
+  | 'EDUCATION'
+  | 'FINANCIAL'
+  | 'LOCAL'
+  | 'OTHER';
+
+export interface SourceProvenance {
+  sourceName: string;
+  sourceType: SourceType;
+  sourceUrl?: string;
+  retrievedAt: string;
+  market?: MarketCode;
+  language?: LanguageCode;
+  publishedAt?: string;
+  lastUpdatedAt?: string;
+}
+
+export interface EvidenceItem {
+  whyIncluded: string;
+  supportingFacts: Array<{ label: string; value: string; source: SourceProvenance }>;
+  sources: SourceProvenance[];
+  uncertainties: string[];
+  retrievedAt: string;
+}
 
 export type MarketCode =
   | 'US'
@@ -128,6 +162,12 @@ export interface EntityItem {
   };
   action: EntityAction;
   sources: EntitySource[];
+  evidence?: EvidenceItem;
+  provenance?: SourceProvenance[];
+  rating?: number;
+  reviewCount?: number;
+  officialUrl?: string;
+  retailerUrl?: string;
 }
 
 export interface ComparisonFactor {

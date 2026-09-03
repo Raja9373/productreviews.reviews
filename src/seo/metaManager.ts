@@ -3,6 +3,7 @@ export function updateDocumentMeta(params: {
   description?: string;
   canonicalPath?: string;
   ogType?: string;
+  noIndex?: boolean;
 }) {
   if (typeof document === 'undefined') return;
 
@@ -39,4 +40,13 @@ export function updateDocumentMeta(params: {
     document.head.appendChild(canonical);
   }
   canonical.setAttribute('href', canonicalUrl);
+
+  // Robots meta tag: Prevent indexing on empty, failed, or thin search result pages
+  let robotsMeta = document.querySelector('meta[name="robots"]');
+  if (!robotsMeta) {
+    robotsMeta = document.createElement('meta');
+    robotsMeta.setAttribute('name', 'robots');
+    document.head.appendChild(robotsMeta);
+  }
+  robotsMeta.setAttribute('content', params.noIndex ? 'noindex, follow' : 'index, follow');
 }

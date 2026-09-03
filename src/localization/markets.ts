@@ -22,89 +22,229 @@ export function getMarketInfo(code: MarketCode): MarketInfo {
 }
 
 const COUNTRY_KEYWORD_MAP: Record<string, MarketCode> = {
+  // Japan
   japan: 'JP',
-  tokyo: 'JP',
   japanese: 'JP',
+  tokyo: 'JP',
+  osaka: 'JP',
+  kyoto: 'JP',
+
+  // India
   india: 'IN',
   indian: 'IN',
+  bharat: 'IN',
   delhi: 'IN',
   mumbai: 'IN',
   bangalore: 'IN',
+  bengaluru: 'IN',
   goa: 'IN',
-  usa: 'US',
-  us: 'US',
-  america: 'US',
-  american: 'US',
+  hyderabad: 'IN',
+  chennai: 'IN',
+  kolkata: 'IN',
+
+  // United Kingdom
   uk: 'UK',
   britain: 'UK',
+  british: 'UK',
   england: 'UK',
+  english: 'UK',
+  scotland: 'UK',
+  wales: 'UK',
   london: 'UK',
+  manchester: 'UK',
+
+  // Germany
   germany: 'DE',
   deutschland: 'DE',
-  berlin: 'DE',
   german: 'DE',
+  berlin: 'DE',
+  munich: 'DE',
+  frankfurt: 'DE',
+
+  // France
   france: 'FR',
-  paris: 'FR',
   french: 'FR',
+  paris: 'FR',
+  lyon: 'FR',
+
+  // Spain
   spain: 'ES',
+  spanish: 'ES',
   madrid: 'ES',
   barcelona: 'ES',
-  spanish: 'ES',
+
+  // Italy
   italy: 'IT',
+  italian: 'IT',
   rome: 'IT',
   milan: 'IT',
-  italian: 'IT',
+
+  // Canada
   canada: 'CA',
-  toronto: 'CA',
   canadian: 'CA',
+  toronto: 'CA',
+  vancouver: 'CA',
+  montreal: 'CA',
+
+  // Australia
   australia: 'AU',
-  sydney: 'AU',
   australian: 'AU',
+  sydney: 'AU',
+  melbourne: 'AU',
+  brisbane: 'AU',
+
+  // Brazil
   brazil: 'BR',
+  brazilian: 'BR',
+  brasil: 'BR',
+  'sao paulo': 'BR',
+  'rio de janeiro': 'BR',
+
+  // Mexico
   mexico: 'MX',
+  mexican: 'MX',
+  cdmx: 'MX',
+
+  // Netherlands
   netherlands: 'NL',
   holland: 'NL',
+  dutch: 'NL',
   amsterdam: 'NL',
+
+  // Singapore
   singapore: 'SG',
+  singaporean: 'SG',
+
+  // United States
+  usa: 'US',
+  america: 'US',
+  american: 'US',
+  'united states': 'US',
 };
 
+export interface MarketResolutionResult {
+  market: MarketCode;
+  explicitCountry?: string;
+  explicitCurrency?: string;
+  resolvedBy: 'country' | 'currency' | 'user' | 'locale' | 'default';
+}
+
 /**
- * Priority resolution:
- * 1. Explicit country in user query (e.g. "best SUV in Japan" -> JP)
- * 2. User-selected market
- * 3. Browser / locale fallback
+ * Deterministic market resolution priority:
+ * 1. Explicit country in query
+ * 2. Explicit currency in query (₹ -> IN, £ -> UK, € -> Euro-market, ¥ -> JP, $ -> contextual/selected market)
+ * 3. User-selected country/market
+ * 4. Browser/locale fallback
+ * (Does not hardcode India as global default)
  */
 export function resolveTargetMarket(
   query: string,
   userSelectedMarket?: MarketCode
-): { market: MarketCode; explicitCountry?: string } {
+): MarketResolutionResult {
   const normalizedQuery = ` ${query.toLowerCase()} `;
 
-  // 1. Explicit country check in query
+  // 1. Explicit country in query
+  // Test phrases like "in Japan", "for India", or direct country keywords
   for (const [kw, code] of Object.entries(COUNTRY_KEYWORD_MAP)) {
-    const pattern = new RegExp(`(?:\\bin|for|near|around)\\s+${kw}\\b|\\b${kw}\\b`, 'i');
+    // Avoid false positives on 2-letter tokens like "us" unless prefixed or standalone
+    if (kw === 'us') {
+      if (/\b(?:in\s+the\s+us|in\s+us|for\s+us\s+market)\b/i.test(normalizedQuery)) {
+        return { market: 'US', explicitCountry: kw, resolvedBy: 'country' };
+      }
+      continue;
+    }
+
+    const pattern = new RegExp(`(?:\\bin|for|near|around|from)\\s+${kw}\\b|\\b${kw}\\b`, 'i');
     if (pattern.test(normalizedQuery)) {
-      return { market: code, explicitCountry: kw };
+      return { market: code, explicitCountry: kw, resolvedBy: 'country' };
     }
   }
 
-  // 2. User-selected market
-  if (userSelectedMarket) {
-    return { market: userSelectedMarket };
+  // 2. Explicit currency in query
+  // Priority 2 overrides user-selected market if query specifies distinct currency
+  // ₹ / INR / Rs / Rupees -> India (IN)
+  if (/[₹]|\b(?:inr|rs\.?|rupees?)\b/i.test(query)) {
+    return { market: 'IN', explicitCurrency: '₹', resolvedBy: 'currency' };
   }
 
-  // 3. Browser locale detection fallback
+  // £ / GBP / Pounds -> UK
+  if (/[£]|\b(?:gbp|pounds?)\b/i.test(query)) {
+    return { market: 'UK', explicitCurrency: '£', resolvedBy: 'currency' };
+  }
+
+  // € / EUR / Euro -> Appropriate Euro-market handling
+  // If user already selected a Euro market (DE, FR, ES, IT, NL), preserve it; otherwise default to DE
+  if (/[€]|\b(?:eur|euros?)\b/i.test(query)) {
+    const euroMarkets: MarketCode[] = ['DE', 'FR', 'ES', 'IT', 'NL'];
+    const chosenEuro = userSelectedMarket && euroMarkets.includes(userSelectedMarket)
+      ? userSelectedMarket
+      : 'DE';
+    return { market: chosenEuro, explicitCurrency: '€', resolvedBy: 'currency' };
+  }
+
+  // ¥ / JPY / Yen -> Japan (JP) when context indicates JPY
+  if (/[¥]|\b(?:jpy|yen)\b/i.test(query)) {
+    return { market: 'JP', explicitCurrency: '¥', resolvedBy: 'currency' };
+  }
+
+  // Canadian Dollar (C$ / CAD) -> CA
+  if (/c\$|\b(?:cad|canadian\s+dollars?)\b/i.test(query)) {
+    return { market: 'CA', explicitCurrency: 'C$', resolvedBy: 'currency' };
+  }
+
+  // Australian Dollar (A$ / AUD) -> AU
+  if (/a\$|\b(?:aud|australian\s+dollars?)\b/i.test(query)) {
+    return { market: 'AU', explicitCurrency: 'A$', resolvedBy: 'currency' };
+  }
+
+  // Singapore Dollar (S$ / SGD) -> SG
+  if (/s\$|\b(?:sgd|singapore\s+dollars?)\b/i.test(query)) {
+    return { market: 'SG', explicitCurrency: 'S$', resolvedBy: 'currency' };
+  }
+
+  // Brazilian Real (R$ / BRL) -> BR
+  if (/r\$|\b(?:brl|reais|real)\b/i.test(query)) {
+    return { market: 'BR', explicitCurrency: 'R$', resolvedBy: 'currency' };
+  }
+
+  // Mexican Peso (Mex$ / MXN) -> MX
+  if (/mex\$|\b(?:mxn|mexican\s+pesos?)\b/i.test(query)) {
+    return { market: 'MX', explicitCurrency: '$', resolvedBy: 'currency' };
+  }
+
+  // US$ or explicit USD -> US
+  if (/us\$|\b(?:usd|us\s+dollars?)\b/i.test(query)) {
+    return { market: 'US', explicitCurrency: '$', resolvedBy: 'currency' };
+  }
+
+  // Standalone $ or dollars
+  // Rule: "US$ / $ → use selected market or contextual country rather than blindly assuming US"
+  if (/[\$]|\b(?:dollars?|bucks?)\b/i.test(query)) {
+    const dollarMarkets: MarketCode[] = ['US', 'CA', 'AU', 'SG', 'MX'];
+    if (userSelectedMarket && dollarMarkets.includes(userSelectedMarket)) {
+      return { market: userSelectedMarket, explicitCurrency: '$', resolvedBy: 'currency' };
+    }
+    return { market: 'US', explicitCurrency: '$', resolvedBy: 'currency' };
+  }
+
+  // 3. User-selected country/market
+  if (userSelectedMarket && SUPPORTED_MARKETS.some((m) => m.code === userSelectedMarket)) {
+    return { market: userSelectedMarket, resolvedBy: 'user' };
+  }
+
+  // 4. Browser/locale fallback
   if (typeof navigator !== 'undefined' && navigator.languages) {
     for (const lang of navigator.languages) {
       const parts = lang.split('-');
       if (parts.length > 1) {
         const countryCode = parts[1].toUpperCase() as MarketCode;
         if (SUPPORTED_MARKETS.some((m) => m.code === countryCode)) {
-          return { market: countryCode };
+          return { market: countryCode, resolvedBy: 'locale' };
         }
       }
     }
   }
 
-  return { market: 'US' };
+  // Default fallback (US) without hardcoding India
+  return { market: 'US', resolvedBy: 'default' };
 }

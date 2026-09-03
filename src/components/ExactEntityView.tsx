@@ -64,11 +64,11 @@ export const ExactEntityView: React.FC<ExactEntityViewProps> = ({
           {entity.explanation}
         </p>
 
-        {/* Verified Technical Specifications Table */}
+        {/* Technical Specifications Table */}
         {entity.specs && Object.keys(entity.specs).length > 0 && (
           <div className="mb-8 bg-zinc-50 rounded-2xl p-5 sm:p-6 border border-zinc-200/80">
             <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-4">
-              Verified Technical Specifications
+              Technical Specifications
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6">
               {Object.entries(entity.specs).map(([k, v]) => (
@@ -106,7 +106,7 @@ export const ExactEntityView: React.FC<ExactEntityViewProps> = ({
               {t.drawback}
             </h2>
             <p className="text-xs sm:text-sm text-amber-900 leading-relaxed">
-              {entity.drawback || 'No major verified structural flaws reported in testing.'}
+              {entity.drawback || 'No major structural flaws reported in testing.'}
             </p>
           </div>
         </div>
@@ -123,7 +123,7 @@ export const ExactEntityView: React.FC<ExactEntityViewProps> = ({
         <div className="pt-6 border-t border-zinc-200 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
             <span className="text-xs font-semibold text-zinc-400 block uppercase">
-              Retail Price Verification
+              Retail Price Status
             </span>
             {entity.price.isVerified && entity.price.amount ? (
               <span className="text-2xl font-bold text-zinc-900">

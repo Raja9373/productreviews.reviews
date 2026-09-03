@@ -17,11 +17,12 @@ export function parseSearchQuery(
   const lower = clean.toLowerCase();
 
   // 1. Resolve Target Market & Country constraint
-  const { market, explicitCountry } = resolveTargetMarket(clean, userMarket);
+  const { market, explicitCountry, explicitCurrency } = resolveTargetMarket(clean, userMarket);
 
   // 2. Extract Constraints
   const constraints: QueryConstraints = {
     explicitCountry,
+    currency: explicitCurrency,
   };
 
   // Budget extraction: under/below/less than ₹30,000 / $500 / 50000 / etc.
@@ -38,13 +39,23 @@ export function parseSearchQuery(
       num *= 100000;
     }
     constraints.budget = num;
-    if (symbol) constraints.currency = symbol;
-    else if (market === 'IN') constraints.currency = '₹';
-    else if (market === 'US') constraints.currency = '$';
-    else if (market === 'UK') constraints.currency = '£';
-    else if (['DE', 'FR', 'ES', 'IT', 'NL'].includes(market)) constraints.currency = '€';
-    else if (market === 'JP') constraints.currency = '¥';
-    else if (market === 'CA') constraints.currency = 'C$';
+    if (symbol) {
+      constraints.currency = symbol;
+    } else if (explicitCurrency) {
+      constraints.currency = explicitCurrency;
+    } else if (market === 'IN') {
+      constraints.currency = '₹';
+    } else if (market === 'US') {
+      constraints.currency = '$';
+    } else if (market === 'UK') {
+      constraints.currency = '£';
+    } else if (['DE', 'FR', 'ES', 'IT', 'NL'].includes(market)) {
+      constraints.currency = '€';
+    } else if (market === 'JP') {
+      constraints.currency = '¥';
+    } else if (market === 'CA') {
+      constraints.currency = 'C$';
+    }
   }
 
   // Location extraction: "near me" or "in [Location]"
@@ -90,7 +101,23 @@ export function parseSearchQuery(
     };
   }
 
-  // Local Discovery: "near me", "hotel in", "housekeeping", "plumber", "doctor", "CA near me"
+  // Local Discovery: "near me", "hotel in", "housekeeping", "plumber", "doctor", "CA near me", "Taj Exotica"
+  const isPlaceQuery =
+    lower.includes('hotel') ||
+    lower.includes('resort') ||
+    lower.includes('taj ') ||
+    lower.includes('taj exotica') ||
+    lower.includes('hyatt') ||
+    lower.includes('marriott') ||
+    lower.includes('hilton') ||
+    lower.includes('sheraton') ||
+    lower.includes('radisson') ||
+    lower.includes('hostel') ||
+    lower.includes('lodge') ||
+    lower.includes('motel') ||
+    lower.includes('inn in ') ||
+    lower.includes('villa');
+
   if (
     constraints.location === 'near me' ||
     lower.includes('hotel in ') ||
@@ -100,10 +127,11 @@ export function parseSearchQuery(
     lower.includes('housekeeping') ||
     lower.includes('plumber') ||
     lower.includes('dentist') ||
-    lower.includes('hospital in')
+    lower.includes('hospital in') ||
+    isPlaceQuery
   ) {
-    intent = 'LOCAL_DISCOVERY';
-    domain = lower.includes('hotel') || lower.includes('resort') ? 'PLACE' : 'SERVICE';
+    intent = isPlaceQuery ? 'GENERAL_LOOKUP' : 'LOCAL_DISCOVERY';
+    domain = isPlaceQuery ? 'PLACE' : 'SERVICE';
     return {
       rawQuery,
       cleanQuery: clean,
@@ -141,13 +169,31 @@ export function parseSearchQuery(
   // Recommendation: "best X", "best phone under ₹30,000", "top SUV"
   if (isComparativeWord || constraints.budget !== undefined || constraints.useCase !== undefined) {
     intent = 'RECOMMENDATION';
-    if (lower.includes('suv') || lower.includes('car') || lower.includes('bike')) {
+    if (lower.includes('suv') || lower.includes('car') || lower.includes('bike') || lower.includes('vehicle')) {
       domain = 'VEHICLE';
-    } else if (lower.includes('software') || lower.includes('app') || lower.includes('crm') || lower.includes('accounting')) {
+    } else if (lower.includes('software') || lower.includes('app') || lower.includes('crm') || lower.includes('accounting') || lower.includes('tool')) {
       domain = 'SOFTWARE';
-    } else if (lower.includes('hotel') || lower.includes('place')) {
+    } else if (lower.includes('hotel') || lower.includes('resort') || lower.includes('place')) {
       domain = 'PLACE';
-    } else if (lower.includes('service') || lower.includes('course')) {
+    } else if (
+      lower.includes('mba') ||
+      lower.includes('degree') ||
+      lower.includes('course') ||
+      lower.includes('university') ||
+      lower.includes('college') ||
+      lower.includes('education') ||
+      lower.includes('certification')
+    ) {
+      domain = 'EDUCATION';
+    } else if (
+      lower.includes('credit card') ||
+      lower.includes('loan') ||
+      lower.includes('mortgage') ||
+      lower.includes('insurance') ||
+      lower.includes('bank account')
+    ) {
+      domain = 'FINANCIAL';
+    } else if (lower.includes('service') || lower.includes('doctor') || lower.includes('plumber') || lower.includes('ca ')) {
       domain = 'SERVICE';
     } else {
       domain = 'PRODUCT';
@@ -184,11 +230,26 @@ export function parseSearchQuery(
     };
   }
 
+  let finalDomain: DecisionDomain = domain;
+  if (
+    lower.includes('mba') ||
+    lower.includes('degree') ||
+    lower.includes('university') ||
+    lower.includes('college') ||
+    lower.includes('course')
+  ) {
+    finalDomain = 'EDUCATION';
+  } else if (lower.includes('hotel') || lower.includes('resort')) {
+    finalDomain = 'PLACE';
+  } else if (lower.includes('suv') || lower.includes('car')) {
+    finalDomain = 'VEHICLE';
+  }
+
   return {
     rawQuery,
     cleanQuery: clean,
     intent,
-    domain,
+    domain: finalDomain,
     market,
     language: userLang,
     constraints,
