@@ -26,7 +26,7 @@ export default async function handler(req: any, res: any) {
     
     // STEP 6: Execute ONE minimal Gemini API call for connectivity testing
     const response = await ai.models.generateContent({
-      model: 'gemini-3.7-flash',
+      model: 'gemini-2.5-flash',
       contents: 'Reply with exactly: OK',
     });
 
