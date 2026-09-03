@@ -155,9 +155,22 @@ export function parseSearchQuery(
   if (isExactModel && !isComparativeWord) {
     intent = 'EXACT_ENTITY';
     domain = 'PRODUCT';
+
+    // Strip trailing in [country/location] from entity cleanQuery so exact matching and discovery find the real product
+    let entityCleanQuery = clean;
+    if (constraints.explicitCountry) {
+      entityCleanQuery = entityCleanQuery
+        .replace(new RegExp(`\\b(?:in|at)\\s+${constraints.explicitCountry}\\b`, 'i'), '')
+        .trim();
+    } else if (constraints.location && constraints.location !== 'near me') {
+      entityCleanQuery = entityCleanQuery
+        .replace(new RegExp(`\\b(?:in|at)\\s+${constraints.location}\\b`, 'i'), '')
+        .trim();
+    }
+
     return {
       rawQuery,
-      cleanQuery: clean,
+      cleanQuery: entityCleanQuery || clean,
       intent,
       domain,
       market,

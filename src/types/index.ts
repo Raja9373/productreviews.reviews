@@ -191,6 +191,7 @@ export interface DecisionResult {
   status: 'SUCCESS' | 'NO_RESULTS' | 'ERROR';
   message?: string;
   items: EntityItem[];
+  alternatives?: EntityItem[];
   comparison?: ComparisonItem;
   retrievedAt: string;
 }

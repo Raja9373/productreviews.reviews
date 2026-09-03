@@ -112,6 +112,27 @@ export async function executeSearch(
       }
 
       if (rankedItems.length > 0) {
+        if (parsed.intent === 'EXACT_ENTITY') {
+          const primaryEntity = rankedItems[0];
+          // Valid alternatives must not be duplicate representations of the primary entity
+          const alternatives = rankedItems
+            .slice(1)
+            .filter(
+              (alt) =>
+                alt.name.toLowerCase() !== primaryEntity.name.toLowerCase() &&
+                alt.slug !== primaryEntity.slug
+            )
+            .slice(0, 3);
+
+          return {
+            parsedQuery: parsed,
+            status: 'SUCCESS',
+            items: [primaryEntity],
+            alternatives: alternatives.length > 0 ? alternatives : undefined,
+            retrievedAt: new Date().toISOString(),
+          };
+        }
+
         return {
           parsedQuery: parsed,
           status: 'SUCCESS',

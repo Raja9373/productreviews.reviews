@@ -1,6 +1,7 @@
 import { DecisionDomain, MarketCode } from '../types';
 import { DiscoveredEntityRaw, NormalizedEntity } from './types';
 import { buildAmazonMarketUrl } from '../affiliate/amazonRouter';
+import { getMarketInfo } from '../localization/markets';
 
 export class EntityNormalizer {
   /**
@@ -150,9 +151,11 @@ export class EntityNormalizer {
         specs,
         price: {
           amount: raw.priceAmount,
-          currency: raw.priceCurrency || '$',
+          currency: raw.priceCurrency || getMarketInfo(market).currencySymbol,
           isVerified: Boolean(raw.isPriceVerified),
-          note: raw.priceNote || 'Commercial pricing must be confirmed at checkout.',
+          note:
+            raw.priceNote ||
+            'Price unverified — commercial pricing requires authorized retailer check',
         },
         rating: raw.rating, // strictly undefined if not supported by source
         reviewCount: raw.reviewCount, // strictly undefined if not supported by source

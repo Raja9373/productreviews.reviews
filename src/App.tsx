@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Header } from './components/Header';
 import { HeroSearch } from './components/HeroSearch';
 import { ResultCard } from './components/ResultCard';
@@ -18,7 +18,7 @@ import { DisclaimerPage } from './components/pages/DisclaimerPage';
 
 import { DecisionResult, EntityItem, LanguageCode, MarketCode } from './types';
 import { getTranslation } from './localization/languages';
-import { resolveTargetMarket } from './localization/markets';
+import { resolveTargetMarket, SUPPORTED_MARKETS } from './localization/markets';
 import { executeSearch } from './search/decisionEngine';
 import { updateDocumentMeta } from './seo/metaManager';
 import { trackEvent } from './analytics/tracker';
@@ -26,8 +26,30 @@ import { trackEvent } from './analytics/tracker';
 type Screen = 'HOME' | 'SEARCH' | 'DETAIL' | 'ABOUT' | 'CONTACT' | 'PRIVACY' | 'TERMS' | 'DISCLAIMER';
 
 export default function App() {
-  const [currentLang, setCurrentLang] = useState<LanguageCode>('en');
-  const [currentMarket, setCurrentMarket] = useState<MarketCode>('US');
+  const [currentLang, setCurrentLang] = useState<LanguageCode>(() => {
+    try {
+      const savedLang = localStorage.getItem('pr_lang') as LanguageCode;
+      if (savedLang && ['en', 'hi', 'es', 'it', 'fr', 'de'].includes(savedLang)) {
+        return savedLang;
+      }
+    } catch {
+      // ignore
+    }
+    return 'en';
+  });
+
+  const [currentMarket, setCurrentMarket] = useState<MarketCode>(() => {
+    try {
+      const savedMarket = localStorage.getItem('pr_market') as MarketCode;
+      if (savedMarket && SUPPORTED_MARKETS.some((m) => m.code === savedMarket)) {
+        return savedMarket;
+      }
+    } catch {
+      // ignore
+    }
+    return 'US';
+  });
+
   const [screen, setScreen] = useState<Screen>('HOME');
   const [query, setQuery] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -35,93 +57,30 @@ export default function App() {
   const [decisionResult, setDecisionResult] = useState<DecisionResult | null>(null);
   const [selectedEntity, setSelectedEntity] = useState<EntityItem | null>(null);
 
-  // Initialize market and language from browser / localStorage
-  useEffect(() => {
-    try {
-      const savedLang = localStorage.getItem('pr_lang') as LanguageCode;
-      if (savedLang && ['en', 'hi', 'es', 'it', 'fr', 'de'].includes(savedLang)) {
-        setCurrentLang(savedLang);
-      }
-      const savedMarket = localStorage.getItem('pr_market') as MarketCode;
-      if (savedMarket) {
-        setCurrentMarket(savedMarket);
-      } else {
-        const detected = resolveTargetMarket('');
-        setCurrentMarket(detected.market);
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  // Handle URL hash routing
-  useEffect(() => {
-    const handleHash = () => {
-      const hash = window.location.hash;
-      if (hash.startsWith('#/search?q=')) {
-        const rawQ = decodeURIComponent(hash.replace('#/search?q=', ''));
-        if (rawQ) {
-          handleSearch(rawQ);
-        }
-      } else if (hash === '#/about') {
-        setScreen('ABOUT');
-      } else if (hash === '#/contact') {
-        setScreen('CONTACT');
-      } else if (hash === '#/privacy') {
-        setScreen('PRIVACY');
-      } else if (hash === '#/terms') {
-        setScreen('TERMS');
-      } else if (hash === '#/affiliate-disclosure' || hash === '#/disclaimer') {
-        setScreen('DISCLAIMER');
-      }
-    };
-
-    handleHash();
-    window.addEventListener('hashchange', handleHash);
-    return () => window.removeEventListener('hashchange', handleHash);
-  }, []);
-
-  const handleLanguageChange = (lang: LanguageCode) => {
-    setCurrentLang(lang);
-    try {
-      localStorage.setItem('pr_lang', lang);
-    } catch {
-      // ignore
-    }
-    trackEvent({ name: 'change_language', params: { lang } });
-  };
-
-  const handleMarketChange = (market: MarketCode) => {
-    setCurrentMarket(market);
-    try {
-      localStorage.setItem('pr_market', market);
-    } catch {
-      // ignore
-    }
-    trackEvent({ name: 'change_market', params: { market } });
-    if (query) {
-      handleSearch(query, market);
-    }
-  };
-
-  const handleResetToHome = () => {
-    setScreen('HOME');
-    setQuery('');
-    setDecisionResult(null);
-    setSelectedEntity(null);
-    window.location.hash = '';
-    updateDocumentMeta({});
-  };
+  // Active state references to prevent stale closures in event listeners
+  const currentMarketRef = useRef<MarketCode>(currentMarket);
+  currentMarketRef.current = currentMarket;
+  const currentLangRef = useRef<LanguageCode>(currentLang);
+  currentLangRef.current = currentLang;
+  const activeSearchKeyRef = useRef<string>('');
 
   const handleSearch = useCallback(
     async (searchQuery: string, marketOverride?: MarketCode) => {
-      const targetMarket = marketOverride || currentMarket;
+      // Deterministic market selection:
+      // Priority 1: marketOverride (explicit parameter)
+      // Priority 2: current user-selected UI market (currentMarketRef)
+      const targetMarket = marketOverride || currentMarketRef.current;
+      const searchKey = `${searchQuery}|${targetMarket}`;
+      activeSearchKeyRef.current = searchKey;
+
       setIsLoading(true);
       setLoadingStage('searching');
       setQuery(searchQuery);
       setScreen('SEARCH');
       setSelectedEntity(null);
-      window.location.hash = `#/search?q=${encodeURIComponent(searchQuery)}`;
+
+      // Preserve market in URL hash so reloads / direct navigation maintain market
+      window.location.hash = `#/search?q=${encodeURIComponent(searchQuery)}&market=${targetMarket}`;
 
       // Step-by-step loading progression per Phase 3 Section 16
       const stageTimer1 = setTimeout(() => {
@@ -141,10 +100,25 @@ export default function App() {
       trackEvent({ name: 'search_initiated', params: { query: searchQuery, market: targetMarket } });
 
       try {
-        const res = await executeSearch(searchQuery, targetMarket, currentLang);
+        const res = await executeSearch(searchQuery, targetMarket, currentLangRef.current);
         setDecisionResult(res);
-        if (res.parsedQuery?.market && res.parsedQuery.market !== targetMarket) {
-          setCurrentMarket(res.parsedQuery.market);
+
+        // Deterministic market rule:
+        // Only update UI market if query itself explicitly specified a different country or currency
+        // e.g. "Sony Alpha 7 IV in USA" overrides UI India -> USA
+        if (
+          res.parsedQuery?.constraints?.explicitCountry ||
+          res.parsedQuery?.constraints?.currency
+        ) {
+          if (res.parsedQuery.market && res.parsedQuery.market !== targetMarket) {
+            setCurrentMarket(res.parsedQuery.market);
+            currentMarketRef.current = res.parsedQuery.market;
+            try {
+              localStorage.setItem('pr_market', res.parsedQuery.market);
+            } catch {
+              // ignore
+            }
+          }
         }
 
         // SEO Safety: Do not index thin, failed, or insufficient-data search results
@@ -171,7 +145,7 @@ export default function App() {
             intent: 'GENERAL_LOOKUP',
             domain: 'GENERAL',
             market: targetMarket,
-            language: currentLang,
+            language: currentLangRef.current,
             constraints: {},
           },
           status: 'ERROR',
@@ -185,8 +159,83 @@ export default function App() {
         setIsLoading(false);
       }
     },
-    [currentMarket, currentLang]
+    []
   );
+
+  // Handle URL hash routing with current market preservation
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash;
+      if (hash.startsWith('#/search?')) {
+        const urlParams = new URLSearchParams(hash.replace(/^#\/search\??/, ''));
+        const rawQ = urlParams.get('q') || '';
+        const marketParam = urlParams.get('market') as MarketCode | null;
+        const validMarket =
+          marketParam && SUPPORTED_MARKETS.some((m) => m.code === marketParam)
+            ? marketParam
+            : currentMarketRef.current;
+
+        const searchKey = `${rawQ}|${validMarket}`;
+        if (rawQ && searchKey !== activeSearchKeyRef.current) {
+          handleSearch(rawQ, validMarket);
+        }
+      } else if (hash.startsWith('#/search=')) {
+        const rawQ = decodeURIComponent(hash.replace('#/search=', ''));
+        if (rawQ) {
+          handleSearch(rawQ, currentMarketRef.current);
+        }
+      } else if (hash === '#/about') {
+        setScreen('ABOUT');
+      } else if (hash === '#/contact') {
+        setScreen('CONTACT');
+      } else if (hash === '#/privacy') {
+        setScreen('PRIVACY');
+      } else if (hash === '#/terms') {
+        setScreen('TERMS');
+      } else if (hash === '#/affiliate-disclosure' || hash === '#/disclaimer') {
+        setScreen('DISCLAIMER');
+      }
+    };
+
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, [handleSearch]);
+
+  const handleLanguageChange = (lang: LanguageCode) => {
+    setCurrentLang(lang);
+    currentLangRef.current = lang;
+    try {
+      localStorage.setItem('pr_lang', lang);
+    } catch {
+      // ignore
+    }
+    trackEvent({ name: 'change_language', params: { lang } });
+  };
+
+  const handleMarketChange = (market: MarketCode) => {
+    setCurrentMarket(market);
+    currentMarketRef.current = market;
+    try {
+      localStorage.setItem('pr_market', market);
+    } catch {
+      // ignore
+    }
+    trackEvent({ name: 'change_market', params: { market } });
+    if (query) {
+      handleSearch(query, market);
+    }
+  };
+
+  const handleResetToHome = () => {
+    setScreen('HOME');
+    setQuery('');
+    setDecisionResult(null);
+    setSelectedEntity(null);
+    activeSearchKeyRef.current = '';
+    window.location.hash = '';
+    updateDocumentMeta({});
+  };
 
   const t = getTranslation(currentLang);
 
@@ -331,12 +380,18 @@ export default function App() {
                     onBack={handleResetToHome}
                   />
                 ) : decisionResult.parsedQuery.intent === 'EXACT_ENTITY' &&
-                  decisionResult.items.length === 1 ? (
+                  decisionResult.items.length > 0 ? (
                   /* 2. Exact Entity Intent */
                   <ExactEntityView
                     entity={decisionResult.items[0]}
+                    alternatives={decisionResult.alternatives}
                     currentLang={currentLang}
+                    market={decisionResult.parsedQuery.market}
                     onBack={handleResetToHome}
+                    onSelectEntity={(ent) => {
+                      setSelectedEntity(ent);
+                      setScreen('DETAIL');
+                    }}
                   />
                 ) : decisionResult.items.length > 0 ? (
                   /* 3. Recommendation List */

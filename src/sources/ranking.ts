@@ -1,6 +1,32 @@
 import { EntityItem, ParsedQuery } from '../types';
 import { NormalizedEntity } from './types';
 
+function getProductCategory(text: string): string | null {
+  const t = text.toLowerCase();
+  if (/\b(?:camera|mirrorless|dslr|interchangeable-lens|full-frame|aps-c|digital camera)\b/.test(t)) {
+    return 'camera';
+  }
+  if (/\b(?:smartphone|phone|android phone|ios phone|mobile phone|phablet|iphone|cellular)\b/.test(t)) {
+    return 'smartphone';
+  }
+  if (/\b(?:laptop|notebook|ultrabook|macbook|chromebook|thinkpad)\b/.test(t)) {
+    return 'laptop';
+  }
+  if (/\b(?:headphones|earbuds|earphones|headset|soundbar)\b/.test(t)) {
+    return 'audio';
+  }
+  if (/\b(?:television|smart tv|oled tv|qled tv|monitor)\b/.test(t)) {
+    return 'display';
+  }
+  if (/\b(?:car|suv|sedan|truck|crossover|vehicle|motorcycle)\b/.test(t)) {
+    return 'vehicle';
+  }
+  if (/\b(?:smartwatch|fitness tracker|apple watch)\b/.test(t)) {
+    return 'wearable';
+  }
+  return null;
+}
+
 export class EvidenceRankingEngine {
   /**
    * Ranks discovered entities purely based on query relevance and factual completeness.
@@ -54,17 +80,42 @@ export class EvidenceRankingEngine {
     // Sort descending by factual relevance score
     scored.sort((a, b) => b.score - a.score);
 
+    // For EXACT_ENTITY queries, filter out unrelated products from conflicting categories
+    let filteredScored = scored;
+    if (parsedQuery.intent === 'EXACT_ENTITY' && scored.length > 0) {
+      const primary = scored[0];
+      const primaryText = `${primary.entity.canonicalName} ${primary.entity.explanation} ${Object.values(
+        primary.entity.specs
+      ).join(' ')}`;
+      const primaryCat = getProductCategory(primaryText);
+
+      if (primaryCat) {
+        filteredScored = scored.filter((item, idx) => {
+          if (idx === 0) return true;
+          const candText = `${item.entity.canonicalName} ${item.entity.explanation} ${Object.values(
+            item.entity.specs
+          ).join(' ')}`;
+          const candCat = getProductCategory(candText);
+          if (candCat && candCat !== primaryCat) {
+            return false;
+          }
+          return true;
+        });
+      }
+    }
+
     // Map to final EntityItem model
-    return scored.map(({ entity }, index) => {
-      // Conservative badges per Phase 3 Section 8:
-      // Only display BEST OVERALL when there is sufficient evidence and explicit scoring separation
-      // Otherwise use 'Recommended option' or 'Relevant option'
-      let badge = 'Relevant option';
-      if (
-        scored.length > 1 &&
+    return filteredScored.map(({ entity }, index) => {
+      // Conservative badges per Phase 3 Section 8 & Exact Entity rules:
+      // Exact entity must NOT be called BEST OVERALL
+      let badge: string | undefined = undefined;
+      if (parsedQuery.intent === 'EXACT_ENTITY') {
+        badge = index === 0 ? undefined : 'Alternative option';
+      } else if (
+        filteredScored.length > 1 &&
         index === 0 &&
-        scored[0].score >= 60 &&
-        scored[0].score > (scored[1]?.score || 0) + 15
+        filteredScored[0].score >= 60 &&
+        filteredScored[0].score > (filteredScored[1]?.score || 0) + 15
       ) {
         badge = 'BEST OVERALL';
       } else if (index === 0) {

@@ -1,19 +1,29 @@
 import React from 'react';
-import { EntityItem, LanguageCode } from '../types';
+import { EntityItem, LanguageCode, MarketCode } from '../types';
 import { getTranslation } from '../localization/languages';
+import { getMarketInfo } from '../localization/markets';
+import { ResultCard } from './ResultCard';
 
 interface ExactEntityViewProps {
   entity: EntityItem;
+  alternatives?: EntityItem[];
   currentLang: LanguageCode;
+  market?: MarketCode;
   onBack: () => void;
+  onSelectEntity?: (entity: EntityItem) => void;
 }
 
 export const ExactEntityView: React.FC<ExactEntityViewProps> = ({
   entity,
+  alternatives,
   currentLang,
+  market,
   onBack,
+  onSelectEntity,
 }) => {
   const t = getTranslation(currentLang);
+  const resolvedMarket: MarketCode = market || entity.provenance?.[0]?.market || 'US';
+  const marketInfo = getMarketInfo(resolvedMarket);
 
   return (
     <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-8">
@@ -37,9 +47,14 @@ export const ExactEntityView: React.FC<ExactEntityViewProps> = ({
       <article className="bg-white rounded-3xl border border-zinc-200 p-6 sm:p-10 shadow-sm">
         {/* Header Tag */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-bold uppercase tracking-wider bg-zinc-900 text-white px-3 py-1 rounded-full">
               {entity.domain}
+            </span>
+            <span className="text-xs font-semibold bg-zinc-100 text-zinc-700 border border-zinc-200 px-3 py-1 rounded-full flex items-center gap-1">
+              <span>{marketInfo.flag}</span>
+              <span>{marketInfo.name}</span>
+              <span className="text-zinc-400">({marketInfo.currencySymbol})</span>
             </span>
             {entity.badge && (
               <span className="text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 px-3 py-1 rounded-full">
@@ -54,7 +69,10 @@ export const ExactEntityView: React.FC<ExactEntityViewProps> = ({
           )}
         </div>
 
-        {/* Title */}
+        {/* Section Heading & Title */}
+        <div className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1">
+          About {entity.name}
+        </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-zinc-900 tracking-tight mb-4">
           {entity.name}
         </h1>
@@ -123,15 +141,23 @@ export const ExactEntityView: React.FC<ExactEntityViewProps> = ({
         <div className="pt-6 border-t border-zinc-200 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
             <span className="text-xs font-semibold text-zinc-400 block uppercase">
-              Retail Price Status
+              Retail Price Status ({marketInfo.name})
             </span>
             {entity.price.isVerified && entity.price.amount ? (
               <span className="text-2xl font-bold text-zinc-900">
                 {entity.price.currency} {entity.price.amount.toLocaleString()}
               </span>
             ) : (
-              <span className="text-xs text-zinc-500 italic">
-                {entity.price.note || t.priceUnverified}
+              <div className="flex items-center gap-2 mt-1">
+                <span className="inline-block w-2 h-2 rounded-full bg-amber-400" />
+                <span className="text-xs font-medium text-zinc-600">
+                  Price: Unverified ({marketInfo.currencySymbol})
+                </span>
+              </div>
+            )}
+            {!entity.price.isVerified && (
+              <span className="text-[11px] text-zinc-400 block mt-0.5">
+                Live retailer check required — commercial prices fluctuate
               </span>
             )}
           </div>
@@ -171,6 +197,32 @@ export const ExactEntityView: React.FC<ExactEntityViewProps> = ({
           </div>
         )}
       </article>
+
+      {/* Related alternatives section if genuine, same-category alternatives exist */}
+      {alternatives && alternatives.length > 0 && (
+        <section className="mt-12">
+          <div className="border-b border-zinc-200/80 pb-4 mb-6">
+            <h2 className="text-xl font-bold text-zinc-900 tracking-tight">
+              Related alternatives
+            </h2>
+            <p className="text-xs text-zinc-500 mt-1">
+              Alternative options in the same category discovered from verified public records.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {alternatives.map((alt) => (
+              <ResultCard
+                key={alt.id}
+                item={alt}
+                currentLang={currentLang}
+                market={resolvedMarket}
+                onSelectEntity={onSelectEntity}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 };
