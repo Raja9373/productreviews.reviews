@@ -1,6 +1,6 @@
 {
   "name": "productreviews.review",
-  "description": "Instant multi-source AI product analysis, verified product recommendations, Amazon geo-price comparison, and coupon tracking across top electronics, appliances, and gadgets.",
-  "requestFramePermissions": ["microphone"],
+  "description": "Universal Search & Decision Engine. Find the right products, services, brands, software, places and more based on what actually matters to you.",
+  "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

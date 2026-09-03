@@ -1,184 +1,156 @@
-export type LanguageCode =
-  | 'en' | 'hi' | 'ja' | 'es' | 'de' | 'fr' | 'ar' | 'pt' | 'ru' | 'ko'
-  | 'zh-CN' | 'zh-TW' | 'bn' | 'ta' | 'te' | 'mr' | 'ur' | 'it' | 'nl' | 'pl'
-  | 'tr' | 'vi' | 'th' | 'id' | 'ms' | 'fil' | 'fa' | 'uk' | 'ro' | 'el'
-  | 'sv' | 'no' | 'da' | 'fi' | 'cs' | 'hu' | 'he' | 'sw' | 'af';
+/**
+ * ProductReviews.review - Universal Decision Engine Types
+ * Pure, reliable, un-fabricated data structures.
+ */
 
-export interface LanguageDef {
+export type IntentType =
+  | 'EXACT_ENTITY'
+  | 'CATEGORY_DISCOVERY'
+  | 'RECOMMENDATION'
+  | 'COMPARISON'
+  | 'LOCAL_DISCOVERY'
+  | 'GENERAL_LOOKUP';
+
+export type DecisionDomain =
+  | 'PRODUCT'
+  | 'SERVICE'
+  | 'COMPANY'
+  | 'SOFTWARE'
+  | 'PLACE'
+  | 'LOCAL'
+  | 'EDUCATION'
+  | 'VEHICLE'
+  | 'GENERAL';
+
+export type MarketCode =
+  | 'US'
+  | 'IN'
+  | 'UK'
+  | 'DE'
+  | 'FR'
+  | 'ES'
+  | 'IT'
+  | 'CA'
+  | 'AU'
+  | 'JP'
+  | 'BR'
+  | 'MX'
+  | 'NL'
+  | 'SG';
+
+export type LanguageCode = 'en' | 'hi' | 'es' | 'it' | 'fr' | 'de';
+
+export type ActionType =
+  | 'CHECK_PRICE'
+  | 'BUY_ON_AMAZON'
+  | 'VISIT_OFFICIAL'
+  | 'VIEW_DETAILS'
+  | 'CONTACT'
+  | 'BOOK';
+
+export interface MarketInfo {
+  code: MarketCode;
+  name: string;
+  currency: string;
+  currencySymbol: string;
+  amazonDomain: string;
+  flag: string;
+}
+
+export interface LanguageInfo {
   code: LanguageCode;
   name: string;
   nativeName: string;
   flag: string;
   dir: 'ltr' | 'rtl';
-  currency: string;
-  currencySymbol: string;
-  currencyRate: number; // relative to USD
 }
 
-export interface CouponData {
-  code: string;
-  discountPercent: number;
-  discountText: string;
-  expiryHours: number;
-  store: string;
-  verifiedToday: boolean;
+export interface QueryConstraints {
+  budget?: number;
+  currency?: string;
+  explicitCountry?: string;
+  location?: string;
+  useCase?: string;
+  brand?: string;
+  comparisonEntities?: [string, string];
 }
 
-export interface StorePrice {
-  storeName: string;
-  priceUSD: number;
-  inStock: boolean;
-  shipping: string;
-  url: string;
+export interface ParsedQuery {
+  rawQuery: string;
+  cleanQuery: string;
+  intent: IntentType;
+  domain: DecisionDomain;
+  market: MarketCode;
+  language: LanguageCode;
+  constraints: QueryConstraints;
 }
 
-export interface SentimentAnalysis {
-  amazonScore: number;
-  amazonReviewsCount: number;
-  amazonSummary: string;
-  redditSentiment: 'Extremely Positive' | 'Mostly Positive' | 'Mixed' | 'Negative';
-  redditMentionCount: number;
-  redditSummary: string;
-  redditScore?: number;
-  youtubeVideosAnalyzed: number;
-  youtubeVerdict: string;
-  youtubeScore?: number;
-  expertScore: number; // out of 100
-  expertReviewSitesCount?: number;
-}
-
-export interface VideoReviewItem {
-  id: string;
+export interface EntitySource {
   title: string;
-  channel: string;
-  duration: string;
-  views: string;
-  summary: string;
-  verdictTag: string;
+  url?: string;
+  domain?: string;
+  note?: string;
+}
+
+export interface VerifiedPrice {
+  amount?: number;
+  currency: string;
+  formatted?: string;
+  isVerified: boolean;
+  note?: string;
+}
+
+export interface EntityAction {
+  type: ActionType;
+  label: string;
   url: string;
+  isAffiliate?: boolean;
+  merchant?: string;
 }
 
-export interface FakeReviewAudit {
-  authenticPercent: number;
-  filteredFakePercent: number;
-  burstPatternDetected: boolean;
-  verifiedBuyerRatio: number;
-  statusBadge: string;
-}
-
-export interface GeoPriceOption {
-  countryCode: string;
-  countryName: string;
-  flag: string;
-  currencySymbol: string;
-  priceFormatted: string;
-  rawPrice: number;
-  tag: string;
-  domain: string;
-  affiliateUrl: string;
-  isLowest?: boolean;
-}
-
-export interface ProductModel {
+export interface EntityItem {
   id: string;
   slug: string;
   name: string;
-  modelNumber: string;
-  brand: string;
-  category: string;
-  image: string;
-  basePriceUSD: number;
-  listPriceUSD?: number;
-  discountPercent?: number;
-  rating: number;
-  totalReviews: number;
-  tag: string; // e.g. "🔥 Aaj Kal Sabse Zyada Bik Raha Hai", "Budget Pick", "Balanced Value", "Premium Flagship"
-  budgetTier?: 'TRENDING' | 'BUDGET' | 'BALANCED' | 'PREMIUM';
-  verifiedBuyersCount?: number;
-  positiveRatingPercent?: number;
-  whyDemandReason?: string; // e.g. "3,450 verified buyers, 88% 5-star"
-  specs: { [key: string]: string };
-  asin?: string;
-  sourceUrl?: string;
-  consensusScore?: {
-    amazon: number;
-    reddit: number;
-    youtube: number;
-    expert: number;
-    totalSourcesCount: number;
-    amazonReviews: number;
-    redditThreads: number;
-    youtubeReviews: number;
-    expertSites: number;
+  brand?: string;
+  domain: DecisionDomain;
+  badge?: 'BEST OVERALL' | 'BEST VALUE' | 'PREMIUM PICK' | string;
+  explanation: string;
+  pros: string[];
+  drawback?: string;
+  whoItIsFor?: string;
+  price: VerifiedPrice;
+  specs?: Record<string, string>;
+  image?: {
+    url: string;
+    alt: string;
+    isVerified: boolean;
   };
-  videoReviews?: VideoReviewItem[];
-  fakeReviewAudit?: FakeReviewAudit;
-  geoPrices?: GeoPriceOption[];
+  action: EntityAction;
+  sources: EntitySource[];
 }
 
-export interface DetailedReport extends ProductModel {
-  verdict: 'BUY' | 'DONT_BUY' | 'CONSIDER_ALT';
-  score: number; // out of 10
-  scoreBreakdown: {
-    performance: number;
-    buildQuality: number;
-    valueForMoney: number;
-    features: number;
-    reliability: number;
-  };
-  summary: { [lang in LanguageCode]?: string };
-  pros: { [lang in LanguageCode]?: string[] };
-  cons: { [lang in LanguageCode]?: string[] };
-  bestFor: string[];
-  coupon: CouponData;
-  stores: StorePrice[];
-  sentiment: SentimentAnalysis;
-  cachedAt?: number;
-  generatedInMs?: number;
+export interface ComparisonFactor {
+  factor: string;
+  entityAAssessment: string;
+  entityBAssessment: string;
+  winner: 'A' | 'B' | 'TIE';
+  why: string;
 }
 
-export interface ScanStage {
-  id: number;
-  text: string;
-  source: 'amazon' | 'youtube' | 'reddit' | 'tech' | 'coupons';
-  durationMs: number;
+export interface ComparisonItem {
+  entityA: EntityItem;
+  entityB: EntityItem;
+  factors: ComparisonFactor[];
+  mainCompromise: string;
+  verdictSummary: string;
 }
 
-export interface TranslationDictionary {
-  siteTitle: string;
-  tagline: string;
-  searchPlaceholder: string;
-  searchBtn: string;
-  micListening: string;
-  micPrompt: string;
-  popularLabel: string;
-  modelsFoundTitle: string;
-  modelsFoundSubtitle: string;
-  selectModelPrompt: string;
-  changeQuery: string;
-  analyzingTitle: string;
-  analyzingSubtitle: string;
-  verdictBuy: string;
-  verdictDontBuy: string;
-  verdictAlt: string;
-  overallScoreLabel: string;
-  prosTitle: string;
-  consTitle: string;
-  bestForTitle: string;
-  keySpecsTitle: string;
-  latestCouponTitle: string;
-  copyCouponBtn: string;
-  copiedToast: string;
-  expiresInLabel: string;
-  viewDealBtn: string;
-  verifiedBuyerReviews: string;
-  multiSourceAnalysis: string;
-  amazonSentiment: string;
-  redditConsensus: string;
-  youtubeBreakdown: string;
-  cachedAtBadge: string;
-  seoUrlsTitle: string;
-  shareReportBtn: string;
-  backToSearch: string;
-  currencyLabel: string;
+export interface DecisionResult {
+  parsedQuery: ParsedQuery;
+  status: 'SUCCESS' | 'NO_RESULTS' | 'ERROR';
+  message?: string;
+  items: EntityItem[];
+  comparison?: ComparisonItem;
+  retrievedAt: string;
 }

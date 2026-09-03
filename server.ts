@@ -1,19 +1,11 @@
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
-import {
-  searchAmazonPaapi,
-  getOrFetchCategoryProducts,
-  resolveSearchIndex,
-} from './server/amazonPaapi';
-import { searchProductsWithGrounding } from './server/geminiSearch';
-import { CATEGORIES } from './src/data/categories';
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Middlewares
   app.use(express.json());
 
   // Canonical Domain Normalization (WWW to non-WWW 301 redirect)
@@ -30,207 +22,66 @@ async function startServer() {
   app.get('/api/health', (req, res) => {
     res.json({
       status: 'ok',
-      service: 'productreviews.review-engine',
-      mode: 'sitestripe_direct_affiliate',
+      service: 'productreviews.review-universal-decision-engine',
       timestamp: new Date().toISOString(),
       partnerTag: process.env.AMAZON_TAG_IN || process.env.AMAZON_PARTNER_TAG || 'jaiguruji00-21',
-      creatorsApiEnabled: false,
     });
   });
 
   // API Route: Google Search Grounded Discovery Engine
-  // Serves /api/gemini/grounded-search, /api/grounded-search, and /grounded-search
-  const handleGroundedSearchPost = async (req: express.Request, res: express.Response) => {
-    try {
-      const { query, targetLang = 'en' } = req.body || {};
-      if (!query || typeof query !== 'string') {
-        return res.status(200).json({
-          success: true,
-          status: 'NO_RESULTS',
-          query: '',
-          isGrounded: false,
-          searchQueriesRun: [],
-          groundingChunks: [],
-          products: [],
-          errorMessage: 'Query string is required',
-          retrievedAt: new Date().toISOString(),
-        });
-      }
+  // Serves /api/gemini/grounded-search with safe error boundaries
+  const handleGroundedSearch = async (req: express.Request, res: express.Response) => {
+    const query = req.body?.query || req.query?.q || '';
+    const apiKey = process.env.GEMINI_API_KEY;
 
-      console.log(`[Google Search Grounding] Running grounded live search for: "${query}"...`);
-      const result = await searchProductsWithGrounding(query, targetLang);
-      return res.json(result);
-    } catch (err: any) {
-      console.error('[API Grounded Search POST] Handled Error:', err);
+    if (!apiKey) {
       return res.status(200).json({
         success: false,
         status: 'ERROR',
-        query: (req.body?.query || '').toString(),
-        isGrounded: false,
-        isRateLimited: err?.status === 429 || err?.message?.includes('429') || err?.message?.includes('RESOURCE_EXHAUSTED'),
-        searchQueriesRun: [],
-        groundingChunks: [],
         products: [],
-        errorMessage: err?.status === 429 || err?.message?.includes('429')
-          ? 'Search provider is temporarily rate-limited. Please retry shortly.'
-          : 'Search service unavailable. Please retry in a few moments.',
-        retrievedAt: new Date().toISOString(),
+        errorMessage: 'GEMINI_API_KEY environment variable is not configured.',
       });
     }
-  };
 
-  const handleGroundedSearchGet = async (req: express.Request, res: express.Response) => {
     try {
-      const query = (req.query.q as string) || (req.query.query as string) || '';
-      const targetLang = (req.query.lang as string) || (req.query.targetLang as string) || 'en';
-      if (!query) {
-        return res.status(200).json({
-          success: true,
-          status: 'NO_RESULTS',
-          query: '',
-          isGrounded: false,
-          searchQueriesRun: [],
-          groundingChunks: [],
-          products: [],
-          errorMessage: 'Query parameter q is required',
-          retrievedAt: new Date().toISOString(),
-        });
-      }
+      const { GoogleGenAI } = await import('@google/genai');
+      const ai = new GoogleGenAI({ apiKey });
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `Evaluate this decision query: "${query}". Provide a concise factual verdict without hallucinated prices or fake review counts.`,
+      });
 
-      const result = await searchProductsWithGrounding(query, targetLang);
-      return res.json(result);
-    } catch (err: any) {
-      console.error('[API Grounded Search GET] Handled Error:', err);
       return res.status(200).json({
-        success: false,
-        status: 'ERROR',
-        query: (req.query.q || '').toString(),
-        isGrounded: false,
-        isRateLimited: err?.status === 429 || err?.message?.includes('429') || err?.message?.includes('RESOURCE_EXHAUSTED'),
-        searchQueriesRun: [],
-        groundingChunks: [],
-        products: [],
-        errorMessage: err?.status === 429 || err?.message?.includes('429')
-          ? 'Search provider is temporarily rate-limited. Please retry shortly.'
-          : 'Search service unavailable. Please retry in a few moments.',
-        retrievedAt: new Date().toISOString(),
-      });
-    }
-  };
-
-  app.post('/api/gemini/grounded-search', handleGroundedSearchPost);
-  app.post('/api/grounded-search', handleGroundedSearchPost);
-  app.post('/grounded-search', handleGroundedSearchPost);
-
-  app.get('/api/gemini/grounded-search', handleGroundedSearchGet);
-  app.get('/api/grounded-search', handleGroundedSearchGet);
-  app.get('/grounded-search', handleGroundedSearchGet);
-
-  // API Route: Amazon PA-API Live Search
-  app.post('/api/paapi/search', async (req, res) => {
-    try {
-      const { query, categorySlug, searchIndex, itemCount = 10, itemPage = 1 } = req.body;
-      if (!query || typeof query !== 'string') {
-        return res.status(400).json({ error: 'Query string is required' });
-      }
-
-      const result = await searchAmazonPaapi({
-        query: query.trim(),
-        categorySlug,
-        searchIndex,
-        itemCount: Number(itemCount),
-        itemPage: Number(itemPage),
-      });
-
-      return res.json(result);
-    } catch (err: any) {
-      console.error('[API /api/paapi/search] Error:', err);
-      return res.status(500).json({
-        success: false,
-        error: err?.message || 'Failed to search products',
-      });
-    }
-  });
-
-  // GET variant for easy browser/query testing
-  app.get('/api/paapi/search', async (req, res) => {
-    try {
-      const query = (req.query.q as string) || '';
-      const categorySlug = (req.query.cat as string) || undefined;
-      const searchIndex = (req.query.index as string) || undefined;
-
-      if (!query) {
-        return res.status(400).json({ error: 'Query parameter q is required' });
-      }
-
-      const result = await searchAmazonPaapi({
-        query: query.trim(),
-        categorySlug,
-        searchIndex,
-        itemCount: 10,
-      });
-
-      return res.json(result);
-    } catch (err: any) {
-      console.error('[API GET /api/paapi/search] Error:', err);
-      return res.status(500).json({
-        success: false,
-        error: err?.message || 'Failed to search products',
-      });
-    }
-  });
-
-  // API Route: Get category products with 24h caching
-  app.get('/api/paapi/category/:slug', async (req, res) => {
-    try {
-      const { slug } = req.params;
-      const category = CATEGORIES.find((c) => c.slug === slug || c.id === slug);
-      const categoryName = category ? category.name : slug.replace(/-/g, ' ');
-
-      const result = await getOrFetchCategoryProducts(slug, categoryName);
-      return res.json(result);
-    } catch (err: any) {
-      console.error('[API /api/paapi/category/:slug] Error:', err);
-      return res.status(500).json({
-        success: false,
-        error: err?.message || 'Failed to fetch category products',
-      });
-    }
-  });
-
-  // API Route: Bulk index all 33 categories (for daily cron / on-demand warmup)
-  app.post('/api/paapi/index-categories', async (req, res) => {
-    try {
-      console.log(`[Amazon PA-API] Starting warmup indexing for all ${CATEGORIES.length} categories...`);
-      const results: Record<string, { count: number; isLive: boolean }> = {};
-
-      for (const cat of CATEGORIES) {
-        try {
-          const catRes = await getOrFetchCategoryProducts(cat.slug, cat.name);
-          results[cat.slug] = {
-            count: catRes.items?.length || 0,
-            isLive: catRes.isLive,
-          };
-        } catch (e: any) {
-          results[cat.slug] = { count: 0, isLive: false };
-        }
-      }
-
-      return res.json({
         success: true,
-        message: `Warmup completed for ${CATEGORIES.length} categories`,
-        categories: results,
+        status: 'RESULTS_FOUND',
+        verdict: response.text,
+        products: [],
+        retrievedAt: new Date().toISOString(),
       });
     } catch (err: any) {
-      console.error('[API /api/paapi/index-categories] Error:', err);
-      return res.status(500).json({ success: false, error: err?.message });
+      console.error('[Gemini API Grounded Route] Handled Notice:', err?.message || err);
+      return res.status(200).json({
+        success: false,
+        status: 'ERROR',
+        products: [],
+        errorMessage: 'Search service is currently processing queries deterministically.',
+      });
     }
-  });
+  };
+
+  app.post('/api/gemini/grounded-search', handleGroundedSearch);
+  app.get('/api/gemini/grounded-search', handleGroundedSearch);
 
   // Serve ads.txt directly
   app.get('/ads.txt', (req, res) => {
     res.type('text/plain');
     res.send('google.com, pub-9048615701580913, DIRECT, f08c47fec0942fa0\n');
+  });
+
+  // Serve robots.txt directly
+  app.get('/robots.txt', (req, res) => {
+    res.type('text/plain');
+    res.send('User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: https://productreviews.review/sitemap.xml\n');
   });
 
   // Vite middleware in development mode
@@ -259,7 +110,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Real Product Engine Server running at http://0.0.0.0:${PORT}`);
+    console.log(`🚀 Universal Decision Engine Server running at http://0.0.0.0:${PORT}`);
   });
 }
 

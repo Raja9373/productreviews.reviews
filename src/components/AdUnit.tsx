@@ -1,66 +1,44 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 
 interface AdUnitProps {
-  id?: string;
-  slot?: string;
-  format?: 'auto' | 'fluid' | 'rectangle' | 'horizontal' | 'vertical';
-  responsive?: boolean;
+  slotId?: string;
+  format?: 'auto' | 'rectangle' | 'horizontal';
   className?: string;
 }
 
-declare global {
-  interface Window {
-    adsbygoogle?: any[];
-  }
-}
-
 export const AdUnit: React.FC<AdUnitProps> = ({
-  id,
-  slot,
+  slotId = '6620583416',
   format = 'auto',
-  responsive = true,
   className = '',
 }) => {
-  const adRef = useRef<HTMLModElement>(null);
-  const isPushed = useRef(false);
-
   useEffect(() => {
-    // Execute adsbygoogle push only once per mounted AdUnit component instance
-    if (isPushed.current) return;
-
     try {
-      if (typeof window !== 'undefined') {
-        window.adsbygoogle = window.adsbygoogle || [];
-        window.adsbygoogle.push({});
-        isPushed.current = true;
+      if (typeof window !== 'undefined' && (window as any).adsbygoogle) {
+        ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
       }
-    } catch (err) {
-      // Gracefully catch ad-blocker or script loading exceptions
-      console.debug('[Google AdSense] AdUnit push notice:', err);
+    } catch {
+      // AdSense script may be blocked by user ad-blocker or iframe
     }
   }, []);
 
   return (
-    <div
-      id={id ? `ad-wrapper-${id}` : undefined}
-      className={`w-full max-w-5xl mx-auto my-6 flex flex-col items-center justify-center px-4 ${className}`}
+    <aside
+      aria-label="Advertisement"
+      className={`my-8 flex flex-col items-center justify-center overflow-hidden ${className}`}
     >
-      {/* 10px Gray Advertisement Label as required by Google AdSense Policy */}
-      <span className="text-[10px] text-zinc-400 font-mono uppercase tracking-widest text-center select-none mb-1.5">
-        Advertisement
-      </span>
-
-      <div className="w-full bg-zinc-50/50 rounded-xl overflow-hidden min-h-[90px] flex items-center justify-center border border-dashed border-zinc-200/60 p-2">
+      <div className="w-full max-w-4xl min-h-[90px] bg-zinc-50 border border-zinc-100 rounded-2xl flex flex-col items-center justify-center p-2 text-center">
+        <span className="text-[10px] uppercase font-semibold text-zinc-400 tracking-wider mb-1">
+          Advertisement
+        </span>
         <ins
-          ref={adRef}
           className="adsbygoogle"
-          style={{ display: 'block', minWidth: '250px' }}
+          style={{ display: 'block', width: '100%' }}
           data-ad-client="ca-pub-9048615701580913"
-          data-ad-slot={slot || undefined}
+          data-ad-slot={slotId}
           data-ad-format={format}
-          data-full-width-responsive={responsive ? 'true' : 'false'}
+          data-full-width-responsive="true"
         />
       </div>
-    </div>
+    </aside>
   );
 };
