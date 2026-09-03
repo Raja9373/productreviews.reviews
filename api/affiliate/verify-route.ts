@@ -46,7 +46,7 @@ export default async function handler(req: any, res: any) {
   };
 
   const domain = domainMap[market] || 'amazon.com';
-  const rawTag = envTagMap[market] || (market === 'IN' ? 'jaiguruji00-21' : undefined);
+  const rawTag = envTagMap[market];
   const hasConfiguredTag = Boolean(rawTag && rawTag.trim().length > 0);
 
   let destinationPattern: string;

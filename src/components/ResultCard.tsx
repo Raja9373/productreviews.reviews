@@ -18,6 +18,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
 }) => {
   const t = getTranslation(currentLang);
   const [showEvidence, setShowEvidence] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   const resolvedMarketCode: MarketCode = market || item.provenance?.[0]?.market || 'US';
   const marketInfo = getMarketInfo(resolvedMarketCode);
@@ -69,7 +70,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
         </div>
 
         {/* Permitted Reference Image (if available from verified public domain/CC source) */}
-        {item.image?.url && (
+        {!imgError && item.image?.url && (
           <div className="mb-4 overflow-hidden rounded-xl bg-zinc-50 aspect-video max-h-48 border border-zinc-200/60 flex items-center justify-center">
             <img
               src={item.image.url}
@@ -77,6 +78,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({
               className="w-full h-full object-contain p-2"
               referrerPolicy="no-referrer"
               loading="lazy"
+              onError={() => setImgError(true)}
             />
           </div>
         )}

@@ -343,6 +343,7 @@ export default function App() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={t.searchPlaceholder}
+                  aria-label={t.searchPlaceholder}
                   className="w-full bg-transparent py-2 text-sm text-zinc-900 focus:outline-none"
                 />
                 <button

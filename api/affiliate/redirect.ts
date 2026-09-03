@@ -48,7 +48,7 @@ export default async function handler(req: any, res: any) {
   };
 
   const domain = domainMap[market] || 'amazon.com';
-  const rawTag = envTagMap[market] || (market === 'IN' ? 'jaiguruji00-21' : undefined);
+  const rawTag = envTagMap[market];
   const tag = rawTag && rawTag.trim() ? rawTag.trim() : undefined;
 
   let targetUrl: string;

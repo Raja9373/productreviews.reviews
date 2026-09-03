@@ -87,6 +87,7 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t.searchPlaceholder}
+            aria-label={t.searchPlaceholder}
             className="w-full bg-transparent py-3 pr-3 text-base text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
             autoComplete="off"
           />

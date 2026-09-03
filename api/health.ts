@@ -8,7 +8,7 @@ export default async function handler(req: any, res: any) {
     service: 'productreviews.review-engine',
     mode: 'sitestripe_direct_affiliate',
     timestamp: new Date().toISOString(),
-    partnerTag: process.env.AMAZON_TAG_IN || process.env.AMAZON_PARTNER_TAG || 'jaiguruji00-21',
+    hasPartnerTag: Boolean(process.env.AMAZON_TAG_IN || process.env.AMAZON_PARTNER_TAG),
     creatorsApiEnabled: false,
   });
 }
