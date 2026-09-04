@@ -64,7 +64,13 @@ export default function App() {
   const [data, setData] = useState<any>(null);
 
   useEffect(() => {
-    // Autoupdate price on page load
+    // Clear old client cache after deploy to prevent stale phone data across categories
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch {}
+
+    // Autoupdate price on initial page load
     fetch('/api/live-prices?q=Best phone under 30000&market=IN')
       .then((r) => r.json())
       .then(setData)
@@ -143,6 +149,16 @@ export default function App() {
       });
 
       trackEvent({ name: 'search_initiated', params: { query: searchQuery, market: targetMarket } });
+
+      // Dynamically fetch live prices and tested picks for this specific query
+      fetch(`/api/live-prices?q=${encodeURIComponent(searchQuery)}&market=${targetMarket}`)
+        .then((r) => r.json())
+        .then((liveRes) => {
+          if (activeSearchKeyRef.current === searchKey) {
+            setData(liveRes);
+          }
+        })
+        .catch((err) => console.warn('[live-prices query fetch failed]', err));
 
       try {
         const res = await executeSearch(searchQuery, targetMarket, currentLangRef.current);

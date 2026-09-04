@@ -78,7 +78,11 @@ export default async function handler(req: any, res: any) {
       err?.message?.includes('RESOURCE_EXHAUSTED') ||
       err?.message?.includes('quota');
 
-    console.warn('[Step 6 Gemini Connectivity] Handled Provider Notice:', err?.message || err);
+    if (isRateLimited) {
+      console.log('[Step 6 Gemini Connectivity] Quota in cooldown or rate-limited, fallback engaged.');
+    } else {
+      console.log('[Step 6 Gemini Connectivity] Handled provider status:', err?.status || 'notice');
+    }
 
     return res.status(200).json({
       success: false,

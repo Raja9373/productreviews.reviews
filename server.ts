@@ -243,7 +243,17 @@ async function startServer() {
         retrievedAt: new Date().toISOString(),
       });
     } catch (err: any) {
-      console.warn('[Gemini API Grounded Route] Handled Notice:', err?.message || err);
+      const isQuotaOrRateLimit =
+        err?.status === 429 ||
+        err?.message?.includes('429') ||
+        err?.message?.includes('RESOURCE_EXHAUSTED') ||
+        err?.message?.includes('quota');
+
+      if (isQuotaOrRateLimit) {
+        console.log('[Gemini API Grounded Route] Notice: Rate limit / quota cooldown active, serving deterministic result.');
+      } else {
+        console.log('[Gemini API Grounded Route] Handled provider status:', err?.status || 'notice');
+      }
       return res.status(200).json({
         success: false,
         status: 'ERROR',
