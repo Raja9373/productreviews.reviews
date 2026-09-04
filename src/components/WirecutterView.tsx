@@ -514,6 +514,35 @@ export const WirecutterView: React.FC<WirecutterViewProps> = ({
             <strong className="text-zinc-900">Why you should trust us:</strong> {trustText}
           </p>
         </div>
+
+        {/* Cooldown / Unknown category honest browse banner (Requirement 3) */}
+        {(liveData?.browseMessage || liveData?.isBrowseOnly) && (
+          <div
+            id="wirecutter-browse-banner"
+            className="mt-6 p-6 bg-amber-50/90 border border-amber-300 rounded-md text-zinc-900 shadow-sm"
+          >
+            <h2 className="text-xl sm:text-2xl font-normal text-zinc-950 font-serif-wirecutter mb-2">
+              {liveData?.browseMessage?.title || `Best ${query} in India - Browse Live on Amazon`}
+            </h2>
+            <p className="text-sm text-zinc-700 leading-relaxed mb-5 font-serif-wirecutter">
+              {liveData?.browseMessage?.body ||
+                `We are updating our lab-tested picks for ${query}. Meanwhile, browse top-rated ${query} on Amazon.in with our affiliate filter.`}
+            </p>
+            <a
+              id="wirecutter-browse-cta-button"
+              href={
+                liveData?.browseMessage?.buttonUrl ||
+                `/api/affiliate/redirect?q=${encodeURIComponent(query)}&tag=jaiguruji00-21`
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-[#b80000] hover:bg-[#990000] text-white font-semibold text-sm px-6 py-3 rounded-sm shadow-sm transition-colors"
+            >
+              <span>{liveData?.browseMessage?.buttonText || `Browse ${query} on Amazon.in`}</span>
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          </div>
+        )}
       </div>
 
       {/* Wirecutter Product Pick Cards (Exact Wirecutter design: White background, thin grey lines, red underline badges) */}

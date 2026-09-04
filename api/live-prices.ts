@@ -1,5 +1,12 @@
 export const revalidate = 3600; // ISR - Vercel will auto-rebuild every 1 hour
 
+export interface BrowseMessage {
+  title: string;
+  body: string;
+  buttonText: string;
+  buttonUrl: string;
+}
+
 export interface LiveProductItem {
   name: string;
   badge: 'TOP PICK' | 'RUNNER-UP' | 'BUDGET PICK';
@@ -25,6 +32,8 @@ export interface LivePriceResponse {
   lastUpdated: string;
   lastUpdatedISO: string;
   affiliateTag: string;
+  isBrowseOnly?: boolean;
+  browseMessage?: BrowseMessage;
 }
 
 export interface FallbackData {
@@ -34,6 +43,8 @@ export interface FallbackData {
   budgetPick: LiveProductItem;
   trust: string;
   livePrice: string;
+  isBrowseOnly?: boolean;
+  browseMessage?: BrowseMessage;
 }
 
 // In-memory per-query cache for instant responses and container runtime efficiency
@@ -755,87 +766,148 @@ export function generateFallback(rawQ: string): FallbackData {
     };
   }
 
-  // 15. Generic Fallback (Requirement 2):
-  // Generate REAL model names like "${brand} ${model}" like "Sony A7C II", NOT "Best camera (Top Tested Recommendation)"
-  let topBrand = 'Sony';
-  let topModel = `${displayName} Pro Series`;
-  let runnerBrand = 'Samsung';
-  let runnerModel = `${displayName} Plus Edition`;
-  let budgetBrand = 'Philips';
-  let budgetModel = `${displayName} Essential`;
-  let priceStr = '₹4,999';
+  // 15. Curated Special Electronics Categories with genuine verified models
+  let matchedCurated = true;
+  let topBrand = '';
+  let topModel = '';
+  let runnerBrand = '';
+  let runnerModel = '';
+  let budgetBrand = '';
+  let budgetModel = '';
+  let priceStr = 'Check live price on Amazon.in';
+  let categoryTitle = defaultTitle;
 
   if (q.includes('hair dryer') || q.includes('dryer')) {
     topBrand = 'Philips'; topModel = 'Philips HP8100/46 Hair Dryer (1000W)';
     runnerBrand = 'Havells'; runnerModel = 'Havells HD3151 Foldable Hair Dryer';
     budgetBrand = 'Vega'; budgetModel = 'Vega Blooming Air 1000W Dryer';
     priceStr = '₹1,299';
+    categoryTitle = 'The Best Hair Dryers for Daily Use in India';
   } else if (q.includes('fryer') || q.includes('air fryer')) {
     topBrand = 'Philips'; topModel = 'Philips Digital Air Fryer HD9252/90 (4.1L)';
     runnerBrand = 'Inalsa'; runnerModel = 'Inalsa Aero Smart Digital Air Fryer';
     budgetBrand = 'Pigeon'; budgetModel = 'Pigeon Healthifry Digital Air Fryer';
     priceStr = '₹7,999';
+    categoryTitle = 'The Best Air Fryers for Healthy Cooking in India';
   } else if (q.includes('keyboard')) {
     topBrand = 'Logitech'; topModel = 'Logitech MX Keys S Wireless Keyboard';
     runnerBrand = 'Keychron'; runnerModel = 'Keychron K2 Wireless Mechanical Keyboard';
     budgetBrand = 'Logitech'; budgetModel = 'Logitech K380 Multi-Device Keyboard';
     priceStr = '₹9,995';
+    categoryTitle = 'The Best Keyboards for Typing & Productivity in India';
   } else if (q.includes('mouse')) {
     topBrand = 'Logitech'; topModel = 'Logitech MX Master 3S Performance Mouse';
     runnerBrand = 'Razer'; runnerModel = 'Razer DeathAdder Essential Gaming Mouse';
     budgetBrand = 'Logitech'; budgetModel = 'Logitech B170 Wireless Mouse';
     priceStr = '₹7,995';
+    categoryTitle = 'The Best Computer Mice for Ergonomics & Productivity in India';
   } else if (q.includes('monitor') || q.includes('display')) {
     topBrand = 'LG'; topModel = 'LG UltraGear 27-inch QHD IPS 180Hz (27GS75Q)';
     runnerBrand = 'BenQ'; runnerModel = 'BenQ EW2780 27-inch Eye-Care IPS Monitor';
     budgetBrand = 'Acer'; budgetModel = 'Acer EK220Q 21.5-inch Full HD Monitor';
     priceStr = '₹21,999';
+    categoryTitle = 'The Best Monitors for Work & Gaming in India';
   } else if (q.includes('soundbar') || q.includes('speaker')) {
     topBrand = 'Sony'; topModel = 'Sony HT-S20R 5.1ch Dolby Digital Soundbar';
     runnerBrand = 'JBL'; runnerModel = 'JBL Flip 6 Portable Bluetooth Speaker';
     budgetBrand = 'boAt'; budgetModel = 'boAt Aavante Bar 1160 60W Soundbar';
     priceStr = '₹17,990';
+    categoryTitle = 'The Best Soundbars & Speakers for Home Audio in India';
   } else if (q.includes('trimmer') || q.includes('shaver')) {
     topBrand = 'Philips'; topModel = 'Philips BT3231/15 Series 3000 Beard Trimmer';
     runnerBrand = 'Mi'; runnerModel = 'Mi Beard Trimmer 2C (0.5mm Precision)';
     budgetBrand = 'Nova'; budgetModel = 'Nova NHT 1076 Cordless Trimmer';
     priceStr = '₹1,599';
+    categoryTitle = 'The Best Beard Trimmers for Grooming in India';
   } else if (q.includes('projector')) {
     topBrand = 'XGIMI'; topModel = 'XGIMI MoGo 2 Portable Projector';
     runnerBrand = 'Epson'; runnerModel = 'Epson EB-E01 XGA 3300 Lumens Projector';
     budgetBrand = 'Wzatco'; budgetModel = 'Wzatco Yuva Plus Native 1080P Projector';
     priceStr = '₹34,990';
+    categoryTitle = 'The Best Home Projectors for Movies & Presentations in India';
   } else if (q.includes('power bank')) {
     topBrand = 'Mi'; topModel = 'Mi 10000mAh 22.5W Fast Charge Power Bank';
     runnerBrand = 'Ambrane'; runnerModel = 'Ambrane 20000mAh Stylo Pro Power Bank';
     budgetBrand = 'URBN'; budgetModel = 'URBN 10000mAh Ultra-Compact Power Bank';
     priceStr = '₹1,299';
+    categoryTitle = 'The Best Power Banks for Travel in India';
   } else if (q.includes('iron')) {
     topBrand = 'Philips'; topModel = 'Philips GC1905 1440W Steam Iron';
     runnerBrand = 'Bajaj'; runnerModel = 'Bajaj DX-7 1000W Dry Iron';
     budgetBrand = 'Usha'; budgetModel = 'Usha EI 1602 1000W Lightweight Dry Iron';
     priceStr = '₹1,799';
+    categoryTitle = 'The Best Steam & Dry Irons for Indian Clothes';
   } else if (q.includes('geyser') || q.includes('water heater')) {
     topBrand = 'AO Smith'; topModel = 'AO Smith HSE-VAS-X-015 Storage 15L Geyser';
     runnerBrand = 'Crompton'; runnerModel = 'Crompton Arno Neo 15L 5 Star Geyser';
     budgetBrand = 'Bajaj'; budgetModel = 'Bajaj New Shakti Neo 15L Metal Geyser';
     priceStr = '₹7,999';
+    categoryTitle = 'The Best 15L & 25L Storage Geysers in India';
   } else if (q.includes('fan')) {
     topBrand = 'Atomberg'; topModel = 'Atomberg Renesa 1200mm BLDC Ceiling Fan';
     runnerBrand = 'Havells'; runnerModel = 'Havells Stealth Air 1200mm Ceiling Fan';
     budgetBrand = 'Crompton'; budgetModel = 'Crompton Hill Briz 1200mm Ceiling Fan';
     priceStr = '₹3,690';
+    categoryTitle = 'The Best Energy-Efficient BLDC Ceiling Fans in India';
   } else {
-    // Brand detection in query if present
-    if (q.includes('sony')) { topBrand = 'Sony'; topModel = `Sony ${displayName.replace(/Sony\s*/i, '')} Alpha Series`; }
-    else if (q.includes('samsung')) { topBrand = 'Samsung'; topModel = `Samsung ${displayName.replace(/Samsung\s*/i, '')} Ultra`; }
-    else if (q.includes('lg')) { topBrand = 'LG'; topModel = `LG ${displayName.replace(/LG\s*/i, '')} Direct Series`; }
-    else if (q.includes('philips')) { topBrand = 'Philips'; topModel = `Philips ${displayName.replace(/Philips\s*/i, '')} Series 5000`; }
-    else if (q.includes('apple')) { topBrand = 'Apple'; topModel = `Apple ${displayName.replace(/Apple\s*/i, '')} Pro`; }
-    else {
-      topBrand = 'Sony';
-      topModel = `${displayName} Pro Master`;
-    }
+    matchedCurated = false;
+  }
+
+  // If unknown query (e.g. drone, universal remote, music system, etc.):
+  // DO NOT USE TEMPLATE: Sony ${q} Pro Master!
+  // Instead, return the honest Browse Live on Amazon fallback:
+  if (!matchedCurated) {
+    const cleanQ = q.replace(/^(best|top)\s+/i, '').trim();
+    const browseTitle = `Best ${cleanQ || 'Products'} in India - Browse Live on Amazon`;
+    const browseBody = `We are updating our lab-tested picks for ${cleanQ || 'this category'}. Meanwhile, browse top-rated ${cleanQ || 'products'} on Amazon.in with our affiliate filter.`;
+    const browseButtonText = `Browse ${cleanQ || 'products'} on Amazon.in`;
+    const browseUrl = makeAffiliateUrl(cleanQ || 'products');
+
+    return {
+      title: browseTitle,
+      trust: browseBody,
+      livePrice: 'Check live price on Amazon.in',
+      isBrowseOnly: true,
+      browseMessage: {
+        title: browseTitle,
+        body: browseBody,
+        buttonText: browseButtonText,
+        buttonUrl: browseUrl,
+      },
+      topPick: {
+        name: `Top-Rated ${displayName || cleanQ} on Amazon.in`,
+        badge: 'TOP PICK',
+        price: 'Check live price on Amazon.in',
+        livePrice: 'Check live price on Amazon.in',
+        pros: 'Verified customer ratings, Prime delivery, and current festival deals in India',
+        cons: 'Live pricing and seller stock availability fluctuate on Amazon.in',
+        searchQuery: cleanQ,
+        affiliateUrl: browseUrl,
+        summary: browseBody,
+      },
+      runnerUp: {
+        name: `Trending Deals in ${displayName || cleanQ}`,
+        badge: 'RUNNER-UP',
+        price: 'Check live price on Amazon.in',
+        livePrice: 'Check live price on Amazon.in',
+        pros: 'Amazon Choice and customer-favorite selections with user reviews',
+        cons: 'Discounts vary by seller and delivery location',
+        searchQuery: cleanQ,
+        affiliateUrl: browseUrl,
+        summary: `Explore popular alternatives and top-rated options with customer feedback on Amazon.in.`,
+      },
+      budgetPick: {
+        name: `Value Selections for ${displayName || cleanQ}`,
+        badge: 'BUDGET PICK',
+        price: 'Check live price on Amazon.in',
+        livePrice: 'Check live price on Amazon.in',
+        pros: 'Budget-friendly options with positive feedback and Amazon fulfillment',
+        cons: 'Promotional pricing changes frequently',
+        searchQuery: cleanQ,
+        affiliateUrl: browseUrl,
+        summary: `Affordable options balancing price and performance on Amazon.in.`,
+      },
+    };
   }
 
   const topPickName = topModel.startsWith(topBrand) ? topModel : `${topBrand} ${topModel}`;
@@ -843,7 +915,7 @@ export function generateFallback(rawQ: string): FallbackData {
   const budgetName = budgetModel.startsWith(budgetBrand) ? budgetModel : `${budgetBrand} ${budgetModel}`;
 
   return {
-    title: defaultTitle,
+    title: categoryTitle,
     trust: `We independently benchmark ${displayName.toLowerCase()} in India, evaluating build quality, reliability under Indian voltage and ambient conditions, and genuine real-world performance.`,
     livePrice: priceStr,
     topPick: {
@@ -920,48 +992,8 @@ export default async function handler(req: any, res: any) {
   // Generate fallback data first
   const fallback = generateFallback(q);
 
-  // List of primary benchmark categories that serve instant verified data
-  const qLower = q.toLowerCase();
-  const isDirectStandardCategory =
-    qLower.includes('camera') ||
-    qLower.includes('dslr') ||
-    qLower.includes('mirrorless') ||
-    qLower.includes('washing') ||
-    qLower.includes('washer') ||
-    qLower.includes('laundry') ||
-    qLower.includes('water purifier') ||
-    qLower.includes('ro ') ||
-    qLower.includes('purifier') ||
-    qLower.includes('refrigerator') ||
-    qLower.includes('fridge') ||
-    qLower.includes('vacuum') ||
-    qLower.includes('microwave') ||
-    qLower.includes('tv') ||
-    qLower.includes('television') ||
-    qLower.includes('oled') ||
-    qLower.includes('bravia') ||
-    qLower.includes('ac') ||
-    qLower.includes('air conditioner') ||
-    qLower.includes('cooler') ||
-    qLower.includes('split ac') ||
-    qLower.includes('laptop') ||
-    qLower.includes('macbook') ||
-    qLower.includes('notebook') ||
-    qLower.includes('earbud') ||
-    qLower.includes('headphone') ||
-    qLower.includes('tws') ||
-    qLower.includes('earphone') ||
-    qLower.includes('buds') ||
-    qLower.includes('phone') ||
-    qLower.includes('mobile') ||
-    qLower.includes('smartphone') ||
-    qLower.includes('30000') ||
-    qLower.includes('30,000') ||
-    qLower.includes('smartwatch') ||
-    qLower.includes('tablet') ||
-    qLower.includes('ipad');
-
   // If directly matching our verified lab benchmarks, serve instant tested data with real models
+  const isDirectStandardCategory = !fallback.isBrowseOnly;
   if (isDirectStandardCategory) {
     const verifiedResponse: LivePriceResponse = {
       query: q,
@@ -981,9 +1013,32 @@ export default async function handler(req: any, res: any) {
     return res.status(200).json(verifiedResponse);
   }
 
-  // 3. For novel / custom categories, attempt AI evaluation if API key exists and not in cooldown
+  // 3. For unknown queries (novel / custom categories):
+  // Check if Gemini quota cooldown is active. If so, return honest browse fallback immediately!
+  const isCooldownActive = Date.now() <= geminiCooldownUntil;
+  if (isCooldownActive) {
+    const cooldownResponse: LivePriceResponse = {
+      query: q,
+      market,
+      title: fallback.title,
+      isBrowseOnly: true,
+      browseMessage: fallback.browseMessage,
+      topPick: fallback.topPick,
+      runnerUp: fallback.runnerUp,
+      budgetPick: fallback.budgetPick,
+      livePrice: fallback.livePrice,
+      whyTrustUs: fallback.trust,
+      lastUpdated: formattedIST,
+      lastUpdatedISO: now.toISOString(),
+      affiliateTag,
+    };
+    memoryCache.set(cacheKey, { data: cooldownResponse, timestamp: Date.now() });
+    return res.status(200).json(cooldownResponse);
+  }
+
+  // Attempt Gemini call ONLY for unknown queries with strict prompt & 15000ms timeout
   const apiKey = process.env.GEMINI_API_KEY;
-  if (apiKey && Date.now() > geminiCooldownUntil) {
+  if (apiKey) {
     try {
       const { GoogleGenAI } = await import('@google/genai');
       const ai = new GoogleGenAI({
@@ -992,125 +1047,210 @@ export default async function handler(req: any, res: any) {
           headers: {
             'User-Agent': 'aistudio-build',
           },
-          timeout: 10000,
+          timeout: 15000,
         },
       });
 
-      const prompt = `You are Wirecutter India tester for ${q} in India market. 
-Generate Top Pick, Runner-up, Budget Pick for ${q} only.
-Return JSON: {
-  "title": "Exact guide title e.g. The Best ${fallback.title.replace('The Best ', '')}",
-  "topPick": {
-    "name": "Full exact product model name available in India",
-    "price": "₹XX,XXX",
-    "pros": "Key specs and strengths",
-    "cons": "Key drawback",
-    "searchQuery": "Amazon IN search keywords",
-    "summary": "Why it is top pick for ${q}"
-  },
-  "runnerUp": {
-    "name": "Full exact product model name available in India",
-    "price": "₹XX,XXX",
-    "pros": "Key specs and strengths",
-    "cons": "Key drawback",
-    "searchQuery": "Amazon IN search keywords",
-    "summary": "Why it is runner-up for ${q}"
-  },
-  "budgetPick": {
-    "name": "Full exact product model name available in India",
-    "price": "₹XX,XXX",
-    "pros": "Key specs and strengths",
-    "cons": "Key drawback",
-    "searchQuery": "Amazon IN search keywords",
-    "summary": "Why it is budget pick for ${q}"
-  },
-  "livePrice": "₹XX,XXX",
-  "whyTrustUs": "dynamic trust text tailored to ${q}"
-}`;
+      const prompt = `For Indian market 2026, list 3 REAL, currently selling models on Amazon.in for "${q}".
+Must be real brand+model that exists. Example for music system: "Sony MHC-V43D", "Zebronics ZEB-TB500", "Philips MMS2220B".
+For universal remote: "Logitech Harmony is discontinued, so give real alternatives: One For All URC-7140, Amkette Evo Gamepad as remote, etc"
+If no real model exists, return Amazon search link only, don't invent.
+Return JSON: {topPickRealModel, brand, avgPriceIN, keyStrength, drawback}
+Timeout 15000ms`;
 
-      let response;
-      try {
-        response = await ai.models.generateContent({
-          model: 'gemini-3.8-flash',
-          contents: prompt,
-          config: {
-            responseMimeType: 'application/json',
-          },
-        });
-      } catch (genErr: any) {
-        const isQuota =
-          genErr?.status === 429 ||
-          genErr?.message?.includes('429') ||
-          genErr?.message?.includes('RESOURCE_EXHAUSTED') ||
-          genErr?.message?.includes('quota');
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout 15000ms')), 15000)
+      );
 
-        if (isQuota) {
-          geminiCooldownUntil = Date.now() + 120_000; // 2 min cooldown
-          console.log('[live-prices API] AI quota in cooldown, switching to local benchmark synthesizer.');
-        }
-      }
+      const genPromise = ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+        },
+      });
+
+      const response: any = await Promise.race([genPromise, timeoutPromise]);
 
       if (response?.text) {
-        const parsed = JSON.parse(response.text);
-        if (parsed.topPick?.name) {
-          const dynamicResponse: LivePriceResponse = {
+        let parsed: any = null;
+        try {
+          parsed = JSON.parse(response.text);
+        } catch {
+          // JSON parse failed
+        }
+
+        const data = Array.isArray(parsed) ? parsed[0] : parsed;
+        const modelName = data?.topPickRealModel || data?.realModel || data?.model || data?.name;
+
+        // Verify that a real model was returned, NOT a fake or placeholder
+        const isInvalidOrFake =
+          !modelName ||
+          typeof modelName !== 'string' ||
+          modelName.toLowerCase().includes("don't invent") ||
+          modelName.toLowerCase().includes('no real model') ||
+          modelName.toLowerCase().includes('search link') ||
+          modelName.toLowerCase().includes('amazon.in/s') ||
+          modelName.toLowerCase().includes('none') ||
+          modelName.toLowerCase().includes('n/a') ||
+          modelName.toLowerCase().includes('pro master') ||
+          modelName.toLowerCase().includes('pro series') ||
+          modelName.toLowerCase().includes('plus edition') ||
+          modelName.toLowerCase().includes('essential');
+
+        if (!isInvalidOrFake) {
+          const cleanQ = q.replace(/^(best|top)\s+/i, '').trim();
+          const brand = data.brand?.trim() || '';
+          const rawModel = modelName.trim();
+          const fullModelName =
+            brand && !rawModel.toLowerCase().includes(brand.toLowerCase())
+              ? `${brand} ${rawModel}`
+              : rawModel;
+
+          // Price logic from requirement 2:
+          // Remove hardcoded 4999. Use:
+          // price = data.avgPriceIN || "Check live price"
+          // Show "Check live price on Amazon.in" if price not in dataset.
+          let priceStr = 'Check live price on Amazon.in';
+          if (data.avgPriceIN && typeof data.avgPriceIN === 'string' && data.avgPriceIN.trim() !== '') {
+            priceStr = data.avgPriceIN.trim();
+            if (!priceStr.startsWith('₹') && /^\d+/.test(priceStr)) {
+              priceStr = `₹${priceStr}`;
+            }
+          }
+
+          const pros = data.keyStrength || 'Real, verified model tested for Indian market durability';
+          const cons =
+            data.drawback || 'Live pricing and seller stock availability subject to seasonal promotions';
+          const summary = `Selected as a genuine, currently selling model for ${cleanQ} on Amazon.in.`;
+          const affiliateUrl = `/api/affiliate/redirect?q=${encodeURIComponent(fullModelName)}&tag=jaiguruji00-21`;
+
+          // Check if runner-up and budget picks were provided
+          let runnerItem: LiveProductItem;
+          const runnerData = Array.isArray(parsed) ? parsed[1] : parsed?.runnerUp;
+          const runnerModel = runnerData?.topPickRealModel || runnerData?.realModel || runnerData?.name;
+          if (runnerModel && typeof runnerModel === 'string' && !runnerModel.toLowerCase().includes('pro master')) {
+            const rBrand = runnerData.brand?.trim() || '';
+            const rFull =
+              rBrand && !runnerModel.toLowerCase().includes(rBrand.toLowerCase())
+                ? `${rBrand} ${runnerModel.trim()}`
+                : runnerModel.trim();
+            const rPrice = runnerData.avgPriceIN?.trim() || 'Check live price on Amazon.in';
+            runnerItem = {
+              name: rFull,
+              badge: 'RUNNER-UP',
+              price: rPrice,
+              livePrice: rPrice,
+              pros: runnerData.keyStrength || 'High build quality and strong alternative feature set',
+              cons: runnerData.drawback || 'Slightly higher price point or specialized requirements',
+              searchQuery: rFull,
+              affiliateUrl: `/api/affiliate/redirect?q=${encodeURIComponent(rFull)}&tag=jaiguruji00-21`,
+              summary: `A top-rated verified alternative for ${cleanQ} on Amazon.in.`,
+            };
+          } else {
+            runnerItem = {
+              name: `Trending Deals in ${cleanQ}`,
+              badge: 'RUNNER-UP',
+              price: 'Check live price on Amazon.in',
+              livePrice: 'Check live price on Amazon.in',
+              pros: 'Amazon Choice and customer-favorite selections with user reviews',
+              cons: 'Discounts vary by seller and delivery location',
+              searchQuery: cleanQ,
+              affiliateUrl: `/api/affiliate/redirect?q=${encodeURIComponent(cleanQ)}&tag=jaiguruji00-21`,
+              summary: `Explore popular customer-favored alternatives on Amazon.in.`,
+            };
+          }
+
+          let budgetItem: LiveProductItem;
+          const budgetData = Array.isArray(parsed) ? parsed[2] : parsed?.budgetPick;
+          const budgetModel = budgetData?.topPickRealModel || budgetData?.realModel || budgetData?.name;
+          if (budgetModel && typeof budgetModel === 'string' && !budgetModel.toLowerCase().includes('pro master')) {
+            const bBrand = budgetData.brand?.trim() || '';
+            const bFull =
+              bBrand && !budgetModel.toLowerCase().includes(bBrand.toLowerCase())
+                ? `${bBrand} ${budgetModel.trim()}`
+                : budgetModel.trim();
+            const bPrice = budgetData.avgPriceIN?.trim() || 'Check live price on Amazon.in';
+            budgetItem = {
+              name: bFull,
+              badge: 'BUDGET PICK',
+              price: bPrice,
+              livePrice: bPrice,
+              pros: budgetData.keyStrength || 'Budget-friendly configuration with dependable value',
+              cons: budgetData.drawback || 'Omits higher-tier luxury features',
+              searchQuery: bFull,
+              affiliateUrl: `/api/affiliate/redirect?q=${encodeURIComponent(bFull)}&tag=jaiguruji00-21`,
+              summary: `Best budget-friendly pick for ${cleanQ} on Amazon.in.`,
+            };
+          } else {
+            budgetItem = {
+              name: `Value Selections for ${cleanQ}`,
+              badge: 'BUDGET PICK',
+              price: 'Check live price on Amazon.in',
+              livePrice: 'Check live price on Amazon.in',
+              pros: 'Budget-friendly options with positive feedback and Amazon fulfillment',
+              cons: 'Promotional pricing changes frequently',
+              searchQuery: cleanQ,
+              affiliateUrl: `/api/affiliate/redirect?q=${encodeURIComponent(cleanQ)}&tag=jaiguruji00-21`,
+              summary: `Affordable options balancing price and performance on Amazon.in.`,
+            };
+          }
+
+          const realModelResponse: LivePriceResponse = {
             query: q,
             market,
-            title: parsed.title || fallback.title,
+            title: `The Best ${cleanQ.charAt(0).toUpperCase() + cleanQ.slice(1)} in India (2026)`,
             topPick: {
-              name: parsed.topPick.name,
+              name: fullModelName,
               badge: 'TOP PICK',
-              price: parsed.topPick.price || fallback.topPick.price,
-              livePrice: parsed.topPick.price || fallback.topPick.livePrice,
-              pros: parsed.topPick.pros || fallback.topPick.pros,
-              cons: parsed.topPick.cons || fallback.topPick.cons,
-              searchQuery: parsed.topPick.searchQuery || parsed.topPick.name,
-              affiliateUrl: `/api/affiliate/redirect?q=${encodeURIComponent(parsed.topPick.searchQuery || parsed.topPick.name)}&tag=jaiguruji00-21`,
-              summary: parsed.topPick.summary || fallback.topPick.summary,
+              price: priceStr,
+              livePrice: priceStr,
+              pros,
+              cons,
+              searchQuery: fullModelName,
+              affiliateUrl,
+              summary,
             },
-            runnerUp: {
-              name: parsed.runnerUp?.name || fallback.runnerUp.name,
-              badge: 'RUNNER-UP',
-              price: parsed.runnerUp?.price || fallback.runnerUp.price,
-              livePrice: parsed.runnerUp?.price || fallback.runnerUp.livePrice,
-              pros: parsed.runnerUp?.pros || fallback.runnerUp.pros,
-              cons: parsed.runnerUp?.cons || fallback.runnerUp.cons,
-              searchQuery: parsed.runnerUp?.searchQuery || parsed.runnerUp?.name || fallback.runnerUp.searchQuery,
-              affiliateUrl: `/api/affiliate/redirect?q=${encodeURIComponent(parsed.runnerUp?.searchQuery || parsed.runnerUp?.name || fallback.runnerUp.searchQuery)}&tag=jaiguruji00-21`,
-              summary: parsed.runnerUp?.summary || fallback.runnerUp.summary,
-            },
-            budgetPick: {
-              name: parsed.budgetPick?.name || fallback.budgetPick.name,
-              badge: 'BUDGET PICK',
-              price: parsed.budgetPick?.price || fallback.budgetPick.price,
-              livePrice: parsed.budgetPick?.price || fallback.budgetPick.livePrice,
-              pros: parsed.budgetPick?.pros || fallback.budgetPick.pros,
-              cons: parsed.budgetPick?.cons || fallback.budgetPick.cons,
-              searchQuery: parsed.budgetPick?.searchQuery || parsed.budgetPick?.name || fallback.budgetPick.searchQuery,
-              affiliateUrl: `/api/affiliate/redirect?q=${encodeURIComponent(parsed.budgetPick?.searchQuery || parsed.budgetPick?.name || fallback.budgetPick.searchQuery)}&tag=jaiguruji00-21`,
-              summary: parsed.budgetPick?.summary || fallback.budgetPick.summary,
-            },
-            livePrice: parsed.livePrice || parsed.topPick?.price || fallback.livePrice,
-            whyTrustUs: parsed.whyTrustUs || fallback.trust,
+            runnerUp: runnerItem,
+            budgetPick: budgetItem,
+            livePrice: priceStr,
+            whyTrustUs: `Verified currently selling models on Amazon.in for the Indian market, evaluated for reliability, specs, and price-to-performance ratio.`,
             lastUpdated: formattedIST,
             lastUpdatedISO: now.toISOString(),
-            affiliateTag,
+            affiliateTag: 'jaiguruji00-21',
           };
 
-          memoryCache.set(cacheKey, { data: dynamicResponse, timestamp: Date.now() });
-          return res.status(200).json(dynamicResponse);
+          memoryCache.set(cacheKey, { data: realModelResponse, timestamp: Date.now() });
+          return res.status(200).json(realModelResponse);
         }
       }
-    } catch {
-      console.log('[live-prices API] Serving fallback for custom query.');
+    } catch (genErr: any) {
+      const isQuota =
+        genErr?.status === 429 ||
+        genErr?.message?.includes('429') ||
+        genErr?.message?.includes('RESOURCE_EXHAUSTED') ||
+        genErr?.message?.includes('quota');
+
+      if (isQuota) {
+        geminiCooldownUntil = Date.now() + 120_000; // 2 min cooldown
+        console.log('[live-prices API] AI quota 429: cooldown activated (120s), switching to honest browse fallback.');
+      } else {
+        console.log('[live-prices API] Gemini error / timeout:', genErr?.message || genErr);
+      }
     }
   }
 
-  // 4. Deterministic fallback using generateFallback - ensures real model name and correct Amazon link
-  const finalResponse: LivePriceResponse = {
+  // 4. If Gemini was not available, returned 429, or cooldown active:
+  // DON'T show fake product. Show honest Browse Live on Amazon fallback:
+  // Title: "Best ${q} in India - Browse Live on Amazon"
+  // Body: "We are updating our lab-tested picks for ${q}. Meanwhile, browse top-rated ${q} on Amazon.in with our affiliate filter."
+  // Button: "Browse ${q} on Amazon.in -> /api/affiliate/redirect?q=${q}&tag=jaiguruji00-21"
+  const browseResponse: LivePriceResponse = {
     query: q,
     market,
     title: fallback.title,
+    isBrowseOnly: true,
+    browseMessage: fallback.browseMessage,
     topPick: fallback.topPick,
     runnerUp: fallback.runnerUp,
     budgetPick: fallback.budgetPick,
@@ -1121,6 +1261,6 @@ Return JSON: {
     affiliateTag,
   };
 
-  memoryCache.set(cacheKey, { data: finalResponse, timestamp: Date.now() });
-  return res.status(200).json(finalResponse);
+  memoryCache.set(cacheKey, { data: browseResponse, timestamp: Date.now() });
+  return res.status(200).json(browseResponse);
 }
