@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 export const revalidate = 3600; // ISR - Vercel will auto-rebuild every 1 hour
 
 export interface BrowseMessage {
@@ -53,11 +56,67 @@ export interface FallbackData {
   browseMessage?: BrowseMessage;
 }
 
-// In-memory per-query cache for instant responses
-// Cache key pattern: live-${q}-IN
-const memoryCache = new Map<string, { data: LivePriceResponse; timestamp: number }>();
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour TTL
+// Permanent disk-backed cache for instant responses (NO EXPIRY / NEVER EXPIRES)
+// Key pattern: live-${q}-IN
+const CACHE_FILE_PATH = path.join(process.cwd(), 'data', 'permanent-products-cache.json');
+const permanentCache = new Map<string, LivePriceResponse>();
 let geminiCooldownUntil = 0; // Quota 429 backoff circuit breaker
+
+// Initialize permanent cache from disk on startup
+function initPermanentCache() {
+  try {
+    if (fs.existsSync(CACHE_FILE_PATH)) {
+      const fileData = fs.readFileSync(CACHE_FILE_PATH, 'utf-8');
+      if (fileData.trim()) {
+        const parsed = JSON.parse(fileData);
+        for (const [k, v] of Object.entries(parsed)) {
+          permanentCache.set(k, v as LivePriceResponse);
+        }
+        console.log(`[live-prices] Loaded ${permanentCache.size} permanently cached products from disk.`);
+      }
+    }
+  } catch (err: any) {
+    console.warn('[live-prices] Error loading permanent cache file:', err?.message || err);
+  }
+}
+
+initPermanentCache();
+
+// Save product to permanent cache (in-memory + disk file) with NO EXPIRY
+function savePermanentCacheEntry(key: string, data: LivePriceResponse) {
+  permanentCache.set(key, data);
+  try {
+    const dir = path.dirname(CACHE_FILE_PATH);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    const obj: Record<string, LivePriceResponse> = {};
+    for (const [k, v] of permanentCache.entries()) {
+      obj[k] = v;
+    }
+    fs.writeFileSync(CACHE_FILE_PATH, JSON.stringify(obj, null, 2), 'utf-8');
+    console.log(`[live-prices] Permanently saved "${key}" to disk cache (Total: ${permanentCache.size}).`);
+  } catch (err: any) {
+    console.warn('[live-prices] Error saving permanent cache to disk:', err?.message || err);
+  }
+}
+
+// Delete product from permanent cache (for flush=true)
+function deletePermanentCacheEntry(key: string) {
+  permanentCache.delete(key);
+  try {
+    if (fs.existsSync(CACHE_FILE_PATH)) {
+      const obj: Record<string, LivePriceResponse> = {};
+      for (const [k, v] of permanentCache.entries()) {
+        obj[k] = v;
+      }
+      fs.writeFileSync(CACHE_FILE_PATH, JSON.stringify(obj, null, 2), 'utf-8');
+    }
+    console.log(`[live-prices] Flushed "${key}" from permanent cache.`);
+  } catch (err: any) {
+    console.warn('[live-prices] Error deleting from permanent cache file:', err?.message || err);
+  }
+}
 
 export function formatISTDate(d = new Date()): string {
   try {
@@ -90,12 +149,6 @@ export function cleanQuery(raw: string): { q: string; titleQ: string } {
 }
 
 // 2. How We Tested - DYNAMIC TITLE & BODY
-// Heading must be: `How We Tested ${titleQ} in India` - NEVER "How We Tested These Smartphones" on juicer page
-// Body per type (auto-detect without huge if-else list):
-// If q has kitchen/juicer/grinder/mixer -> "Tested in Indian kitchens: voltage 170-270V, hard water, 45C, noise, steel"
-// If q has AC/cooler/purifier -> "Tested in 45C Delhi, 180 sq ft room, energy meter"
-// If q has TV/laptop/phone -> "140 hrs battery, thermal, nits, drop"
-// Else -> "Build quality, user feedback, after-sales, value for Indian market"
 export function getTestingDetails(q: string, titleQ: string): {
   heading: string;
   summary: string;
@@ -124,7 +177,6 @@ export function getTestingDetails(q: string, titleQ: string): {
     para2 = 'Motor strain, operational noise levels, and food-grade stainless steel durability were measured under prolonged stress tests to guarantee kitchen reliability.';
   } else if (
     qLower.includes('ac') ||
-    qLower.includes('air conditioner') ||
     qLower.includes('cooler') ||
     qLower.includes('purifier') ||
     qLower.includes('fan') ||
@@ -403,7 +455,7 @@ export function matchMainCategory(qLower: string): 'phone' | 'laptop' | 'tv' | '
   return null;
 }
 
-// Honest Browse Live on Amazon Card - NO FAKE DATA EVER
+// Honest Browse Live on Amazon Card - Fallback if AI quota fails
 export function makeHonestBrowseResponse(q: string, titleQ: string, market = 'IN'): LivePriceResponse {
   const affiliateUrl = `/api/affiliate/redirect?q=${encodeURIComponent(q)}&tag=jaiguruji00-21`;
   const browseTitle = `Best ${titleQ} in India - Browse Live on Amazon`;
@@ -469,8 +521,28 @@ export function makeHonestBrowseResponse(q: string, titleQ: string, market = 'IN
 // Fallback generator for server.ts and offline recovery
 export function generateFallback(raw: string): FallbackData {
   const { q, titleQ } = cleanQuery(raw);
-  const mainCat = matchMainCategory(q);
+  const cacheKey = `live-${q}-IN`;
 
+  // 1. Check permanent cache first
+  const existing = permanentCache.get(cacheKey);
+  if (existing) {
+    return {
+      title: existing.title,
+      topPick: existing.topPick,
+      runnerUp: existing.runnerUp,
+      budgetPick: existing.budgetPick,
+      trust: existing.whyTrustUs,
+      livePrice: existing.livePrice,
+      methodologyHeading: existing.methodologyHeading,
+      methodologyPara1: existing.methodologyPara1,
+      methodologyPara2: existing.methodologyPara2,
+      isBrowseOnly: existing.isBrowseOnly ?? false,
+      browseMessage: existing.browseMessage,
+    };
+  }
+
+  // 2. Check 5 main categories
+  const mainCat = matchMainCategory(q);
   if (mainCat) {
     const cached = CACHED_CATEGORY_DATA[mainCat];
     const testing = getTestingDetails(q, titleQ);
@@ -488,6 +560,7 @@ export function generateFallback(raw: string): FallbackData {
     };
   }
 
+  // 3. Honest browse
   const honest = makeHonestBrowseResponse(q, titleQ);
   return {
     title: honest.title,
@@ -549,26 +622,28 @@ export default async function handleLivePrices(req: any, res: any) {
   // 1. Clean query
   const { q, titleQ } = cleanQuery(rawQ);
 
-  // 5. Cache key pattern: live-${q}-IN
+  // Cache key pattern: live-${q}-IN
   const cacheKey = `live-${q}-${market}`;
 
   if (flush) {
-    memoryCache.delete(cacheKey);
-    console.log(`[live-prices API] Cache flushed for key: ${cacheKey}`);
+    deletePermanentCacheEntry(cacheKey);
+    console.log(`[live-prices API] Permanent cache flushed for key: ${cacheKey}`);
   } else {
-    const cachedEntry = memoryCache.get(cacheKey);
-    if (cachedEntry && Date.now() - cachedEntry.timestamp < CACHE_TTL_MS) {
-      res.setHeader('X-Cache-Status', 'HIT');
-      return res.status(200).json(cachedEntry.data);
+    // 1. Check cache live-${q}-IN
+    // If exists -> show like TV (full 3 cards) - ZERO API CALL
+    const cachedEntry = permanentCache.get(cacheKey);
+    if (cachedEntry) {
+      res.setHeader('X-Cache-Status', 'PERMANENT-HIT');
+      return res.status(200).json(cachedEntry);
     }
   }
 
-  // 2. Dynamic testing details
+  // Dynamic testing details for fallback/context
   const testing = getTestingDetails(q, titleQ);
   const now = new Date();
   const formattedIST = formatISTDate(now);
 
-  // 3. Try cache CACHED_CATEGORY_DATA for 5 main only (phone, laptop, TV, AC, earbuds) - zero API call
+  // Try cache CACHED_CATEGORY_DATA for 5 main only (phone, laptop, TV, AC, earbuds) - zero API call
   const mainCat = matchMainCategory(q);
   if (mainCat) {
     const cachedCat = CACHED_CATEGORY_DATA[mainCat];
@@ -589,23 +664,23 @@ export default async function handleLivePrices(req: any, res: any) {
       affiliateTag: 'jaiguruji00-21',
       isBrowseOnly: false,
     };
-    memoryCache.set(cacheKey, { data: verifiedResponse, timestamp: Date.now() });
+    savePermanentCacheEntry(cacheKey, verifiedResponse);
     res.setHeader('X-Cache-Status', 'ZERO-API-BENCHMARK');
     return res.status(200).json(verifiedResponse);
   }
 
-  // For EVERY other query (camera to juicer to curtain):
+  // 2. If NOT exists in CACHED_CATEGORY_DATA or permanentCache:
   // Check if cooldown is active from previous 429
   const isCooldownActive = Date.now() <= geminiCooldownUntil;
   if (isCooldownActive) {
-    console.log(`[live-prices API] Quota cooldown active (${Math.round((geminiCooldownUntil - Date.now()) / 1000)}s remaining), serving honest browse card.`);
+    console.log(`[live-prices API] Quota cooldown active (${Math.round((geminiCooldownUntil - Date.now()) / 1000)}s remaining), serving temporary honest browse card.`);
     const honestResponse = makeHonestBrowseResponse(q, titleQ, market);
-    memoryCache.set(cacheKey, { data: honestResponse, timestamp: Date.now() });
+    // Note: Do NOT save honest response permanently during temporary cooldown
     return res.status(200).json(honestResponse);
   }
 
-  // Call Gemini ONCE with:
-  // "List 3 REAL models sold on Amazon.in India 2026 for '${q}'. Must exist. Eg juicer=Philips Viva HR1832, Sujata Powermatic. No invention. Return JSON {top, runner, budget} with real name and avg price or notFound:true} Timeout 15000"
+  // Call Gemini ONCE with user's strict prompt:
+  // "Give 3 REAL models sold on Amazon.in for '${q}' India 2026. Must exist on amazon.in. No Pro Master. Eg juicer = Philips HR1832, Sujata Powermatic. Return JSON {top, runner, budget, whyTrust for ${q} in India}"
   const apiKey =
     process.env.GEMINI_API_KEY ||
     (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_GEMINI_API_KEY);
@@ -623,7 +698,7 @@ export default async function handleLivePrices(req: any, res: any) {
         },
       });
 
-      const prompt = `List 3 REAL models sold on Amazon.in India 2026 for '${q}'. Must exist. Eg juicer=Philips Viva HR1832, Sujata Powermatic. No invention. Return JSON {top, runner, budget} with real name and avg price or notFound:true} Timeout 15000`;
+      const prompt = `Give 3 REAL models sold on Amazon.in for '${q}' India 2026. Must exist on amazon.in. No Pro Master. Eg juicer = Philips HR1832, Sujata Powermatic. Return JSON {top, runner, budget, whyTrust for ${q} in India} with fields {name, price, pros, cons, summary}`;
 
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Timeout 15000ms')), 15000)
@@ -647,13 +722,11 @@ export default async function handleLivePrices(req: any, res: any) {
           parsed = null;
         }
 
-        // Check if notFound was returned
         const isNotFound =
           parsed?.notFound === true ||
           (Array.isArray(parsed) && parsed[0]?.notFound === true);
 
         if (!isNotFound && parsed) {
-          // Normalize top, runner, budget objects
           const topObj = parsed.top || parsed.topPick || (Array.isArray(parsed) ? parsed[0] : null);
           const runnerObj = parsed.runner || parsed.runnerUp || (Array.isArray(parsed) ? parsed[1] : null);
           const budgetObj = parsed.budget || parsed.budgetPick || (Array.isArray(parsed) ? parsed[2] : null);
@@ -662,22 +735,27 @@ export default async function handleLivePrices(req: any, res: any) {
           const runnerName = runnerObj?.name || runnerObj?.realModel || runnerObj?.model;
           const budgetName = budgetObj?.name || budgetObj?.realModel || budgetObj?.model;
 
-          // Validate that the top model is REAL and NOT placeholder
           if (!isFakeOrInvalidModel(topName)) {
             const topPrice = formatSafePrice(topObj.price || topObj.avgPrice || topObj.avgPriceIN);
             const runnerPrice = formatSafePrice(runnerObj?.price || runnerObj?.avgPrice || runnerObj?.avgPriceIN);
             const budgetPrice = formatSafePrice(budgetObj?.price || budgetObj?.avgPrice || budgetObj?.avgPriceIN);
+
+            const whyTrustFromAI =
+              parsed.whyTrust ||
+              parsed.whyTrustUs ||
+              parsed[`whyTrust for ${q} in India`] ||
+              testing.summary;
 
             const topPick: LiveProductItem = {
               name: String(topName).trim(),
               badge: 'TOP PICK',
               price: topPrice,
               livePrice: topPrice,
-              pros: topObj.strengths || topObj.pros || 'High reliability and verified performance for Indian conditions',
-              cons: topObj.drawback || topObj.cons || 'Live pricing and seller stock availability subject to seasonal promotions',
+              pros: topObj.pros || topObj.strengths || 'High reliability and verified performance for Indian conditions',
+              cons: topObj.cons || topObj.drawback || 'Live pricing and seller stock availability subject to seasonal promotions',
               searchQuery: String(topName).trim(),
               affiliateUrl: `/api/affiliate/redirect?q=${encodeURIComponent(String(topName).trim())}&tag=jaiguruji00-21`,
-              summary: `Selected as a genuine, currently selling top pick for ${titleQ} on Amazon.in.`,
+              summary: topObj.summary || topObj.whyWePicked || `Selected as our premier tested top pick for ${titleQ} on Amazon.in.`,
             };
 
             const runnerPick: LiveProductItem = !isFakeOrInvalidModel(runnerName)
@@ -686,11 +764,11 @@ export default async function handleLivePrices(req: any, res: any) {
                   badge: 'RUNNER-UP',
                   price: runnerPrice,
                   livePrice: runnerPrice,
-                  pros: runnerObj.strengths || runnerObj.pros || 'Dependable alternative with balanced performance',
-                  cons: runnerObj.drawback || runnerObj.cons || 'Slightly different feature balance or availability',
+                  pros: runnerObj.pros || runnerObj.strengths || 'Dependable alternative with balanced performance',
+                  cons: runnerObj.cons || runnerObj.drawback || 'Slightly different feature balance or availability',
                   searchQuery: String(runnerName).trim(),
                   affiliateUrl: `/api/affiliate/redirect?q=${encodeURIComponent(String(runnerName).trim())}&tag=jaiguruji00-21`,
-                  summary: `A top-rated verified alternative for ${titleQ} on Amazon.in.`,
+                  summary: runnerObj.summary || runnerObj.whyWePicked || `A standout alternative for buyers seeking specific capabilities in ${titleQ}.`,
                 }
               : {
                   name: `Trending Deals in ${titleQ}`,
@@ -710,11 +788,11 @@ export default async function handleLivePrices(req: any, res: any) {
                   badge: 'BUDGET PICK',
                   price: budgetPrice,
                   livePrice: budgetPrice,
-                  pros: budgetObj.strengths || budgetObj.pros || 'Excellent price-to-performance ratio for everyday use',
-                  cons: budgetObj.drawback || budgetObj.cons || 'Omits higher-tier luxury features',
+                  pros: budgetObj.pros || budgetObj.strengths || 'Excellent price-to-performance ratio for everyday use',
+                  cons: budgetObj.cons || budgetObj.drawback || 'Omits higher-tier luxury features',
                   searchQuery: String(budgetName).trim(),
                   affiliateUrl: `/api/affiliate/redirect?q=${encodeURIComponent(String(budgetName).trim())}&tag=jaiguruji00-21`,
-                  summary: `Best budget-friendly pick for ${titleQ} on Amazon.in.`,
+                  summary: budgetObj.summary || budgetObj.whyWePicked || `The highest value option preserving core essentials for ${titleQ}.`,
                 }
               : {
                   name: `Value Selections for ${titleQ}`,
@@ -736,7 +814,7 @@ export default async function handleLivePrices(req: any, res: any) {
               runnerUp: runnerPick,
               budgetPick,
               livePrice: topPrice,
-              whyTrustUs: testing.summary,
+              whyTrustUs: String(whyTrustFromAI).trim(),
               methodologyHeading: testing.heading,
               methodologyPara1: testing.para1,
               methodologyPara2: testing.para2,
@@ -746,7 +824,9 @@ export default async function handleLivePrices(req: any, res: any) {
               isBrowseOnly: false,
             };
 
-            memoryCache.set(cacheKey, { data: realModelResponse, timestamp: Date.now() });
+            // Save result as live-${q}-IN with NO EXPIRY (never expire)
+            // Now show like TV!
+            savePermanentCacheEntry(cacheKey, realModelResponse);
             return res.status(200).json(realModelResponse);
           }
         }
@@ -760,16 +840,15 @@ export default async function handleLivePrices(req: any, res: any) {
 
       if (isQuota) {
         geminiCooldownUntil = Date.now() + 120_000; // 2 min cooldown
-        console.log('[live-prices API] AI quota 429: cooldown activated (120s), switching to honest browse card.');
+        console.log('[live-prices API] AI quota 429: cooldown activated (120s), switching to temporary honest browse card.');
       } else {
         console.log('[live-prices API] Gemini error / timeout:', genErr?.message || genErr);
       }
     }
   }
 
-  // If notFound or 429 or cooldown or invalid data:
-  // SHOW HONEST CARD - No fake!
+  // If Gemini failed / 429 / offline:
+  // SHOW HONEST CARD - No fake data, temporary (not permanently cached)
   const honestResponse = makeHonestBrowseResponse(q, titleQ, market);
-  memoryCache.set(cacheKey, { data: honestResponse, timestamp: Date.now() });
   return res.status(200).json(honestResponse);
 }
