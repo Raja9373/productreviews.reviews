@@ -46,37 +46,84 @@ async function startServer() {
     return undefined;
   };
 
-  // API Route: Amazon Market Compliant Affiliate Redirection
-  // API Route: Amazon Market Compliant Affiliate Redirection
-  // Primary Amazon IN affiliate ID hardcoded: jaiguruji00-21 with ENV fallback
-  app.get('/api/affiliate/redirect', (req, res) => {
-    const market = String(req.query.market || 'IN').toUpperCase();
-    const query = String(req.query.q || req.query.query || '').trim();
-    const asin = String(req.query.asin || '').trim();
+  const GLOBAL_MARKET_STORES: Record<string, { domain: string; defaultTag: string }> = {
+    IN: { domain: 'amazon.in', defaultTag: 'jaiguruji00-21' },
+    US: { domain: 'amazon.com', defaultTag: 'jaiguruji00-20' },
+    UK: { domain: 'amazon.co.uk', defaultTag: 'jaiguruji0002-21' },
+    JP: { domain: 'amazon.co.jp', defaultTag: 'jaiguruji00-22' },
+    DE: { domain: 'amazon.de', defaultTag: 'jaiguruji0004-21' },
+    FR: { domain: 'amazon.fr', defaultTag: 'jaiguruji0005-21' },
+    ES: { domain: 'amazon.es', defaultTag: 'jaiguruji0008-21' },
+    IT: { domain: 'amazon.it', defaultTag: 'jaiguruji0007-21' },
+    CA: { domain: 'amazon.ca', defaultTag: 'jaiguruji000b-20' },
+    AU: { domain: 'amazon.com.au', defaultTag: 'jaiguruji00-20' },
+    BR: { domain: 'amazon.com.br', defaultTag: 'jaiguruji00-20' },
+    MX: { domain: 'amazon.com.mx', defaultTag: 'jaiguruji00-20' },
+    NL: { domain: 'amazon.nl', defaultTag: 'jaiguruji0004-21' },
+    SG: { domain: 'amazon.sg', defaultTag: 'jaiguruji00-20' },
+  };
 
-    const hardcodedTag = 'jaiguruji00-21';
-    let tag = hardcodedTag;
-    try {
-      if (typeof process !== 'undefined' && process.env) {
-        tag = process.env.AMAZON_IN_ID || process.env.AMAZON_TAG_IN || hardcodedTag;
-      }
-      if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
-        const viteTag = (import.meta as any).env.VITE_AMAZON_IN_ID || (import.meta as any).env.VITE_AMAZON_TAG_IN;
-        if (viteTag && viteTag.trim()) tag = viteTag.trim();
-      }
-    } catch {}
+  // API Route: Geo detection helper
+  app.get('/api/geo', (req, res) => {
+    const geoHeader = (
+      req.headers['x-client-geo-country'] ||
+      req.headers['cf-ipcountry'] ||
+      req.headers['x-country-code'] ||
+      req.headers['x-appengine-country'] ||
+      ''
+    ).toString().toUpperCase();
 
-    if (!tag || !tag.trim()) {
-      tag = hardcodedTag;
+    const acceptLang = (req.headers['accept-language'] || '').toString().toLowerCase();
+
+    let detectedMarket = 'US';
+    if (GLOBAL_MARKET_STORES[geoHeader]) {
+      detectedMarket = geoHeader;
+    } else if (acceptLang.includes('ja')) {
+      detectedMarket = 'JP';
+    } else if (acceptLang.includes('de')) {
+      detectedMarket = 'DE';
+    } else if (acceptLang.includes('fr')) {
+      detectedMarket = 'FR';
+    } else if (acceptLang.includes('es')) {
+      detectedMarket = 'ES';
+    } else if (acceptLang.includes('it')) {
+      detectedMarket = 'IT';
+    } else if (acceptLang.includes('hi') || acceptLang.includes('en-in')) {
+      detectedMarket = 'IN';
+    } else if (acceptLang.includes('en-gb')) {
+      detectedMarket = 'UK';
+    } else if (acceptLang.includes('en-ca') || acceptLang.includes('fr-ca')) {
+      detectedMarket = 'CA';
     }
 
-    const domain = market === 'US' ? 'amazon.com' : 'amazon.in';
+    res.json({
+      country: detectedMarket,
+      domain: GLOBAL_MARKET_STORES[detectedMarket]?.domain || 'amazon.com',
+      tag: GLOBAL_MARKET_STORES[detectedMarket]?.defaultTag || 'jaiguruji00-20',
+    });
+  });
+
+  // API Route: Amazon Global Compliant Affiliate Redirection
+  app.get('/api/affiliate/redirect', (req, res) => {
+    const market = String(req.query.market || 'US').toUpperCase();
+    const query = String(req.query.q || req.query.query || '').trim();
+    const asin = String(req.query.asin || '').trim();
+    const passedTag = String(req.query.tag || '').trim();
+
+    const storeConfig = GLOBAL_MARKET_STORES[market] || GLOBAL_MARKET_STORES.US;
+    const domain = storeConfig.domain;
+
+    let tag = passedTag || storeConfig.defaultTag;
+    const envTag = getEnvTag(market);
+    if (envTag) {
+      tag = envTag;
+    }
 
     let targetUrl: string;
     if (asin && /^[A-Z0-9]{10}$/i.test(asin)) {
       targetUrl = `https://www.${domain}/dp/${encodeURIComponent(asin)}?tag=${encodeURIComponent(tag)}`;
     } else {
-      const searchParam = encodeURIComponent(query || 'best electronics');
+      const searchParam = encodeURIComponent(query || 'best products');
       targetUrl = `https://www.${domain}/s?k=${searchParam}&tag=${encodeURIComponent(tag)}`;
     }
 
@@ -300,9 +347,25 @@ async function startServer() {
 
   // Serve robots.txt directly
   app.get('/robots.txt', (req, res) => {
-    res.type('text/plain');
-    res.send('User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: https://productreviews.review/sitemap.xml\n');
+    res.type('text/plain; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.send('User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: https://productreviews.review/sitemap.xml\n');
   });
+
+  // Dynamic /sitemap.xml generated from CACHED_CATEGORY_DATA keys + live-${q}-IN cache keys
+  const serveDynamicSitemap = async (req: express.Request, res: express.Response) => {
+    try {
+      const sitemapModule = await import('./api/sitemap');
+      await sitemapModule.default(req, res);
+    } catch (err: any) {
+      console.warn('[server.ts sitemap generation error]:', err?.message || err);
+      res.type('application/xml; charset=utf-8');
+      res.status(500).send('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>https://productreviews.review/</loc></url>\n</urlset>');
+    }
+  };
+
+  app.get('/sitemap.xml', serveDynamicSitemap);
+  app.get('/api/sitemap', serveDynamicSitemap);
 
   // Vite middleware in development mode
   if (process.env.NODE_ENV !== 'production') {

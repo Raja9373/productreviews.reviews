@@ -118,6 +118,44 @@ function deletePermanentCacheEntry(key: string) {
   }
 }
 
+// Export helper for dynamic /sitemap.xml generation
+export function getPermanentCacheKeysAndData(): {
+  categoryKeys: string[];
+  entries: Array<{ key: string; data?: LivePriceResponse }>;
+} {
+  const categoryKeys = Object.keys(CACHED_CATEGORY_DATA);
+  const map = new Map<string, LivePriceResponse | undefined>();
+
+  // In-memory permanentCache
+  for (const [k, v] of permanentCache.entries()) {
+    map.set(k, v);
+  }
+
+  // Disk cache
+  try {
+    if (fs.existsSync(CACHE_FILE_PATH)) {
+      const fileData = fs.readFileSync(CACHE_FILE_PATH, 'utf-8');
+      if (fileData.trim()) {
+        const parsed = JSON.parse(fileData);
+        for (const [k, v] of Object.entries(parsed)) {
+          if (!map.has(k)) {
+            map.set(k, v as LivePriceResponse);
+          }
+        }
+      }
+    }
+  } catch (err: any) {
+    console.warn('[live-prices] Error reading disk cache for sitemap:', err?.message || err);
+  }
+
+  const entries: Array<{ key: string; data?: LivePriceResponse }> = [];
+  for (const [key, data] of map.entries()) {
+    entries.push({ key, data });
+  }
+
+  return { categoryKeys, entries };
+}
+
 export function formatISTDate(d = new Date()): string {
   try {
     const formatter = new Intl.DateTimeFormat('en-IN', {
@@ -455,13 +493,35 @@ export function matchMainCategory(qLower: string): 'phone' | 'laptop' | 'tv' | '
   return null;
 }
 
+const STORE_ID_MAP: Record<
+  string,
+  { tag: string; domain: string; currencySymbol: string; name: string; currency: string }
+> = {
+  IN: { tag: 'jaiguruji00-21', domain: 'amazon.in', currencySymbol: '₹', name: 'India', currency: 'INR' },
+  US: { tag: 'jaiguruji00-20', domain: 'amazon.com', currencySymbol: '$', name: 'the United States', currency: 'USD' },
+  UK: { tag: 'jaiguruji0002-21', domain: 'amazon.co.uk', currencySymbol: '£', name: 'the United Kingdom', currency: 'GBP' },
+  JP: { tag: 'jaiguruji00-22', domain: 'amazon.co.jp', currencySymbol: '¥', name: 'Japan', currency: 'JPY' },
+  DE: { tag: 'jaiguruji0004-21', domain: 'amazon.de', currencySymbol: '€', name: 'Germany', currency: 'EUR' },
+  FR: { tag: 'jaiguruji0005-21', domain: 'amazon.fr', currencySymbol: '€', name: 'France', currency: 'EUR' },
+  ES: { tag: 'jaiguruji0008-21', domain: 'amazon.es', currencySymbol: '€', name: 'Spain', currency: 'EUR' },
+  IT: { tag: 'jaiguruji0007-21', domain: 'amazon.it', currencySymbol: '€', name: 'Italy', currency: 'EUR' },
+  CA: { tag: 'jaiguruji000b-20', domain: 'amazon.ca', currencySymbol: 'C$', name: 'Canada', currency: 'CAD' },
+};
+
+function getStoreInfo(market: string) {
+  const norm = (market || 'US').toUpperCase();
+  return STORE_ID_MAP[norm] || STORE_ID_MAP.US;
+}
+
 // Honest Browse Live on Amazon Card - Fallback if AI quota fails
-export function makeHonestBrowseResponse(q: string, titleQ: string, market = 'IN'): LivePriceResponse {
-  const affiliateUrl = `/api/affiliate/redirect?q=${encodeURIComponent(q)}&tag=jaiguruji00-21`;
-  const browseTitle = `Best ${titleQ} in India - Browse Live on Amazon`;
-  const browseBody = `We are updating our lab-tested picks for ${q}. Meanwhile, browse top-rated ${q} on Amazon.in with our affiliate filter.`;
+export function makeHonestBrowseResponse(q: string, titleQ: string, market = 'US'): LivePriceResponse {
+  const store = getStoreInfo(market);
+  const affiliateUrl = `/api/affiliate/redirect?q=${encodeURIComponent(q)}&market=${market}&tag=${store.tag}`;
+  const browseTitle = `Best ${titleQ} in ${store.name} - Browse Live on Amazon`;
+  const browseBody = `We are updating our lab-tested picks for ${q}. Meanwhile, browse top-rated ${q} on ${store.domain} with our affiliate filter.`;
   const testing = getTestingDetails(q, titleQ);
   const now = new Date();
+  const livePriceText = `Check live price on ${store.domain}`;
 
   return {
     query: q,
@@ -471,16 +531,16 @@ export function makeHonestBrowseResponse(q: string, titleQ: string, market = 'IN
     browseMessage: {
       title: browseTitle,
       body: browseBody,
-      buttonText: `Browse ${titleQ} on Amazon.in`,
+      buttonText: `Browse ${titleQ} on ${store.domain}`,
       buttonUrl: affiliateUrl,
     },
     topPick: {
-      name: `Top-Rated ${titleQ} on Amazon.in`,
+      name: `Top-Rated ${titleQ} on ${store.domain}`,
       badge: 'TOP PICK',
-      price: 'Check live price on Amazon.in',
-      livePrice: 'Check live price on Amazon.in',
-      pros: 'Verified customer ratings, Prime delivery, and current festival deals on Amazon.in',
-      cons: 'Live pricing and seller stock availability fluctuate on Amazon.in',
+      price: livePriceText,
+      livePrice: livePriceText,
+      pros: `Verified customer ratings, Prime delivery, and current seasonal promotions on ${store.domain}`,
+      cons: `Live pricing and seller stock availability fluctuate on ${store.domain}`,
       searchQuery: q,
       affiliateUrl,
       summary: browseBody,
@@ -488,40 +548,40 @@ export function makeHonestBrowseResponse(q: string, titleQ: string, market = 'IN
     runnerUp: {
       name: `Trending Deals in ${titleQ}`,
       badge: 'RUNNER-UP',
-      price: 'Check live price on Amazon.in',
-      livePrice: 'Check live price on Amazon.in',
+      price: livePriceText,
+      livePrice: livePriceText,
       pros: 'Amazon Choice and customer-favorite selections with user reviews',
       cons: 'Discounts vary by seller and delivery location',
       searchQuery: q,
       affiliateUrl,
-      summary: `Explore popular customer-favored alternatives for ${titleQ} on Amazon.in.`,
+      summary: `Explore popular customer-favored alternatives for ${titleQ} on ${store.domain}.`,
     },
     budgetPick: {
       name: `Value Selections for ${titleQ}`,
       badge: 'BUDGET PICK',
-      price: 'Check live price on Amazon.in',
-      livePrice: 'Check live price on Amazon.in',
+      price: livePriceText,
+      livePrice: livePriceText,
       pros: 'Budget-friendly options with positive feedback and Amazon fulfillment',
       cons: 'Promotional pricing changes frequently',
       searchQuery: q,
       affiliateUrl,
-      summary: `Affordable options balancing price and performance for ${titleQ} on Amazon.in.`,
+      summary: `Affordable options balancing price and performance for ${titleQ} on ${store.domain}.`,
     },
-    livePrice: 'Check live price on Amazon.in',
+    livePrice: livePriceText,
     whyTrustUs: testing.summary,
     methodologyHeading: testing.heading,
     methodologyPara1: testing.para1,
     methodologyPara2: testing.para2,
     lastUpdated: formatISTDate(now),
     lastUpdatedISO: now.toISOString(),
-    affiliateTag: 'jaiguruji00-21',
+    affiliateTag: store.tag,
   };
 }
 
 // Fallback generator for server.ts and offline recovery
-export function generateFallback(raw: string): FallbackData {
+export function generateFallback(raw: string, market = 'US'): FallbackData {
   const { q, titleQ } = cleanQuery(raw);
-  const cacheKey = `live-${q}-IN`;
+  const cacheKey = `live-${q}-${market}`;
 
   // 1. Check permanent cache first
   const existing = permanentCache.get(cacheKey);
@@ -561,7 +621,7 @@ export function generateFallback(raw: string): FallbackData {
   }
 
   // 3. Honest browse
-  const honest = makeHonestBrowseResponse(q, titleQ);
+  const honest = makeHonestBrowseResponse(q, titleQ, market);
   return {
     title: honest.title,
     topPick: honest.topPick,
@@ -593,22 +653,31 @@ function isFakeOrInvalidModel(name: any): boolean {
     lower.includes('none') ||
     lower.includes('n/a') ||
     lower.includes('amazon.in/s') ||
+    lower.includes('amazon.com/s') ||
     lower.length < 3
   );
 }
 
-// Format price safely without hardcoding ₹4,999
-function formatSafePrice(rawPrice: any): string {
-  if (!rawPrice || typeof rawPrice !== 'string') return 'Check live price on Amazon.in';
+// Format price safely according to market currency
+function formatSafePrice(rawPrice: any, currencySymbol = '$', domain = 'amazon.com'): string {
+  const fallback = `Check live price on ${domain}`;
+  if (!rawPrice || typeof rawPrice !== 'string') return fallback;
   const trimmed = rawPrice.trim();
-  if (trimmed === '' || trimmed === '4999' || trimmed === '₹4,999') {
-    return 'Check live price on Amazon.in';
+  if (trimmed === '' || trimmed === '4999' || trimmed.toLowerCase().includes('check')) {
+    return fallback;
   }
-  if (trimmed.startsWith('₹') || trimmed.toLowerCase().includes('check')) {
+  if (
+    trimmed.startsWith(currencySymbol) ||
+    trimmed.startsWith('$') ||
+    trimmed.startsWith('₹') ||
+    trimmed.startsWith('£') ||
+    trimmed.startsWith('€') ||
+    trimmed.startsWith('¥')
+  ) {
     return trimmed;
   }
-  if (/^\d[\d,]*$/.test(trimmed)) {
-    return `₹${trimmed}`;
+  if (/^\d[\d,.]*$/.test(trimmed)) {
+    return `${currencySymbol}${trimmed}`;
   }
   return trimmed;
 }
@@ -698,7 +767,8 @@ export default async function handleLivePrices(req: any, res: any) {
         },
       });
 
-      const prompt = `Give 3 REAL models sold on Amazon.in for '${q}' India 2026. Must exist on amazon.in. No Pro Master. Eg juicer = Philips HR1832, Sujata Powermatic. Return JSON {top, runner, budget, whyTrust for ${q} in India} with fields {name, price, pros, cons, summary}`;
+      const store = getStoreInfo(market);
+      const prompt = `Give 3 REAL models sold on ${store.domain} for '${q}' in ${store.name} 2026. Must exist on ${store.domain}. No Pro Master or generic placeholders. Return JSON {top, runner, budget, whyTrust for ${q} in ${store.name}} with fields {name, price, pros, cons, summary} in ${store.currency} (${store.currencySymbol}).`;
 
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Timeout 15000ms')), 15000)
@@ -736,14 +806,26 @@ export default async function handleLivePrices(req: any, res: any) {
           const budgetName = budgetObj?.name || budgetObj?.realModel || budgetObj?.model;
 
           if (!isFakeOrInvalidModel(topName)) {
-            const topPrice = formatSafePrice(topObj.price || topObj.avgPrice || topObj.avgPriceIN);
-            const runnerPrice = formatSafePrice(runnerObj?.price || runnerObj?.avgPrice || runnerObj?.avgPriceIN);
-            const budgetPrice = formatSafePrice(budgetObj?.price || budgetObj?.avgPrice || budgetObj?.avgPriceIN);
+            const topPrice = formatSafePrice(
+              topObj.price || topObj.avgPrice || topObj.avgPriceIN,
+              store.currencySymbol,
+              store.domain
+            );
+            const runnerPrice = formatSafePrice(
+              runnerObj?.price || runnerObj?.avgPrice || runnerObj?.avgPriceIN,
+              store.currencySymbol,
+              store.domain
+            );
+            const budgetPrice = formatSafePrice(
+              budgetObj?.price || budgetObj?.avgPrice || budgetObj?.avgPriceIN,
+              store.currencySymbol,
+              store.domain
+            );
 
             const whyTrustFromAI =
               parsed.whyTrust ||
               parsed.whyTrustUs ||
-              parsed[`whyTrust for ${q} in India`] ||
+              parsed[`whyTrust for ${q} in ${store.name}`] ||
               testing.summary;
 
             const topPick: LiveProductItem = {
@@ -751,11 +833,11 @@ export default async function handleLivePrices(req: any, res: any) {
               badge: 'TOP PICK',
               price: topPrice,
               livePrice: topPrice,
-              pros: topObj.pros || topObj.strengths || 'High reliability and verified performance for Indian conditions',
-              cons: topObj.cons || topObj.drawback || 'Live pricing and seller stock availability subject to seasonal promotions',
+              pros: topObj.pros || topObj.strengths || `High reliability and verified performance for ${store.name}`,
+              cons: topObj.cons || topObj.drawback || `Live pricing and seller stock availability subject to seasonal promotions on ${store.domain}`,
               searchQuery: String(topName).trim(),
-              affiliateUrl: `/api/affiliate/redirect?q=${encodeURIComponent(String(topName).trim())}&tag=jaiguruji00-21`,
-              summary: topObj.summary || topObj.whyWePicked || `Selected as our premier tested top pick for ${titleQ} on Amazon.in.`,
+              affiliateUrl: `/api/affiliate/redirect?q=${encodeURIComponent(String(topName).trim())}&market=${market}&tag=${store.tag}`,
+              summary: topObj.summary || topObj.whyWePicked || `Selected as our premier tested top pick for ${titleQ} on ${store.domain}.`,
             };
 
             const runnerPick: LiveProductItem = !isFakeOrInvalidModel(runnerName)
@@ -767,19 +849,19 @@ export default async function handleLivePrices(req: any, res: any) {
                   pros: runnerObj.pros || runnerObj.strengths || 'Dependable alternative with balanced performance',
                   cons: runnerObj.cons || runnerObj.drawback || 'Slightly different feature balance or availability',
                   searchQuery: String(runnerName).trim(),
-                  affiliateUrl: `/api/affiliate/redirect?q=${encodeURIComponent(String(runnerName).trim())}&tag=jaiguruji00-21`,
+                  affiliateUrl: `/api/affiliate/redirect?q=${encodeURIComponent(String(runnerName).trim())}&market=${market}&tag=${store.tag}`,
                   summary: runnerObj.summary || runnerObj.whyWePicked || `A standout alternative for buyers seeking specific capabilities in ${titleQ}.`,
                 }
               : {
                   name: `Trending Deals in ${titleQ}`,
                   badge: 'RUNNER-UP',
-                  price: 'Check live price on Amazon.in',
-                  livePrice: 'Check live price on Amazon.in',
+                  price: `Check live price on ${store.domain}`,
+                  livePrice: `Check live price on ${store.domain}`,
                   pros: 'Amazon Choice and customer-favorite selections with user reviews',
                   cons: 'Discounts vary by seller and delivery location',
                   searchQuery: q,
-                  affiliateUrl: `/api/affiliate/redirect?q=${encodeURIComponent(q)}&tag=jaiguruji00-21`,
-                  summary: `Explore popular customer-favored alternatives for ${titleQ} on Amazon.in.`,
+                  affiliateUrl: `/api/affiliate/redirect?q=${encodeURIComponent(q)}&market=${market}&tag=${store.tag}`,
+                  summary: `Explore popular customer-favored alternatives for ${titleQ} on ${store.domain}.`,
                 };
 
             const budgetPick: LiveProductItem = !isFakeOrInvalidModel(budgetName)
@@ -791,25 +873,25 @@ export default async function handleLivePrices(req: any, res: any) {
                   pros: budgetObj.pros || budgetObj.strengths || 'Excellent price-to-performance ratio for everyday use',
                   cons: budgetObj.cons || budgetObj.drawback || 'Omits higher-tier luxury features',
                   searchQuery: String(budgetName).trim(),
-                  affiliateUrl: `/api/affiliate/redirect?q=${encodeURIComponent(String(budgetName).trim())}&tag=jaiguruji00-21`,
+                  affiliateUrl: `/api/affiliate/redirect?q=${encodeURIComponent(String(budgetName).trim())}&market=${market}&tag=${store.tag}`,
                   summary: budgetObj.summary || budgetObj.whyWePicked || `The highest value option preserving core essentials for ${titleQ}.`,
                 }
               : {
                   name: `Value Selections for ${titleQ}`,
                   badge: 'BUDGET PICK',
-                  price: 'Check live price on Amazon.in',
-                  livePrice: 'Check live price on Amazon.in',
+                  price: `Check live price on ${store.domain}`,
+                  livePrice: `Check live price on ${store.domain}`,
                   pros: 'Budget-friendly options with positive feedback and Amazon fulfillment',
                   cons: 'Promotional pricing changes frequently',
                   searchQuery: q,
-                  affiliateUrl: `/api/affiliate/redirect?q=${encodeURIComponent(q)}&tag=jaiguruji00-21`,
-                  summary: `Affordable options balancing price and performance for ${titleQ} on Amazon.in.`,
+                  affiliateUrl: `/api/affiliate/redirect?q=${encodeURIComponent(q)}&market=${market}&tag=${store.tag}`,
+                  summary: `Affordable options balancing price and performance for ${titleQ} on ${store.domain}.`,
                 };
 
             const realModelResponse: LivePriceResponse = {
               query: q,
               market,
-              title: `The Best ${titleQ} in India (2026)`,
+              title: `The Best ${titleQ} in ${store.name} (2026)`,
               topPick,
               runnerUp: runnerPick,
               budgetPick,
@@ -820,12 +902,11 @@ export default async function handleLivePrices(req: any, res: any) {
               methodologyPara2: testing.para2,
               lastUpdated: formattedIST,
               lastUpdatedISO: now.toISOString(),
-              affiliateTag: 'jaiguruji00-21',
+              affiliateTag: store.tag,
               isBrowseOnly: false,
             };
 
-            // Save result as live-${q}-IN with NO EXPIRY (never expire)
-            // Now show like TV!
+            // Save result as live-${q}-${market} with NO EXPIRY (never expire)
             savePermanentCacheEntry(cacheKey, realModelResponse);
             return res.status(200).json(realModelResponse);
           }

@@ -70,15 +70,56 @@ export default function App() {
       sessionStorage.clear();
     } catch {}
 
+    // Check user's country from /api/geo if no manual preference saved
+    let initialMarket = currentMarket;
+    try {
+      const savedMarket = localStorage.getItem('pr_market');
+      const savedLang = localStorage.getItem('pr_lang');
+      if (!savedMarket) {
+        fetch('/api/geo')
+          .then((r) => r.json())
+          .then((geoData) => {
+            if (geoData?.country && SUPPORTED_MARKETS.some((m) => m.code === geoData.country)) {
+              setCurrentMarket(geoData.country);
+              currentMarketRef.current = geoData.country;
+              initialMarket = geoData.country;
+              // Map country to natural language if user hasn't explicitly set language
+              if (!savedLang) {
+                const countryLangMap: Record<string, LanguageCode> = {
+                  JP: 'ja',
+                  DE: 'de',
+                  FR: 'fr',
+                  ES: 'es',
+                  IT: 'it',
+                  IN: 'en',
+                  US: 'en',
+                  UK: 'en',
+                  CA: 'en',
+                };
+                const mappedLang = countryLangMap[geoData.country] || 'en';
+                setCurrentLang(mappedLang);
+                currentLangRef.current = mappedLang;
+              }
+              // Fetch initial market prices for detected country
+              fetch(`/api/live-prices?q=Best phone&market=${geoData.country}`)
+                .then((r) => r.json())
+                .then(setData)
+                .catch(() => {});
+            }
+          })
+          .catch((err) => console.warn('[Auto geo-detection error]', err));
+      }
+    } catch {}
+
     // Autoupdate price on initial page load
-    fetch('/api/live-prices?q=Best phone under 30000&market=IN')
+    fetch(`/api/live-prices?q=Best phone&market=${initialMarket}`)
       .then((r) => r.json())
       .then(setData)
       .catch((err) => console.warn('[Auto-update live-prices fetch]', err));
 
     // Auto refresh every 6 hours without reload
     const intervalId = setInterval(() => {
-      fetch('/api/live-prices?q=Best phone under 30000&market=IN')
+      fetch(`/api/live-prices?q=Best phone&market=${currentMarketRef.current}`)
         .then((r) => r.json())
         .then(setData)
         .catch(() => {});
@@ -229,12 +270,17 @@ export default function App() {
     []
   );
 
-  // Handle URL hash routing with current market preservation
+  // Handle URL hash and pathname routing with current market preservation
   useEffect(() => {
-    const handleHash = () => {
+    const handleNavigation = () => {
       const hash = window.location.hash || '';
+      const pathname = (window.location.pathname || '/').replace(/\/$/, '') || '/';
+      const searchParams = new URLSearchParams(window.location.search);
 
-      // Check for search queries: /#search?q=..., #/search?q=..., #search?q=...
+      // Check for search queries: query parameter ?q=..., /search?q=..., or #/search?q=...
+      let rawQ = (searchParams.get('q') || '').trim();
+      let marketParam = searchParams.get('market') as MarketCode | null;
+
       const isSearchHash =
         hash.startsWith('#/search?') ||
         hash.startsWith('#search?') ||
@@ -248,13 +294,19 @@ export default function App() {
           .replace(/^#search\??/, '')
           .replace(/^\/#search\??/, '')
           .replace(/^=/, '');
-        const urlParams = new URLSearchParams(queryPart.startsWith('q=') ? queryPart : `q=${queryPart}`);
-        let rawQ = (urlParams.get('q') || '').trim();
-        // If query is empty in /#search?q=, use "Best phone under 30000" as default
+        const hashParams = new URLSearchParams(queryPart.startsWith('q=') ? queryPart : `q=${queryPart}`);
+        if (!rawQ) {
+          rawQ = (hashParams.get('q') || '').trim();
+        }
+        if (!marketParam) {
+          marketParam = hashParams.get('market') as MarketCode | null;
+        }
+      }
+
+      if (rawQ || isSearchHash || pathname === '/search') {
         if (!rawQ) {
           rawQ = 'Best phone under 30000';
         }
-        const marketParam = urlParams.get('market') as MarketCode | null;
         const validMarket =
           marketParam && SUPPORTED_MARKETS.some((m) => m.code === marketParam)
             ? marketParam
@@ -264,15 +316,20 @@ export default function App() {
         if (searchKey !== activeSearchKeyRef.current) {
           handleSearch(rawQ, validMarket);
         }
-      } else if (hash === '#/about') {
+      } else if (hash === '#/about' || pathname === '/about') {
         setScreen('ABOUT');
-      } else if (hash === '#/contact') {
+      } else if (hash === '#/contact' || pathname === '/contact') {
         setScreen('CONTACT');
-      } else if (hash === '#/privacy') {
+      } else if (hash === '#/privacy' || pathname === '/privacy') {
         setScreen('PRIVACY');
-      } else if (hash === '#/terms') {
+      } else if (hash === '#/terms' || pathname === '/terms') {
         setScreen('TERMS');
-      } else if (hash === '#/affiliate-disclosure' || hash === '#/disclaimer') {
+      } else if (
+        hash === '#/affiliate-disclosure' ||
+        hash === '#/disclaimer' ||
+        pathname === '/disclaimer' ||
+        pathname === '/affiliate-disclosure'
+      ) {
         setScreen('DISCLAIMER');
       } else if (!hash || hash === '#' || hash === '#/' || hash === '/' || hash === '') {
         // Wirecutter Homepage: On "/" or no query, DO NOT show "Best Phone under 30000".
@@ -290,9 +347,13 @@ export default function App() {
       }
     };
 
-    handleHash();
-    window.addEventListener('hashchange', handleHash);
-    return () => window.removeEventListener('hashchange', handleHash);
+    handleNavigation();
+    window.addEventListener('hashchange', handleNavigation);
+    window.addEventListener('popstate', handleNavigation);
+    return () => {
+      window.removeEventListener('hashchange', handleNavigation);
+      window.removeEventListener('popstate', handleNavigation);
+    };
   }, [handleSearch]);
 
   const handleLanguageChange = (lang: LanguageCode) => {
@@ -347,12 +408,14 @@ export default function App() {
 
       {/* Main App Content Body */}
       <main className="flex-1 w-full bg-white">
-        {/* VIEW: HOME - Exact Wirecutter Homepage for India */}
+        {/* VIEW: HOME - Wirecutter Homepage with Dynamic Market Adaptation */}
         {screen === 'HOME' && (
           <WirecutterHome
             lastUpdated={lastUpdated}
             onNavigateToSearch={handleSearch}
             liveData={data}
+            market={currentMarket}
+            currentLang={currentLang}
           />
         )}
 

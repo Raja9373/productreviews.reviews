@@ -1,11 +1,26 @@
 // Shared Product Testing & Methodology Utilities for Wirecutter India Clone
 
+import { MarketCode } from '../types';
+
 export interface TestingDetails {
   heading: string;
   summary: string;
   para1: string;
   para2: string;
 }
+
+const REGION_NAMES: Record<string, string> = {
+  IN: 'India',
+  US: 'the United States',
+  UK: 'the United Kingdom',
+  JP: 'Japan',
+  DE: 'Germany',
+  FR: 'France',
+  ES: 'Spain',
+  IT: 'Italy',
+  CA: 'Canada',
+  AU: 'Australia',
+};
 
 // 1. Clean query helper:
 // q = search?q param, lower, trim, remove leading "best/top"
@@ -21,14 +36,9 @@ export function cleanQuery(raw: string): { q: string; titleQ: string } {
 }
 
 // 2. How We Tested - DYNAMIC TITLE & BODY
-// Heading must be: `How We Tested ${titleQ} in India` - NEVER "How We Tested These Smartphones" on juicer page
-// Body per type (auto-detect without if-else list):
-// If q has kitchen/juicer/grinder/mixer -> "Tested in Indian kitchens: voltage 170-270V, hard water, 45C, noise, steel"
-// If q has AC/cooler/purifier -> "Tested in 45C Delhi, 180 sq ft room, energy meter"
-// If q has TV/laptop/phone -> "140 hrs battery, thermal, nits, drop"
-// Else -> "Build quality, user feedback, after-sales, value for Indian market"
-export function getTestingDetails(q: string, titleQ: string): TestingDetails {
+export function getTestingDetails(q: string, titleQ: string, market: MarketCode = 'US'): TestingDetails {
   const qLower = (q || '').toLowerCase();
+  const region = REGION_NAMES[market] || 'your region';
   let summary = '';
   let para1 = '';
   let para2 = '';
@@ -45,9 +55,9 @@ export function getTestingDetails(q: string, titleQ: string): TestingDetails {
     qLower.includes('toaster') ||
     qLower.includes('kettle')
   ) {
-    summary = 'Tested in Indian kitchens: voltage 170-270V, hard water, 45C, noise, steel';
-    para1 = `We tested ${titleQ} across real Indian household kitchens, benchmarking motor performance under fluctuating voltages between 170V and 270V, heavy borewell and municipal water, and 45°C ambient heat.`;
-    para2 = 'Motor strain, operational noise levels, and food-grade stainless steel durability were measured under prolonged stress tests to guarantee kitchen reliability.';
+    summary = `Tested in real household kitchens: voltage stability, motor torque, thermal regulation, noise & food-grade durability`;
+    para1 = `We tested ${titleQ} across real home kitchens in ${region}, benchmarking motor endurance under heavy loads, municipal water conditions, and continuous operational heating.`;
+    para2 = 'Motor strain, operational noise decibels, and food-grade stainless steel longevity were measured under prolonged stress cycles to guarantee everyday reliability.';
   } else if (
     qLower.includes('ac') ||
     qLower.includes('cooler') ||
@@ -56,9 +66,9 @@ export function getTestingDetails(q: string, titleQ: string): TestingDetails {
     qLower.includes('geyser') ||
     qLower.includes('heater')
   ) {
-    summary = 'Tested in 45C Delhi, 180 sq ft room, energy meter';
-    para1 = `Testing for ${titleQ} was conducted during extreme Indian climatic conditions reaching 45°C in Delhi, measuring rapid thermal and air pull-down across an insulated 180 sq. ft room.`;
-    para2 = 'Energy meters tracked kilowatt-hour electricity consumption continuously to calculate genuine seasonal running costs and long-term hardware resilience.';
+    summary = `Tested across dynamic climate conditions, 180 sq ft chamber, continuous energy consumption monitoring`;
+    para1 = `Testing for ${titleQ} was conducted during real seasonal climatic extremes in ${region}, measuring rapid thermal and air filtration pull-down across an insulated room environment.`;
+    para2 = 'Digital energy meters logged kilowatt-hour electricity consumption continuously to calculate genuine seasonal running costs and long-term hardware resilience.';
   } else if (
     qLower.includes('tv') ||
     qLower.includes('television') ||
@@ -68,17 +78,17 @@ export function getTestingDetails(q: string, titleQ: string): TestingDetails {
     qLower.includes('tablet') ||
     qLower.includes('monitor')
   ) {
-    summary = '140 hrs battery, thermal, nits, drop';
-    para1 = `We logged over 140 hours testing ${titleQ}, measuring real-world battery endurance, thermal throttling under sustained heavy load, and display legibility under direct sunlight in peak nits.`;
-    para2 = 'Hardware durability was verified with drop tests, port stress cycling, and real-world network performance across Indian cellular and Wi-Fi networks.';
+    summary = `140+ hours real-world battery endurance, thermal throttling under load, peak nit brightness and drop resistance`;
+    para1 = `We logged over 140 hours testing ${titleQ}, measuring real-world battery endurance, thermal throttling under sustained heavy load, and display legibility under direct ambient daylight in peak nits.`;
+    para2 = `Hardware durability was verified with drop tests, port stress cycling, and real-world network performance across cellular and modern Wi-Fi networks in ${region}.`;
   } else {
-    summary = 'Build quality, user feedback, after-sales, value for Indian market';
-    para1 = `We evaluated ${titleQ} for Indian market durability, analyzing material build quality, verified Indian customer feedback, and brand after-sales service support across metro and tier-2 cities.`;
-    para2 = 'Each model was benchmarked for genuine value for money, avoiding inflated brand premiums while ensuring long-term reliability.';
+    summary = `Material build quality, verified owner feedback, manufacturer warranty support and value in ${region}`;
+    para1 = `We evaluated ${titleQ} for real-world durability in ${region}, analyzing material build quality, verified local customer feedback, and manufacturer after-sales support networks.`;
+    para2 = 'Each model was benchmarked for genuine value, avoiding inflated brand premiums while ensuring long-term product satisfaction.';
   }
 
   return {
-    heading: `How We Tested ${titleQ} in India`,
+    heading: `How We Tested ${titleQ} in ${region}`,
     summary,
     para1,
     para2,

@@ -1,7 +1,8 @@
 import React from 'react';
 import { MarketCode, ParsedQuery } from '../types';
-import { ArrowLeft, ExternalLink, Clock, Check, AlertCircle } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Clock, Check, AlertCircle, ShieldCheck } from 'lucide-react';
 import { cleanQuery, getTestingDetails, matchMainCategory } from '../lib/productTesting';
+import { getStoreConfig, buildAffiliateUrl } from '../affiliate/affiliateConfig';
 
 interface WirecutterViewProps {
   query: string;
@@ -217,22 +218,23 @@ const MAIN_CATEGORY_FALLBACKS: Record<
 
 export const WirecutterView: React.FC<WirecutterViewProps> = ({
   query,
-  market = 'IN',
+  market = 'US',
   liveData,
   lastUpdated = 'September 4, 2026, 3:30 PM IST',
   onBackToHome,
 }) => {
-  // 1. Clean query
+  // 1. Clean query & retrieve regional market settings
   const { q, titleQ } = cleanQuery(query);
   const mainCat = matchMainCategory(q);
+  const store = getStoreConfig(market);
 
-  // 2. Dynamic Headline Title - Never default to phone for juicer/ac/etc.
+  // 2. Dynamic Headline Title
   const headlineTitle =
     liveData?.title ||
-    (mainCat ? MAIN_CATEGORY_TITLES[mainCat] : `The Best ${titleQ} in India (2026)`);
+    (mainCat ? MAIN_CATEGORY_TITLES[mainCat] : `The Best ${titleQ} in ${store.regionName} (2026)`);
 
   // 2. Dynamic Testing Details
-  const testing = getTestingDetails(q, titleQ);
+  const testing = getTestingDetails(q, titleQ, market);
   const trustText = liveData?.whyTrustUs || testing.summary;
   const methodologyTitle = liveData?.methodologyHeading || testing.heading;
   const methodologyPara1 = liveData?.methodologyPara1 || testing.para1;
@@ -246,14 +248,14 @@ export const WirecutterView: React.FC<WirecutterViewProps> = ({
           badge: 'TOP PICK',
           badgeStyleClass: 'wirecutter-badge-top',
           name: liveData.topPick.name,
-          pros: liveData.topPick.pros || 'Empirically tested benchmark performance in Indian conditions',
+          pros: liveData.topPick.pros || `Empirically tested benchmark performance in ${store.regionName}`,
           cons: liveData.topPick.cons || 'Higher initial price point than lower-tier models',
-          price: liveData.topPick.livePrice || liveData.topPick.price || 'Check live price on Amazon.in',
+          price: liveData.topPick.livePrice || liveData.topPick.price || `Check live price on ${store.domain}`,
           searchQuery: liveData.topPick.searchQuery || liveData.topPick.name,
           asin: liveData.topPick.asin,
           whyWePicked:
             liveData.topPick.summary ||
-            `Our top-rated choice for ${titleQ}, combining premium performance, proven reliability, and great value.`,
+            `Our top-rated choice for ${titleQ}, combining premium performance, proven reliability, and great value on ${store.domain}.`,
         },
         {
           badge: 'RUNNER-UP',
@@ -261,7 +263,7 @@ export const WirecutterView: React.FC<WirecutterViewProps> = ({
           name: liveData.runnerUp?.name || `Trending Deals in ${titleQ}`,
           pros: liveData.runnerUp?.pros || 'Strong alternative with dependable performance',
           cons: liveData.runnerUp?.cons || 'Specific niche trade-offs to keep in mind',
-          price: liveData.runnerUp?.livePrice || liveData.runnerUp?.price || 'Check live price on Amazon.in',
+          price: liveData.runnerUp?.livePrice || liveData.runnerUp?.price || `Check live price on ${store.domain}`,
           searchQuery: liveData.runnerUp?.searchQuery || liveData.runnerUp?.name || q,
           asin: liveData.runnerUp?.asin,
           whyWePicked:
@@ -274,7 +276,7 @@ export const WirecutterView: React.FC<WirecutterViewProps> = ({
           name: liveData.budgetPick?.name || `Value Selections for ${titleQ}`,
           pros: liveData.budgetPick?.pros || 'Exceptional price-to-performance ratio',
           cons: liveData.budgetPick?.cons || 'Minor compromises on secondary materials',
-          price: liveData.budgetPick?.livePrice || liveData.budgetPick?.price || 'Check live price on Amazon.in',
+          price: liveData.budgetPick?.livePrice || liveData.budgetPick?.price || `Check live price on ${store.domain}`,
           searchQuery: liveData.budgetPick?.searchQuery || liveData.budgetPick?.name || q,
           asin: liveData.budgetPick?.asin,
           whyWePicked:
@@ -294,22 +296,22 @@ export const WirecutterView: React.FC<WirecutterViewProps> = ({
       {
         badge: 'TOP PICK',
         badgeStyleClass: 'wirecutter-badge-top',
-        name: `Top-Rated ${titleQ} on Amazon.in`,
-        pros: 'Verified Indian customer reviews, Prime delivery, and current manufacturer promotions',
-        cons: 'Live pricing and seller stock availability change frequently on Amazon.in',
-        price: 'Check live price on Amazon.in',
+        name: `Top-Rated ${titleQ} on ${store.domain}`,
+        pros: `Verified customer reviews, Prime delivery, and current manufacturer promotions on ${store.domain}`,
+        cons: `Live pricing and seller stock availability change frequently on ${store.domain}`,
+        price: `Check live price on ${store.domain}`,
         searchQuery: q,
-        whyWePicked: `We are currently updating our lab tests for ${titleQ}. In the meantime, browse the highest-rated verified options on Amazon.in.`,
+        whyWePicked: `We are currently updating our lab tests for ${titleQ}. In the meantime, browse the highest-rated verified options on ${store.domain}.`,
       },
       {
         badge: 'RUNNER-UP',
         badgeStyleClass: 'wirecutter-badge-runner',
         name: `Trending Deals in ${titleQ}`,
         pros: 'Amazon’s Choice and trending popular selections with positive buyer feedback',
-        cons: 'Discounts fluctuate by seller and delivery pincode',
-        price: 'Check live price on Amazon.in',
+        cons: 'Discounts fluctuate by seller and delivery location',
+        price: `Check live price on ${store.domain}`,
         searchQuery: q,
-        whyWePicked: `Explore popular customer-favored alternatives for ${titleQ} on Amazon.in.`,
+        whyWePicked: `Explore popular customer-favored alternatives for ${titleQ} on ${store.domain}.`,
       },
       {
         badge: 'BUDGET PICK',
@@ -317,9 +319,9 @@ export const WirecutterView: React.FC<WirecutterViewProps> = ({
         name: `Value Selections for ${titleQ}`,
         pros: 'Budget-friendly options balancing price and everyday performance',
         cons: 'Omits higher-end premium materials',
-        price: 'Check live price on Amazon.in',
+        price: `Check live price on ${store.domain}`,
         searchQuery: q,
-        whyWePicked: `Affordable options balancing price and durability for ${titleQ} on Amazon.in.`,
+        whyWePicked: `Affordable options balancing price and durability for ${titleQ} on ${store.domain}.`,
       },
     ];
   };
@@ -345,7 +347,7 @@ export const WirecutterView: React.FC<WirecutterViewProps> = ({
         <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500 font-mono pb-2">
           <span>Reviews</span>
           <span>/</span>
-          <span>India</span>
+          <span>{store.regionName}</span>
           <span>/</span>
           <span className="text-zinc-800 font-semibold">{titleQ}</span>
         </div>
@@ -386,23 +388,23 @@ export const WirecutterView: React.FC<WirecutterViewProps> = ({
             className="mt-6 p-6 bg-amber-50/90 border border-amber-300 rounded-md text-zinc-900 shadow-sm"
           >
             <h2 className="text-xl sm:text-2xl font-normal text-zinc-950 font-serif-wirecutter mb-2">
-              {liveData?.browseMessage?.title || `Best ${titleQ} in India - Browse Live on Amazon`}
+              {liveData?.browseMessage?.title || `Best ${titleQ} in ${store.regionName} - Browse Live on Amazon`}
             </h2>
             <p className="text-sm text-zinc-700 leading-relaxed mb-5 font-serif-wirecutter">
               {liveData?.browseMessage?.body ||
-                `We are updating our lab-tested picks for ${q}. Meanwhile, browse top-rated ${q} on Amazon.in with our affiliate filter.`}
+                `We are updating our lab-tested picks for ${q}. Meanwhile, browse top-rated ${q} on ${store.domain} with our affiliate filter.`}
             </p>
             <a
               id="wirecutter-browse-cta-button"
               href={
                 liveData?.browseMessage?.buttonUrl ||
-                `/api/affiliate/redirect?q=${encodeURIComponent(q)}&tag=jaiguruji00-21`
+                buildAffiliateUrl(q, market)
               }
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-[#b80000] hover:bg-[#990000] text-white font-semibold text-sm px-6 py-3 rounded-sm shadow-sm transition-colors"
             >
-              <span>{liveData?.browseMessage?.buttonText || `Browse ${titleQ} on Amazon.in`}</span>
+              <span>{liveData?.browseMessage?.buttonText || `Browse ${titleQ} on ${store.domain}`}</span>
               <ExternalLink className="w-4 h-4" />
             </a>
           </div>
@@ -412,14 +414,13 @@ export const WirecutterView: React.FC<WirecutterViewProps> = ({
       {/* Wirecutter Product Pick Cards */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 mt-6 space-y-10">
         {picks.map((pick, idx) => {
-          // 4. Affiliate: All buttons -> /api/affiliate/redirect?q=${q}&tag=jaiguruji00-21
-          const affiliateHref = `/api/affiliate/redirect?q=${encodeURIComponent(pick.searchQuery || q)}&tag=jaiguruji00-21`;
+          const affiliateHref = buildAffiliateUrl(pick.searchQuery || q, market, pick.asin);
 
           return (
             <div
               key={idx}
               id={`wirecutter-pick-${idx}`}
-              className="border border-zinc-200 bg-white p-6 sm:p-8 transition-all hover:border-zinc-300"
+              className="border border-zinc-200 bg-white p-6 sm:p-8 transition-all hover:border-zinc-300 shadow-sm rounded-sm"
             >
               {/* Wirecutter Pick Badge Header */}
               <div className="flex flex-wrap items-baseline justify-between gap-3 mb-3">
@@ -436,7 +437,7 @@ export const WirecutterView: React.FC<WirecutterViewProps> = ({
                     {pick.price}
                   </span>
                   <span className="text-[11px] text-zinc-500 hidden sm:inline">
-                    on Amazon.in
+                    on {store.domain}
                   </span>
                 </div>
               </div>
@@ -476,7 +477,7 @@ export const WirecutterView: React.FC<WirecutterViewProps> = ({
               {/* Direct Affiliate Action Area */}
               <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
                 <div className="text-xs text-zinc-500">
-                  <span>Price verified live. Free Prime delivery available on Amazon.in.</span>
+                  <span>Price verified live. Free Prime delivery available on {store.domain}.</span>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -487,7 +488,7 @@ export const WirecutterView: React.FC<WirecutterViewProps> = ({
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 bg-[#b80000] hover:bg-[#990000] text-white font-semibold text-xs px-5 py-2.5 rounded-sm shadow-sm transition-colors"
                   >
-                    <span>Check on Amazon</span>
+                    <span>Check on {store.domain}</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 </div>
@@ -513,7 +514,7 @@ export const WirecutterView: React.FC<WirecutterViewProps> = ({
       {/* Affiliate Tag Compliance Notice */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 mt-8 text-center text-xs text-zinc-400">
         <span>
-          productreviews.review is reader-supported. When you buy through links on our site, we may earn an affiliate commission from Amazon.in (Tag: jaiguruji00-21).
+          productreviews.review is reader-supported. When you buy through links on our site, we may earn an affiliate commission from {store.domain} (Associate Tag: {store.affiliateTag}).
         </span>
       </div>
     </article>
