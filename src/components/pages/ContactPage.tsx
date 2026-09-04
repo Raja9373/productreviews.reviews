@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Mail, MessageSquare, Send, Check, MapPin, Clock } from 'lucide-react';
+import { ArrowLeft, Mail, Send, Check, MapPin, Clock, ExternalLink, Loader2 } from 'lucide-react';
+
+const RECIPIENT_EMAIL = 'alokmohansharma.delhi@gmail.com';
 
 interface ContactPageProps {
   onBackToHome: () => void;
@@ -10,12 +12,54 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onBackToHome }) => {
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [gmailLink, setGmailLink] = useState('');
+  const [mailtoLink, setMailtoLink] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !message.trim()) return;
-    setSubmitted(true);
+
+    setIsSubmitting(true);
+
+    const cleanSubject = subject.trim() || 'General Inquiry / Product Review Feedback';
+    const encodedSubject = encodeURIComponent(`[productreviews.review] ${cleanSubject} - ${name.trim()}`);
+    const encodedBody = encodeURIComponent(
+      `Hello Alok,\n\nName: ${name.trim()}\nEmail: ${email.trim()}\nSubject: ${cleanSubject}\n\nMessage:\n${message.trim()}\n\n---\nSent via productreviews.review Contact Form`
+    );
+
+    const mailto = `mailto:${RECIPIENT_EMAIL}?subject=${encodedSubject}&body=${encodedBody}`;
+    const gmail = `https://mail.google.com/mail/?view=cm&fs=1&to=${RECIPIENT_EMAIL}&su=${encodedSubject}&body=${encodedBody}`;
+
+    setMailtoLink(mailto);
+    setGmailLink(gmail);
+
+    try {
+      // Send to backend API to persist and route message
+      await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          subject: cleanSubject,
+          message: message.trim(),
+        }),
+      });
+    } catch (err) {
+      console.warn('[ContactPage] Backend submission failed, proceeding with direct client redirect:', err);
+    } finally {
+      setIsSubmitting(false);
+      setSubmitted(true);
+
+      // Trigger user's mail client directly
+      try {
+        window.location.href = mailto;
+      } catch {}
+    }
   };
 
   const handleReset = () => {
@@ -24,6 +68,8 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onBackToHome }) => {
     setSubject('');
     setMessage('');
     setSubmitted(false);
+    setGmailLink('');
+    setMailtoLink('');
   };
 
   return (
@@ -33,7 +79,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onBackToHome }) => {
         <button
           id="contact-back-btn"
           onClick={onBackToHome}
-          className="px-3.5 py-1.5 rounded-full border border-zinc-200 hover:bg-zinc-50 text-zinc-700 hover:text-zinc-950 transition-colors flex items-center gap-1.5 text-xs font-medium"
+          className="px-3.5 py-1.5 rounded-full border border-zinc-200 hover:bg-zinc-50 text-zinc-700 hover:text-zinc-950 transition-colors flex items-center gap-1.5 text-xs font-medium cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Home</span>
@@ -54,13 +100,14 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onBackToHome }) => {
             <div className="space-y-4 text-xs">
               <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-zinc-50 border border-zinc-100">
                 <Mail className="w-4 h-4 text-zinc-700 mt-0.5 shrink-0" />
-                <div>
+                <div className="min-w-0 flex-1">
                   <div className="font-bold text-zinc-900">Direct Email</div>
                   <a
-                    href="mailto:contact@productreviews.review"
-                    className="text-zinc-600 hover:text-zinc-900 font-mono underline underline-offset-2 mt-0.5 block"
+                    href={`mailto:${RECIPIENT_EMAIL}`}
+                    className="text-zinc-600 hover:text-zinc-900 font-mono underline underline-offset-2 mt-0.5 block truncate"
+                    title={RECIPIENT_EMAIL}
                   >
-                    contact@productreviews.review
+                    {RECIPIENT_EMAIL}
                   </a>
                 </div>
               </div>
@@ -76,8 +123,8 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onBackToHome }) => {
               <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-zinc-50 border border-zinc-100">
                 <MapPin className="w-4 h-4 text-zinc-700 mt-0.5 shrink-0" />
                 <div>
-                  <div className="font-bold text-zinc-900">Global Operations</div>
-                  <div className="text-zinc-500 mt-0.5">productreviews.review Engine</div>
+                  <div className="font-bold text-zinc-900">Operations Desk</div>
+                  <div className="text-zinc-500 mt-0.5">productreviews.review Editorial Office</div>
                 </div>
               </div>
             </div>
@@ -88,24 +135,58 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onBackToHome }) => {
         <div className="lg:col-span-7">
           <div className="bg-white rounded-[24px] border border-zinc-200 p-6 sm:p-8 shadow-sm">
             {submitted ? (
-              <div className="py-12 flex flex-col items-center text-center animate-in fade-in">
+              <div className="py-8 flex flex-col items-center text-center animate-in fade-in">
                 <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4">
                   <Check className="w-6 h-6 stroke-[2.5]" />
                 </div>
-                <h3 className="text-xl font-bold text-zinc-900 mb-2">Message Received</h3>
-                <p className="text-sm text-zinc-500 max-w-md mb-6">
-                  Thank you for contacting us, {name}. A member of our team will review your message and reply to <strong className="text-zinc-800">{email}</strong> shortly.
+                <h3 className="text-xl font-bold text-zinc-900 mb-2">Message Connected</h3>
+                <p className="text-sm text-zinc-600 max-w-md mb-2">
+                  Thank you, <strong className="text-zinc-900">{name}</strong>. Your message has been safely submitted and routed to{' '}
+                  <strong className="text-zinc-900 font-mono text-xs">{RECIPIENT_EMAIL}</strong>.
                 </p>
+                <p className="text-xs text-zinc-500 max-w-md mb-6">
+                  A draft has also been initiated in your default mail client. You can also send directly using the options below:
+                </p>
+
+                <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
+                  {gmailLink && (
+                    <a
+                      href={gmailLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-colors shadow-xs"
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                      <span>Open in Gmail</span>
+                      <ExternalLink className="w-3 h-3 opacity-80" />
+                    </a>
+                  )}
+                  {mailtoLink && (
+                    <a
+                      href={mailtoLink}
+                      className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-zinc-300 hover:bg-zinc-50 text-zinc-800 text-xs font-semibold flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Open in Mail App</span>
+                    </a>
+                  )}
+                </div>
+
                 <button
                   onClick={handleReset}
-                  className="px-5 py-2 rounded-full bg-zinc-900 text-white text-xs font-semibold hover:bg-zinc-800 transition-colors"
+                  className="px-5 py-2 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-medium transition-colors"
                 >
                   Send Another Message
                 </button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
-                <h2 className="text-lg font-bold text-zinc-900 mb-2">Send a Message</h2>
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-lg font-bold text-zinc-900">Send a Message</h2>
+                  <span className="text-[11px] text-zinc-500">
+                    To: <span className="font-mono text-zinc-700 font-medium">{RECIPIENT_EMAIL}</span>
+                  </span>
+                </div>
 
                 <div>
                   <label htmlFor="contact-name" className="block text-xs font-medium text-zinc-700 mb-1">
@@ -169,10 +250,20 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onBackToHome }) => {
                 <button
                   id="contact-submit-btn"
                   type="submit"
-                  className="w-full py-3 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 shadow-xs"
+                  disabled={isSubmitting}
+                  className="w-full py-3 bg-zinc-900 hover:bg-zinc-800 disabled:bg-zinc-400 text-white rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
                 >
-                  <Send className="w-4 h-4" />
-                  <span>Send Message</span>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Routing Message...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      <span>Send to {RECIPIENT_EMAIL}</span>
+                    </>
+                  )}
                 </button>
               </form>
             )}

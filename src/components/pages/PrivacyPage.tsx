@@ -104,7 +104,10 @@ export const PrivacyPage: React.FC<PrivacyPageProps> = ({ onBackToHome }) => {
               If you have any questions or concerns regarding our privacy practices or wish to exercise your rights, please reach out directly:
             </p>
             <p className="font-mono text-zinc-900 bg-zinc-50 p-3 rounded-xl border border-zinc-100 inline-block text-xs">
-              Email: contact@productreviews.review
+              Email:{' '}
+              <a href="mailto:alokmohansharma.delhi@gmail.com" className="underline hover:text-black">
+                alokmohansharma.delhi@gmail.com
+              </a>
             </p>
           </section>
         </div>

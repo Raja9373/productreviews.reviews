@@ -339,6 +339,17 @@ async function startServer() {
   app.post('/api/gemini/grounded-search', handleGroundedSearch);
   app.get('/api/gemini/grounded-search', handleGroundedSearch);
 
+  // Contact Form API - connects and routes messages to alokmohansharma.delhi@gmail.com
+  app.post('/api/contact', async (req, res) => {
+    try {
+      const contactHandler = (await import('./api/contact')).default;
+      await contactHandler(req, res);
+    } catch (err: any) {
+      console.warn('[server.ts contact error]:', err?.message || err);
+      res.status(500).json({ error: 'Failed to process contact submission.' });
+    }
+  });
+
   // Serve ads.txt directly
   app.get('/ads.txt', (req, res) => {
     res.type('text/plain');
