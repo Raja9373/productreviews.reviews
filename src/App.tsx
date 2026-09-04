@@ -6,6 +6,7 @@ import { ExactEntityView } from './components/ExactEntityView';
 import { ComparisonView } from './components/ComparisonView';
 import { EmptyState } from './components/EmptyState';
 import { WirecutterView } from './components/WirecutterView';
+import { WirecutterHome } from './components/WirecutterHome';
 import { AffiliateDisclosure } from './components/AffiliateDisclosure';
 import { CookieConsent } from './components/CookieConsent';
 import { AdUnit } from './components/AdUnit';
@@ -39,6 +40,7 @@ export default function App() {
     return 'en';
   });
 
+  // Default to IN (India) for Exact Wirecutter Clone for India
   const [currentMarket, setCurrentMarket] = useState<MarketCode>(() => {
     try {
       const savedMarket = localStorage.getItem('pr_market') as MarketCode;
@@ -48,7 +50,7 @@ export default function App() {
     } catch {
       // ignore
     }
-    return 'US';
+    return 'IN';
   });
 
   const [screen, setScreen] = useState<Screen>('HOME');
@@ -57,6 +59,48 @@ export default function App() {
   const [loadingStage, setLoadingStage] = useState<'searching' | 'finding' | 'comparing'>('searching');
   const [decisionResult, setDecisionResult] = useState<DecisionResult | null>(null);
   const [selectedEntity, setSelectedEntity] = useState<EntityItem | null>(null);
+
+  // AUTO-UPDATE PATCH: Live Prices state from /api/live-prices
+  const [data, setData] = useState<any>(null);
+
+  useEffect(() => {
+    // Autoupdate price on page load
+    fetch('/api/live-prices?q=Best phone under 30000&market=IN')
+      .then((r) => r.json())
+      .then(setData)
+      .catch((err) => console.warn('[Auto-update live-prices fetch]', err));
+
+    // Auto refresh every 6 hours without reload
+    const intervalId = setInterval(() => {
+      fetch('/api/live-prices?q=Best phone under 30000&market=IN')
+        .then((r) => r.json())
+        .then(setData)
+        .catch(() => {});
+    }, 1000 * 60 * 60 * 6);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // Format current IST timestamp
+  const defaultIST = (() => {
+    try {
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+      return `${formatter.format(now)} IST`;
+    } catch {
+      return 'September 4, 2026, 3:30 PM IST';
+    }
+  })();
+
+  const lastUpdated = data?.lastUpdated || defaultIST;
 
   // Active state references to prevent stale closures in event listeners
   const currentMarketRef = useRef<MarketCode>(currentMarket);
@@ -214,9 +258,19 @@ export default function App() {
         setScreen('TERMS');
       } else if (hash === '#/affiliate-disclosure' || hash === '#/disclaimer') {
         setScreen('DISCLAIMER');
-      } else if (!hash || hash === '#' || hash === '#/') {
-        // Default to "Best phone under 30000" on direct entry if empty
-        handleSearch('Best phone under 30000', currentMarketRef.current);
+      } else if (!hash || hash === '#' || hash === '#/' || hash === '/' || hash === '') {
+        // Wirecutter Homepage: On "/" or no query, DO NOT show "Best Phone under 30000".
+        // Show Wirecutter.com exact homepage
+        setScreen('HOME');
+        setQuery('');
+        setDecisionResult(null);
+        setSelectedEntity(null);
+        activeSearchKeyRef.current = '';
+        updateDocumentMeta({
+          title: 'productreviews.review — The best gear for your everyday life',
+          description: 'Tested by experts. The exact Wirecutter clone for India with transparent ratings and unbiased reviews.',
+          canonicalPath: '/',
+        });
       }
     };
 
@@ -271,72 +325,19 @@ export default function App() {
         onSelectLanguage={handleLanguageChange}
         onSelectMarket={handleMarketChange}
         onResetToHome={handleResetToHome}
+        onSearch={handleSearch}
+        initialQuery={query}
       />
 
       {/* Main App Content Body */}
-      <main className="flex-1 w-full">
-        {/* VIEW: HOME */}
+      <main className="flex-1 w-full bg-white">
+        {/* VIEW: HOME - Exact Wirecutter Homepage for India */}
         {screen === 'HOME' && (
-          <div>
-            <HeroSearch
-              currentLang={currentLang}
-              onSearch={(q) => handleSearch(q)}
-              initialQuery=""
-            />
-
-            {/* Platform Decision Principles (Clean, Honest, Anti-Slop) */}
-            <section className="max-w-5xl mx-auto px-4 sm:px-6 py-12 border-t border-zinc-200/60">
-              <div className="text-center mb-10">
-                <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">
-                  Universal Decision Architecture
-                </h2>
-                <p className="mt-2 text-sm sm:text-base text-zinc-600 max-w-xl mx-auto">
-                  Complex research behind the scenes. Simple answer in front.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
-                  <div className="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center font-bold text-sm mb-4">
-                    1
-                  </div>
-                  <h3 className="text-base font-bold text-zinc-900 mb-2">
-                    Intent &amp; Constraint Detection
-                  </h3>
-                  <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
-                    Understands your budget, regional availability, use cases, and specific domain
-                    needs without forcing you into rigid dropdowns.
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
-                  <div className="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center font-bold text-sm mb-4">
-                    2
-                  </div>
-                  <h3 className="text-base font-bold text-zinc-900 mb-2">
-                    Zero Synthetic Data
-                  </h3>
-                  <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
-                    We strictly forbid fabricated ratings, unverified coupons, and fake reviews. If a
-                    data point cannot be verified, we honestly label it as unverified.
-                  </p>
-                </div>
-
-                <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
-                  <div className="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center font-bold text-sm mb-4">
-                    3
-                  </div>
-                  <h3 className="text-base font-bold text-zinc-900 mb-2">
-                    Unbiased Recommendations
-                  </h3>
-                  <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
-                    Our verdicts and rankings are determined purely by technical specs and verified
-                    evidence — never by merchant commissions or advertising relationships.
-                  </p>
-                </div>
-              </div>
-            </section>
-          </div>
+          <WirecutterHome
+            lastUpdated={lastUpdated}
+            onNavigateToSearch={handleSearch}
+            liveData={data}
+          />
         )}
 
         {/* VIEW: SEARCH RESULTS */}
@@ -418,77 +419,14 @@ export default function App() {
                     }}
                   />
                 ) : (
-                  decisionResult.parsedQuery.constraints.productType === 'smartphone' ||
-                  decisionResult.parsedQuery.cleanQuery.toLowerCase().includes('phone') ||
-                  decisionResult.parsedQuery.cleanQuery.toLowerCase().includes('30000') ||
-                  decisionResult.parsedQuery.cleanQuery.toLowerCase().includes('30,000')
-                ) ? (
-                  /* Wirecutter Clone Direct HTML View */
+                  /* Wirecutter Clone Direct Product Page View */
                   <WirecutterView
-                    query={decisionResult.parsedQuery.cleanQuery}
-                    market={decisionResult.parsedQuery.market}
+                    query={decisionResult.parsedQuery.cleanQuery || query}
+                    market={decisionResult.parsedQuery.market || currentMarket}
                     parsedQuery={decisionResult.parsedQuery}
-                  />
-                ) : decisionResult.items.length > 0 ? (
-                  /* 3. Recommendation List */
-                  <div>
-                    <div className="mb-6 flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 border-b border-zinc-200/80 pb-4">
-                      <div>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">
-                          Decision Recommendations
-                        </h1>
-                        <p className="text-xs text-zinc-500 mt-1">
-                          Showing {decisionResult.items.length} options for &ldquo;
-                          <span className="font-semibold text-zinc-800">
-                            {decisionResult.parsedQuery.cleanQuery}
-                          </span>
-                          &rdquo; in {decisionResult.parsedQuery.market}
-                        </p>
-                      </div>
-                      <span className="text-[11px] font-mono text-zinc-400">
-                        Intent: {decisionResult.parsedQuery.intent}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {decisionResult.items.map((item) => (
-                        <ResultCard
-                          key={item.id}
-                          item={item}
-                          currentLang={currentLang}
-                          market={decisionResult.parsedQuery.market}
-                          onSelectEntity={(ent) => {
-                            setSelectedEntity(ent);
-                            setScreen('DETAIL');
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  /* 4. No Results / Clean Empty State */
-                  <EmptyState
-                    query={decisionResult.parsedQuery.cleanQuery}
-                    currentLang={currentLang}
-                    parsedQuery={decisionResult.parsedQuery}
-                    customMessage={decisionResult.message}
-                    onSelectSuggestion={(sug) => handleSearch(sug)}
-                    onRetry={() => handleSearch(query)}
-                    onChangeQuery={() => {
-                      const input =
-                        (document.getElementById('search-input-header') as HTMLInputElement) ||
-                        (document.getElementById('search-input-home') as HTMLInputElement);
-                      if (input) {
-                        input.focus();
-                        input.select();
-                      }
-                    }}
-                    onChangeMarket={() => {
-                      const select = document.getElementById('market-selector') as HTMLSelectElement;
-                      if (select) {
-                        select.focus();
-                      }
-                    }}
+                    liveData={data}
+                    lastUpdated={lastUpdated}
+                    onBackToHome={handleResetToHome}
                   />
                 )}
               </div>
@@ -530,70 +468,84 @@ export default function App() {
         />
       </main>
 
-      {/* Global Footer */}
+      {/* Global Footer - Wirecutter Style */}
       <footer className="w-full bg-white border-t border-zinc-200 py-10 mt-16 text-xs text-zinc-500">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex flex-col items-center md:items-start gap-1">
-            <span className="font-bold text-zinc-900 tracking-tight text-sm">
-              ProductReviews.review
-            </span>
-            <p className="text-zinc-500 text-center md:text-left">
-              Universal Search &amp; Decision Engine. Unbiased evidence synthesis.
+            <div className="flex items-center gap-2">
+              <span className="bg-zinc-900 text-white text-[11px] font-bold px-1.5 py-0.5 rounded-xs font-serif">
+                PR
+              </span>
+              <span className="font-bold text-zinc-950 font-serif-wirecutter tracking-tight text-sm">
+                productreviews.review
+              </span>
+            </div>
+            <p className="text-zinc-500 text-center md:text-left mt-1 text-xs">
+              The exact Wirecutter clone for India. Unbiased recommendations, tested by experts.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 font-medium text-zinc-600">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 font-medium text-zinc-700">
             <button
               onClick={() => {
                 setScreen('ABOUT');
                 window.location.hash = '#/about';
               }}
-              className="hover:text-zinc-950 transition-colors"
+              className="hover:text-zinc-950 hover:underline transition-colors cursor-pointer"
             >
-              {t.footerAbout}
-            </button>
-            <button
-              onClick={() => {
-                setScreen('CONTACT');
-                window.location.hash = '#/contact';
-              }}
-              className="hover:text-zinc-950 transition-colors"
-            >
-              {t.footerContact}
-            </button>
-            <button
-              onClick={() => {
-                setScreen('PRIVACY');
-                window.location.hash = '#/privacy';
-              }}
-              className="hover:text-zinc-950 transition-colors"
-            >
-              {t.footerPrivacy}
-            </button>
-            <button
-              onClick={() => {
-                setScreen('TERMS');
-                window.location.hash = '#/terms';
-              }}
-              className="hover:text-zinc-950 transition-colors"
-            >
-              {t.footerTerms}
+              About
             </button>
             <button
               onClick={() => {
                 setScreen('DISCLAIMER');
                 window.location.hash = '#/affiliate-disclosure';
               }}
-              className="hover:text-zinc-950 transition-colors"
+              className="hover:text-zinc-950 hover:underline transition-colors cursor-pointer"
             >
-              {t.footerAffiliate}
+              Trust &amp; How We Test
+            </button>
+            <button
+              onClick={() => {
+                setScreen('CONTACT');
+                window.location.hash = '#/contact';
+              }}
+              className="hover:text-zinc-950 hover:underline transition-colors cursor-pointer"
+            >
+              Contact
+            </button>
+            <button
+              onClick={() => {
+                setScreen('PRIVACY');
+                window.location.hash = '#/privacy';
+              }}
+              className="hover:text-zinc-950 hover:underline transition-colors cursor-pointer"
+            >
+              Privacy Policy
+            </button>
+            <button
+              onClick={() => {
+                setScreen('TERMS');
+                window.location.hash = '#/terms';
+              }}
+              className="hover:text-zinc-950 hover:underline transition-colors cursor-pointer"
+            >
+              Terms
+            </button>
+            <button
+              onClick={() => {
+                setScreen('DISCLAIMER');
+                window.location.hash = '#/affiliate-disclosure';
+              }}
+              className="hover:text-zinc-950 hover:underline transition-colors cursor-pointer"
+            >
+              Affiliate Disclosure
             </button>
           </div>
         </div>
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-6 pt-6 border-t border-zinc-100 flex flex-col sm:flex-row items-center justify-between gap-2 text-zinc-400 text-[11px]">
-          <span>&copy; {new Date().getFullYear()} ProductReviews.review. All rights reserved.</span>
-          <span>Google AdSense Publisher ID: ca-pub-9048615701580913</span>
+          <span>&copy; {new Date().getFullYear()} productreviews.review. All rights reserved.</span>
+          <span>Amazon IN Tag: jaiguruji00-21 • Google AdSense Publisher: ca-pub-9048615701580913</span>
         </div>
       </footer>
 

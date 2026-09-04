@@ -2,11 +2,54 @@
 
 @layer base {
   html {
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: 'Helvetica Neue', Helvetica, Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #ffffff;
+    color: #111111;
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  h1, h2, h3, .font-serif-wirecutter {
+    font-family: Georgia, 'Times New Roman', Times, serif;
+  }
+}
+
+/* Wirecutter Editorial Pick Underline Badges (No black box badges) */
+.wirecutter-badge-top {
+  display: inline-block;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #111111;
+  padding-bottom: 2px;
+  border-bottom: 2px solid #b80000;
+}
+
+.wirecutter-badge-runner {
+  display: inline-block;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #111111;
+  padding-bottom: 2px;
+  border-bottom: 2px solid #475569;
+}
+
+.wirecutter-badge-budget {
+  display: inline-block;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #111111;
+  padding-bottom: 2px;
+  border-bottom: 2px solid #15803d;
 }
 
 /* Custom minimal scrollbar */

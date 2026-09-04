@@ -1,6 +1,6 @@
 {
   "name": "productreviews.review",
-  "description": "Universal Search & Decision Engine. Find the right products, services, brands, software, places and more based on what actually matters to you.",
+  "description": "The best gear for your everyday life in India. Tested by experts. Independent product reviews and recommendations for phones, laptops, TVs, ACs, earbuds, and more.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

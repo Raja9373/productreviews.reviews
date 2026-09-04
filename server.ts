@@ -47,75 +47,58 @@ async function startServer() {
   };
 
   // API Route: Amazon Market Compliant Affiliate Redirection
-  // Keeps all AMAZON_TAG_* environment variables strictly on the server
-  // Never exposes tags client-side; never invents missing affiliate tags
+  // API Route: Amazon Market Compliant Affiliate Redirection
+  // Primary Amazon IN affiliate ID hardcoded: jaiguruji00-21 with ENV fallback
   app.get('/api/affiliate/redirect', (req, res) => {
-    const market = String(req.query.market || 'US').toUpperCase();
+    const market = String(req.query.market || 'IN').toUpperCase();
     const query = String(req.query.q || req.query.query || '').trim();
     const asin = String(req.query.asin || '').trim();
 
-    // Map from market code to exact server environment variable
-    // Preserves both AMAZON_*_ID and AMAZON_TAG_* conventions with Vite fallback
-    const envTagMap: Record<string, string | undefined> = {
-      IN: getEnvTag('IN'),
-      US: getEnvTag('US'),
-      UK: getEnvTag('UK'),
-      JP: getEnvTag('JP'),
-      DE: getEnvTag('DE'),
-      FR: getEnvTag('FR'),
-      ES: getEnvTag('ES'),
-      IT: getEnvTag('IT'),
-      CA: getEnvTag('CA'),
-      AU: getEnvTag('AU'),
-      BR: getEnvTag('BR'),
-      MX: getEnvTag('MX'),
-      NL: getEnvTag('NL'),
-      SG: getEnvTag('SG'),
-    };
+    const hardcodedTag = 'jaiguruji00-21';
+    let tag = hardcodedTag;
+    try {
+      if (typeof process !== 'undefined' && process.env) {
+        tag = process.env.AMAZON_IN_ID || process.env.AMAZON_TAG_IN || hardcodedTag;
+      }
+      if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
+        const viteTag = (import.meta as any).env.VITE_AMAZON_IN_ID || (import.meta as any).env.VITE_AMAZON_TAG_IN;
+        if (viteTag && viteTag.trim()) tag = viteTag.trim();
+      }
+    } catch {}
 
-    const domainMap: Record<string, string> = {
-      IN: 'amazon.in',
-      US: 'amazon.com',
-      UK: 'amazon.co.uk',
-      JP: 'amazon.co.jp',
-      DE: 'amazon.de',
-      FR: 'amazon.fr',
-      ES: 'amazon.es',
-      IT: 'amazon.it',
-      CA: 'amazon.ca',
-      AU: 'amazon.com.au',
-      BR: 'amazon.com.br',
-      MX: 'amazon.com.mx',
-      NL: 'amazon.nl',
-      SG: 'amazon.sg',
-    };
+    if (!tag || !tag.trim()) {
+      tag = hardcodedTag;
+    }
 
-    const domain = domainMap[market] || 'amazon.com';
-
-    // In api/affiliate/redirect:
-    // With import.meta.env.VITE_xxx fallback to process.env
-    // and fallback: const tag = process.env.AMAZON_TAG_IN || process.env.AMAZON_TAG_US
-    const tag =
-      envTagMap[market] ||
-      (typeof import.meta !== 'undefined' && ((import.meta as any).env?.VITE_AMAZON_TAG_IN || (import.meta as any).env?.VITE_AMAZON_TAG_US)) ||
-      process.env.AMAZON_TAG_IN ||
-      process.env.AMAZON_TAG_US;
+    const domain = market === 'US' ? 'amazon.com' : 'amazon.in';
 
     let targetUrl: string;
     if (asin && /^[A-Z0-9]{10}$/i.test(asin)) {
-      targetUrl = `https://www.${domain}/dp/${encodeURIComponent(asin)}`;
-      if (tag) {
-        targetUrl += `?tag=${encodeURIComponent(tag)}`;
-      }
+      targetUrl = `https://www.${domain}/dp/${encodeURIComponent(asin)}?tag=${encodeURIComponent(tag)}`;
     } else {
-      const searchParam = encodeURIComponent(query || 'electronics');
-      targetUrl = `https://www.${domain}/s?k=${searchParam}`;
-      if (tag) {
-        targetUrl += `&tag=${encodeURIComponent(tag)}`;
-      }
+      const searchParam = encodeURIComponent(query || 'best electronics');
+      targetUrl = `https://www.${domain}/s?k=${searchParam}&tag=${encodeURIComponent(tag)}`;
     }
 
     return res.redirect(302, targetUrl);
+  });
+
+  // API Route: Live Prices & Hourly Revalidation for Wirecutter Clone (Exact Wirecutter for India)
+  app.get('/api/live-prices', async (req, res) => {
+    try {
+      const livePricesHandler = (await import('./api/live-prices')).default;
+      await livePricesHandler(req, res);
+    } catch (err: any) {
+      console.warn('[server.ts live-prices error]:', err?.message || err);
+      const now = new Date();
+      res.json({
+        query: String(req.query.q || 'Best phone under 30000'),
+        market: 'IN',
+        livePrice: 'Check live price',
+        lastUpdated: `${now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'long', day: 'numeric', year: 'numeric' })} IST`,
+        affiliateTag: 'jaiguruji00-21',
+      });
+    }
   });
 
   // API Route: Safe Affiliate Route Verification (Section 23 test mode)
