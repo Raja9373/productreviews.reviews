@@ -10,7 +10,9 @@ export default async function handler(req: any, res: any) {
     return res.status(200).end();
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey =
+    process.env.GEMINI_API_KEY ||
+    (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_GEMINI_API_KEY);
   if (!apiKey) {
     return res.status(200).json({
       success: false,
@@ -22,15 +24,46 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
-    
-    // STEP 6: Execute ONE minimal Gemini API call for connectivity testing
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: 'Reply with exactly: OK',
+    const ai = new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
+        timeout: 10000,
+      },
     });
 
-    const reply = response.text?.trim() || 'OK';
+    let reply = 'OK';
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: 'Reply with exactly: OK',
+      });
+      reply = response.text?.trim() || 'OK';
+    } catch (primaryErr: any) {
+      const isTransient =
+        primaryErr?.status === 503 ||
+        primaryErr?.status === 504 ||
+        primaryErr?.status === 429 ||
+        primaryErr?.message?.includes('503') ||
+        primaryErr?.message?.includes('504') ||
+        primaryErr?.message?.includes('429') ||
+        primaryErr?.message?.includes('high demand') ||
+        primaryErr?.message?.includes('DEADLINE_EXCEEDED') ||
+        primaryErr?.message?.includes('UNAVAILABLE') ||
+        primaryErr?.message?.includes('RESOURCE_EXHAUSTED');
+
+      if (isTransient) {
+        const fallbackResponse = await ai.models.generateContent({
+          model: 'gemini-3.1-flash-lite',
+          contents: 'Reply with exactly: OK',
+        });
+        reply = fallbackResponse.text?.trim() || 'OK';
+      } else {
+        throw primaryErr;
+      }
+    }
 
     return res.status(200).json({
       success: true,
@@ -45,7 +78,7 @@ export default async function handler(req: any, res: any) {
       err?.message?.includes('RESOURCE_EXHAUSTED') ||
       err?.message?.includes('quota');
 
-    console.error('[Step 6 Gemini Connectivity] Handled Provider Notice:', err?.message || err);
+    console.warn('[Step 6 Gemini Connectivity] Handled Provider Notice:', err?.message || err);
 
     return res.status(200).json({
       success: false,

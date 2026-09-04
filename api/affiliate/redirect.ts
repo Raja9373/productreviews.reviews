@@ -12,22 +12,41 @@ export default async function handler(req: any, res: any) {
   const query = String(req.query?.q || req.query?.query || '').trim();
   const asin = String(req.query?.asin || '').trim();
 
-  // Map from market code to exact server environment variable
+  // Helper with import.meta.env.VITE_xxx fallback to process.env
+  const getEnvTag = (code: string): string | undefined => {
+    try {
+      if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
+        const viteVal =
+          (import.meta as any).env[`VITE_AMAZON_TAG_${code}`] ||
+          (import.meta as any).env[`VITE_AMAZON_${code}_ID`];
+        if (viteVal && viteVal.trim()) return viteVal.trim();
+      }
+    } catch {}
+    if (typeof process !== 'undefined' && process.env) {
+      const procVal =
+        process.env[`AMAZON_TAG_${code}`] ||
+        process.env[`AMAZON_${code}_ID`];
+      if (procVal && procVal.trim()) return procVal.trim();
+    }
+    return undefined;
+  };
+
+  // Map from market code to environment variable (Vite fallback to process.env)
   const envTagMap: Record<string, string | undefined> = {
-    IN: process.env.AMAZON_TAG_IN,
-    US: process.env.AMAZON_TAG_US,
-    UK: process.env.AMAZON_TAG_UK,
-    JP: process.env.AMAZON_TAG_JP,
-    DE: process.env.AMAZON_TAG_DE,
-    FR: process.env.AMAZON_TAG_FR,
-    ES: process.env.AMAZON_TAG_ES,
-    IT: process.env.AMAZON_TAG_IT,
-    CA: process.env.AMAZON_TAG_CA,
-    AU: process.env.AMAZON_TAG_AU,
-    BR: process.env.AMAZON_TAG_BR,
-    MX: process.env.AMAZON_TAG_MX,
-    NL: process.env.AMAZON_TAG_NL,
-    SG: process.env.AMAZON_TAG_SG,
+    IN: getEnvTag('IN'),
+    US: getEnvTag('US'),
+    UK: getEnvTag('UK'),
+    JP: getEnvTag('JP'),
+    DE: getEnvTag('DE'),
+    FR: getEnvTag('FR'),
+    ES: getEnvTag('ES'),
+    IT: getEnvTag('IT'),
+    CA: getEnvTag('CA'),
+    AU: getEnvTag('AU'),
+    BR: getEnvTag('BR'),
+    MX: getEnvTag('MX'),
+    NL: getEnvTag('NL'),
+    SG: getEnvTag('SG'),
   };
 
   const domainMap: Record<string, string> = {
@@ -48,8 +67,15 @@ export default async function handler(req: any, res: any) {
   };
 
   const domain = domainMap[market] || 'amazon.com';
-  const rawTag = envTagMap[market];
-  const tag = rawTag && rawTag.trim() ? rawTag.trim() : undefined;
+
+  // In api/affiliate/redirect.ts:
+  // With import.meta.env.VITE_xxx fallback to process.env
+  // and fallback: const tag = process.env.AMAZON_TAG_IN || process.env.AMAZON_TAG_US
+  const tag =
+    envTagMap[market] ||
+    (typeof import.meta !== 'undefined' && ((import.meta as any).env?.VITE_AMAZON_TAG_IN || (import.meta as any).env?.VITE_AMAZON_TAG_US)) ||
+    process.env.AMAZON_TAG_IN ||
+    process.env.AMAZON_TAG_US;
 
   let targetUrl: string;
   if (asin && /^[A-Z0-9]{10}$/i.test(asin)) {

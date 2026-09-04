@@ -8,7 +8,12 @@ export default async function handler(req: any, res: any) {
     service: 'productreviews.review-engine',
     mode: 'sitestripe_direct_affiliate',
     timestamp: new Date().toISOString(),
-    hasPartnerTag: Boolean(process.env.AMAZON_TAG_IN || process.env.AMAZON_PARTNER_TAG),
+    hasPartnerTag: Boolean(
+      (typeof import.meta !== 'undefined' && ((import.meta as any).env?.VITE_AMAZON_TAG_IN || (import.meta as any).env?.VITE_AMAZON_PARTNER_TAG || (import.meta as any).env?.VITE_AMAZON_IN_ID)) ||
+      process.env.AMAZON_TAG_IN ||
+      process.env.AMAZON_IN_ID ||
+      process.env.AMAZON_PARTNER_TAG
+    ),
     creatorsApiEnabled: false,
   });
 }

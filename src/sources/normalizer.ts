@@ -80,9 +80,13 @@ export class EntityNormalizer {
         officialUrl = raw.specs['Official Website'];
       }
 
+      // Authoritative source resolution (never use Wikipedia as primary destination)
+      const isWikiUrl = (u?: string) => Boolean(u && /wikipedia\.org/i.test(u));
+      const directAuthoritativeUrl = officialUrl || (raw.sourceUrl && !isWikiUrl(raw.sourceUrl) ? raw.sourceUrl : undefined);
+
       // Action determination according to Domain
       let actionLabel = 'View Official Details';
-      let actionUrl = officialUrl || raw.sourceUrl || '#';
+      let actionUrl = directAuthoritativeUrl || `https://www.google.com/search?q=${encodeURIComponent(canonicalName + ' official site')}`;
       let isAffiliate = false;
       let merchant: string | undefined = undefined;
 
@@ -98,16 +102,24 @@ export class EntityNormalizer {
         merchant = 'Amazon';
       } else if (domain === 'SOFTWARE') {
         actionLabel = 'Visit Official Website';
-        actionUrl = officialUrl || raw.sourceUrl || `https://www.google.com/search?q=${encodeURIComponent(canonicalName + ' official software')}`;
+        actionUrl =
+          directAuthoritativeUrl ||
+          `https://www.google.com/search?q=${encodeURIComponent(canonicalName + ' official software website')}`;
       } else if (domain === 'VEHICLE') {
         actionLabel = 'View Manufacturer Specifications';
-        actionUrl = officialUrl || raw.sourceUrl || `https://www.google.com/search?q=${encodeURIComponent(canonicalName + ' manufacturer official')}`;
+        actionUrl =
+          directAuthoritativeUrl ||
+          `https://www.google.com/search?q=${encodeURIComponent(canonicalName + ' manufacturer official')}`;
       } else if (domain === 'EDUCATION') {
         actionLabel = 'Visit Institution Portal';
-        actionUrl = officialUrl || raw.sourceUrl || `https://www.google.com/search?q=${encodeURIComponent(canonicalName + ' official portal')}`;
+        actionUrl =
+          directAuthoritativeUrl ||
+          `https://www.google.com/search?q=${encodeURIComponent(canonicalName + ' official portal')}`;
       } else if (domain === 'PLACE' || domain === 'LOCAL' || domain === 'SERVICE') {
         actionLabel = 'View Location & Details';
-        actionUrl = raw.sourceUrl || `https://www.google.com/search?q=${encodeURIComponent(canonicalName)}`;
+        actionUrl =
+          directAuthoritativeUrl ||
+          `https://www.google.com/search?q=${encodeURIComponent(canonicalName + ' official')}`;
       }
 
       // Facts and specifications

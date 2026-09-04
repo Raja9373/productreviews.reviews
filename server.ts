@@ -27,6 +27,25 @@ async function startServer() {
     });
   });
 
+  // Helper to read tag from import.meta.env.VITE_xxx with fallback to process.env
+  const getEnvTag = (code: string): string | undefined => {
+    try {
+      if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
+        const viteVal =
+          (import.meta as any).env[`VITE_AMAZON_TAG_${code}`] ||
+          (import.meta as any).env[`VITE_AMAZON_${code}_ID`];
+        if (viteVal && viteVal.trim()) return viteVal.trim();
+      }
+    } catch {}
+    if (typeof process !== 'undefined' && process.env) {
+      const procVal =
+        process.env[`AMAZON_TAG_${code}`] ||
+        process.env[`AMAZON_${code}_ID`];
+      if (procVal && procVal.trim()) return procVal.trim();
+    }
+    return undefined;
+  };
+
   // API Route: Amazon Market Compliant Affiliate Redirection
   // Keeps all AMAZON_TAG_* environment variables strictly on the server
   // Never exposes tags client-side; never invents missing affiliate tags
@@ -36,21 +55,22 @@ async function startServer() {
     const asin = String(req.query.asin || '').trim();
 
     // Map from market code to exact server environment variable
+    // Preserves both AMAZON_*_ID and AMAZON_TAG_* conventions with Vite fallback
     const envTagMap: Record<string, string | undefined> = {
-      IN: process.env.AMAZON_TAG_IN,
-      US: process.env.AMAZON_TAG_US,
-      UK: process.env.AMAZON_TAG_UK,
-      JP: process.env.AMAZON_TAG_JP,
-      DE: process.env.AMAZON_TAG_DE,
-      FR: process.env.AMAZON_TAG_FR,
-      ES: process.env.AMAZON_TAG_ES,
-      IT: process.env.AMAZON_TAG_IT,
-      CA: process.env.AMAZON_TAG_CA,
-      AU: process.env.AMAZON_TAG_AU,
-      BR: process.env.AMAZON_TAG_BR,
-      MX: process.env.AMAZON_TAG_MX,
-      NL: process.env.AMAZON_TAG_NL,
-      SG: process.env.AMAZON_TAG_SG,
+      IN: getEnvTag('IN'),
+      US: getEnvTag('US'),
+      UK: getEnvTag('UK'),
+      JP: getEnvTag('JP'),
+      DE: getEnvTag('DE'),
+      FR: getEnvTag('FR'),
+      ES: getEnvTag('ES'),
+      IT: getEnvTag('IT'),
+      CA: getEnvTag('CA'),
+      AU: getEnvTag('AU'),
+      BR: getEnvTag('BR'),
+      MX: getEnvTag('MX'),
+      NL: getEnvTag('NL'),
+      SG: getEnvTag('SG'),
     };
 
     const domainMap: Record<string, string> = {
@@ -71,8 +91,15 @@ async function startServer() {
     };
 
     const domain = domainMap[market] || 'amazon.com';
-    const rawTag = envTagMap[market];
-    const tag = rawTag && rawTag.trim() ? rawTag.trim() : undefined;
+
+    // In api/affiliate/redirect:
+    // With import.meta.env.VITE_xxx fallback to process.env
+    // and fallback: const tag = process.env.AMAZON_TAG_IN || process.env.AMAZON_TAG_US
+    const tag =
+      envTagMap[market] ||
+      (typeof import.meta !== 'undefined' && ((import.meta as any).env?.VITE_AMAZON_TAG_IN || (import.meta as any).env?.VITE_AMAZON_TAG_US)) ||
+      process.env.AMAZON_TAG_IN ||
+      process.env.AMAZON_TAG_US;
 
     let targetUrl: string;
     if (asin && /^[A-Z0-9]{10}$/i.test(asin)) {
@@ -100,20 +127,20 @@ async function startServer() {
     const asin = String(req.query.asin || '').trim();
 
     const envTagMap: Record<string, string | undefined> = {
-      IN: process.env.AMAZON_TAG_IN,
-      US: process.env.AMAZON_TAG_US,
-      UK: process.env.AMAZON_TAG_UK,
-      JP: process.env.AMAZON_TAG_JP,
-      DE: process.env.AMAZON_TAG_DE,
-      FR: process.env.AMAZON_TAG_FR,
-      ES: process.env.AMAZON_TAG_ES,
-      IT: process.env.AMAZON_TAG_IT,
-      CA: process.env.AMAZON_TAG_CA,
-      AU: process.env.AMAZON_TAG_AU,
-      BR: process.env.AMAZON_TAG_BR,
-      MX: process.env.AMAZON_TAG_MX,
-      NL: process.env.AMAZON_TAG_NL,
-      SG: process.env.AMAZON_TAG_SG,
+      IN: getEnvTag('IN'),
+      US: getEnvTag('US'),
+      UK: getEnvTag('UK'),
+      JP: getEnvTag('JP'),
+      DE: getEnvTag('DE'),
+      FR: getEnvTag('FR'),
+      ES: getEnvTag('ES'),
+      IT: getEnvTag('IT'),
+      CA: getEnvTag('CA'),
+      AU: getEnvTag('AU'),
+      BR: getEnvTag('BR'),
+      MX: getEnvTag('MX'),
+      NL: getEnvTag('NL'),
+      SG: getEnvTag('SG'),
     };
 
     const domainMap: Record<string, string> = {
@@ -165,10 +192,12 @@ async function startServer() {
   });
 
   // API Route: Google Search Grounded Discovery Engine
-  // Serves /api/gemini/grounded-search with safe error boundaries
+  // Serves /api/gemini/grounded-search with safe error boundaries and resilient model fallback
   const handleGroundedSearch = async (req: express.Request, res: express.Response) => {
     const query = req.body?.query || req.query?.q || '';
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey =
+      process.env.GEMINI_API_KEY ||
+      (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_GEMINI_API_KEY);
 
     if (!apiKey) {
       return res.status(200).json({
@@ -181,11 +210,47 @@ async function startServer() {
 
     try {
       const { GoogleGenAI } = await import('@google/genai');
-      const ai = new GoogleGenAI({ apiKey });
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: `Evaluate this decision query: "${query}". Provide a concise factual verdict without hallucinated prices or fake review counts.`,
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          },
+          timeout: 10000,
+        },
       });
+
+      const promptText = `Evaluate this decision query: "${query}". Provide a concise factual verdict without hallucinated prices or fake review counts.`;
+
+      let response;
+      try {
+        response = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents: promptText,
+        });
+      } catch (primaryErr: any) {
+        const isTransient =
+          primaryErr?.status === 503 ||
+          primaryErr?.status === 504 ||
+          primaryErr?.status === 429 ||
+          primaryErr?.message?.includes('503') ||
+          primaryErr?.message?.includes('504') ||
+          primaryErr?.message?.includes('429') ||
+          primaryErr?.message?.includes('high demand') ||
+          primaryErr?.message?.includes('DEADLINE_EXCEEDED') ||
+          primaryErr?.message?.includes('UNAVAILABLE') ||
+          primaryErr?.message?.includes('RESOURCE_EXHAUSTED');
+
+        if (isTransient) {
+          // Graceful fallback to gemini-3.1-flash-lite during demand spikes
+          response = await ai.models.generateContent({
+            model: 'gemini-3.1-flash-lite',
+            contents: promptText,
+          });
+        } else {
+          throw primaryErr;
+        }
+      }
 
       return res.status(200).json({
         success: true,
@@ -195,7 +260,7 @@ async function startServer() {
         retrievedAt: new Date().toISOString(),
       });
     } catch (err: any) {
-      console.error('[Gemini API Grounded Route] Handled Notice:', err?.message || err);
+      console.warn('[Gemini API Grounded Route] Handled Notice:', err?.message || err);
       return res.status(200).json({
         success: false,
         status: 'ERROR',

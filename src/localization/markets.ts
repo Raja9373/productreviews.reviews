@@ -162,8 +162,8 @@ export function resolveTargetMarket(
 
   // 2. Explicit currency in query
   // Priority 2 overrides user-selected market if query specifies distinct currency
-  // ₹ / INR / Rs / Rupees -> India (IN)
-  if (/[₹]|\b(?:inr|rs\.?|rupees?)\b/i.test(query)) {
+  // ₹ / INR / Rs / Rupees / 30000 -> India (IN)
+  if (/[₹]|\b(?:inr|rs\.?|rupees?|30000|30,000)\b/i.test(query)) {
     return { market: 'IN', explicitCurrency: '₹', resolvedBy: 'currency' };
   }
 

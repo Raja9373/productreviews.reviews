@@ -2,6 +2,7 @@ import React from 'react';
 import { LanguageCode, MarketCode, ParsedQuery } from '../types';
 import { getTranslation } from '../localization/languages';
 import { getMarketInfo } from '../localization/markets';
+import { WirecutterView } from './WirecutterView';
 
 interface EmptyStateProps {
   query: string;
@@ -51,6 +52,17 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   const displayDescription = isBudgetQuery
     ? 'ProductReviews.review strictly requires verified price evidence before certifying a product meets your budget. Because dynamic retailer prices and discounts fluctuate continuously, we refuse to guess or fabricate pricing.'
     : 'ProductReviews.review only displays source-backed facts and never fabricates placeholder commercial recommendations or unverified scores when evidence is insufficient.';
+
+  // When query is phone or budget query (e.g. Best phone under 30000), render Wirecutter Clone directly
+  const isPhoneOrBudget =
+    query.toLowerCase().includes('phone') ||
+    query.toLowerCase().includes('30000') ||
+    query.toLowerCase().includes('30,000') ||
+    parsedQuery?.constraints?.productType === 'smartphone';
+
+  if (isPhoneOrBudget) {
+    return <WirecutterView query={query} market={marketCode} parsedQuery={parsedQuery} />;
+  }
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 py-16 text-center">

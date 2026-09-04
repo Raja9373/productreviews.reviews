@@ -19,11 +19,34 @@ export function parseSearchQuery(
   // 1. Resolve Target Market & Country constraint
   const { market, explicitCountry, explicitCurrency } = resolveTargetMarket(clean, userMarket);
 
+  // Language detection from query: en / hi / ja / es
+  let detectedLang: LanguageCode = userLang;
+  if (/[\u0900-\u097F]|\b(?:kaisa|accha|achha|sasta|badiya|mehenga|ke\s+liye)\b/i.test(clean)) {
+    detectedLang = 'hi';
+  } else if (/[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/i.test(clean)) {
+    detectedLang = 'ja';
+  } else if (/\b(?:mejor|tel[eé]fono|m[oó]vil|barato|precio|bajo|para)\b/i.test(lower) || /[áéíóúñ]/i.test(clean)) {
+    detectedLang = 'es';
+  }
+
   // 2. Extract Constraints
   const constraints: QueryConstraints = {
     explicitCountry,
     currency: explicitCurrency,
   };
+
+  // Product Type extraction (e.g. smartphone)
+  if (/\b(?:phone|smartphone|mobile|android|iphone|cellphone)\b/i.test(lower)) {
+    constraints.productType = 'smartphone';
+  } else if (/\b(?:camera|mirrorless|dslr)\b/i.test(lower)) {
+    constraints.productType = 'camera';
+  } else if (/\b(?:laptop|notebook|macbook)\b/i.test(lower)) {
+    constraints.productType = 'laptop';
+  } else if (/\b(?:tv|television)\b/i.test(lower)) {
+    constraints.productType = 'television';
+  } else if (/\b(?:headphone|earphone|earbuds|audio)\b/i.test(lower)) {
+    constraints.productType = 'audio';
+  }
 
   // Budget extraction: under/below/less than ₹30,000 / $500 / 50000 / etc.
   const budgetMatch = clean.match(
@@ -96,7 +119,7 @@ export function parseSearchQuery(
       intent,
       domain,
       market,
-      language: userLang,
+      language: detectedLang,
       constraints,
     };
   }
@@ -138,7 +161,7 @@ export function parseSearchQuery(
       intent,
       domain,
       market,
-      language: userLang,
+      language: detectedLang,
       constraints,
     };
   }
@@ -174,7 +197,7 @@ export function parseSearchQuery(
       intent,
       domain,
       market,
-      language: userLang,
+      language: detectedLang,
       constraints,
     };
   }
@@ -217,7 +240,7 @@ export function parseSearchQuery(
       intent,
       domain,
       market,
-      language: userLang,
+      language: detectedLang,
       constraints,
     };
   }
@@ -238,7 +261,7 @@ export function parseSearchQuery(
       intent,
       domain,
       market,
-      language: userLang,
+      language: detectedLang,
       constraints,
     };
   }
@@ -264,7 +287,7 @@ export function parseSearchQuery(
     intent,
     domain: finalDomain,
     market,
-    language: userLang,
+    language: detectedLang,
     constraints,
   };
 }

@@ -5,6 +5,7 @@ import { ResultCard } from './components/ResultCard';
 import { ExactEntityView } from './components/ExactEntityView';
 import { ComparisonView } from './components/ComparisonView';
 import { EmptyState } from './components/EmptyState';
+import { WirecutterView } from './components/WirecutterView';
 import { AffiliateDisclosure } from './components/AffiliateDisclosure';
 import { CookieConsent } from './components/CookieConsent';
 import { AdUnit } from './components/AdUnit';
@@ -29,7 +30,7 @@ export default function App() {
   const [currentLang, setCurrentLang] = useState<LanguageCode>(() => {
     try {
       const savedLang = localStorage.getItem('pr_lang') as LanguageCode;
-      if (savedLang && ['en', 'hi', 'es', 'it', 'fr', 'de'].includes(savedLang)) {
+      if (savedLang && ['en', 'hi', 'es', 'it', 'fr', 'de', 'ja'].includes(savedLang)) {
         return savedLang;
       }
     } catch {
@@ -121,6 +122,12 @@ export default function App() {
           }
         }
 
+        // Synchronize language if query had explicit language signals (e.g. hi, ja, es)
+        if (res.parsedQuery?.language && res.parsedQuery.language !== currentLangRef.current) {
+          setCurrentLang(res.parsedQuery.language);
+          currentLangRef.current = res.parsedQuery.language;
+        }
+
         // SEO Safety: Do not index thin, failed, or insufficient-data search results
         updateDocumentMeta({
           title: searchQuery,
@@ -165,10 +172,28 @@ export default function App() {
   // Handle URL hash routing with current market preservation
   useEffect(() => {
     const handleHash = () => {
-      const hash = window.location.hash;
-      if (hash.startsWith('#/search?')) {
-        const urlParams = new URLSearchParams(hash.replace(/^#\/search\??/, ''));
-        const rawQ = urlParams.get('q') || '';
+      const hash = window.location.hash || '';
+
+      // Check for search queries: /#search?q=..., #/search?q=..., #search?q=...
+      const isSearchHash =
+        hash.startsWith('#/search?') ||
+        hash.startsWith('#search?') ||
+        hash.startsWith('/#search?') ||
+        hash.startsWith('#/search=') ||
+        hash.startsWith('#search=');
+
+      if (isSearchHash) {
+        const queryPart = hash
+          .replace(/^#\/?search\??/, '')
+          .replace(/^#search\??/, '')
+          .replace(/^\/#search\??/, '')
+          .replace(/^=/, '');
+        const urlParams = new URLSearchParams(queryPart.startsWith('q=') ? queryPart : `q=${queryPart}`);
+        let rawQ = (urlParams.get('q') || '').trim();
+        // If query is empty in /#search?q=, use "Best phone under 30000" as default
+        if (!rawQ) {
+          rawQ = 'Best phone under 30000';
+        }
         const marketParam = urlParams.get('market') as MarketCode | null;
         const validMarket =
           marketParam && SUPPORTED_MARKETS.some((m) => m.code === marketParam)
@@ -176,13 +201,8 @@ export default function App() {
             : currentMarketRef.current;
 
         const searchKey = `${rawQ}|${validMarket}`;
-        if (rawQ && searchKey !== activeSearchKeyRef.current) {
+        if (searchKey !== activeSearchKeyRef.current) {
           handleSearch(rawQ, validMarket);
-        }
-      } else if (hash.startsWith('#/search=')) {
-        const rawQ = decodeURIComponent(hash.replace('#/search=', ''));
-        if (rawQ) {
-          handleSearch(rawQ, currentMarketRef.current);
         }
       } else if (hash === '#/about') {
         setScreen('ABOUT');
@@ -194,6 +214,9 @@ export default function App() {
         setScreen('TERMS');
       } else if (hash === '#/affiliate-disclosure' || hash === '#/disclaimer') {
         setScreen('DISCLAIMER');
+      } else if (!hash || hash === '#' || hash === '#/') {
+        // Default to "Best phone under 30000" on direct entry if empty
+        handleSearch('Best phone under 30000', currentMarketRef.current);
       }
     };
 
@@ -393,6 +416,18 @@ export default function App() {
                       setSelectedEntity(ent);
                       setScreen('DETAIL');
                     }}
+                  />
+                ) : (
+                  decisionResult.parsedQuery.constraints.productType === 'smartphone' ||
+                  decisionResult.parsedQuery.cleanQuery.toLowerCase().includes('phone') ||
+                  decisionResult.parsedQuery.cleanQuery.toLowerCase().includes('30000') ||
+                  decisionResult.parsedQuery.cleanQuery.toLowerCase().includes('30,000')
+                ) ? (
+                  /* Wirecutter Clone Direct HTML View */
+                  <WirecutterView
+                    query={decisionResult.parsedQuery.cleanQuery}
+                    market={decisionResult.parsedQuery.market}
+                    parsedQuery={decisionResult.parsedQuery}
                   />
                 ) : decisionResult.items.length > 0 ? (
                   /* 3. Recommendation List */

@@ -124,9 +124,17 @@ export class EvidenceRankingEngine {
         badge = 'Relevant option';
       }
 
+      // Determine non-Wikipedia primary destination (never send primary CTA to Wikipedia)
+      const isWikiUrl = (u?: string) => Boolean(u && /wikipedia\.org/i.test(u));
+      const directAuthoritativeUrl =
+        entity.officialUrl ||
+        entity.provenance.find((p) => p.sourceUrl && !isWikiUrl(p.sourceUrl))?.sourceUrl;
+
       // Map primary action per Phase 3 Section 13 & 19
       let actionLabel = 'View Official Details';
-      let actionUrl = entity.officialUrl || entity.provenance[0]?.sourceUrl || '#';
+      let actionUrl =
+        directAuthoritativeUrl ||
+        `https://www.google.com/search?q=${encodeURIComponent(entity.canonicalName + ' official site')}`;
       let isAffiliate = false;
       let merchant: string | undefined = undefined;
 
@@ -140,16 +148,24 @@ export class EvidenceRankingEngine {
         merchant = 'Amazon';
       } else if (entity.domain === 'SOFTWARE') {
         actionLabel = 'Visit Official Website';
-        actionUrl = entity.officialUrl || entity.provenance[0]?.sourceUrl || `https://www.google.com/search?q=${encodeURIComponent(entity.canonicalName + ' official software')}`;
+        actionUrl =
+          directAuthoritativeUrl ||
+          `https://www.google.com/search?q=${encodeURIComponent(entity.canonicalName + ' official software website')}`;
       } else if (entity.domain === 'VEHICLE') {
         actionLabel = 'View Manufacturer Portal';
-        actionUrl = entity.officialUrl || entity.provenance[0]?.sourceUrl || `https://www.google.com/search?q=${encodeURIComponent(entity.canonicalName + ' official')}`;
+        actionUrl =
+          directAuthoritativeUrl ||
+          `https://www.google.com/search?q=${encodeURIComponent(entity.canonicalName + ' official manufacturer')}`;
       } else if (entity.domain === 'EDUCATION') {
         actionLabel = 'Visit Institution Portal';
-        actionUrl = entity.officialUrl || entity.provenance[0]?.sourceUrl || `https://www.google.com/search?q=${encodeURIComponent(entity.canonicalName)}`;
+        actionUrl =
+          directAuthoritativeUrl ||
+          `https://www.google.com/search?q=${encodeURIComponent(entity.canonicalName + ' official portal')}`;
       } else if (entity.domain === 'PLACE' || entity.domain === 'LOCAL' || entity.domain === 'SERVICE') {
-        actionLabel = 'View Directory Entry';
-        actionUrl = entity.provenance[0]?.sourceUrl || `https://www.google.com/search?q=${encodeURIComponent(entity.canonicalName)}`;
+        actionLabel = 'View Official Details';
+        actionUrl =
+          directAuthoritativeUrl ||
+          `https://www.google.com/search?q=${encodeURIComponent(entity.canonicalName + ' official')}`;
       }
 
       return {

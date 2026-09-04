@@ -72,7 +72,7 @@ export type MarketCode =
   | 'NL'
   | 'SG';
 
-export type LanguageCode = 'en' | 'hi' | 'es' | 'it' | 'fr' | 'de';
+export type LanguageCode = 'en' | 'hi' | 'es' | 'it' | 'fr' | 'de' | 'ja';
 
 export type ActionType =
   | 'CHECK_PRICE'
@@ -106,6 +106,7 @@ export interface QueryConstraints {
   location?: string;
   useCase?: string;
   brand?: string;
+  productType?: string;
   comparisonEntities?: [string, string];
 }
 
