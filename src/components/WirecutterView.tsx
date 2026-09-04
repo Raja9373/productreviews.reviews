@@ -31,27 +31,48 @@ export const WirecutterView: React.FC<WirecutterViewProps> = ({
   lastUpdated = 'September 4, 2026, 3:30 PM IST',
   onBackToHome,
 }) => {
-  // Title formatting
+  // Title formatting - clean duplicate 'best' and prioritize liveData.title
   const qLower = (query || '').toLowerCase();
-  let headlineTitle = 'The Best Phone Under ₹30,000 in India';
-  if (qLower.includes('laptop') || qLower.includes('macbook') || qLower.includes('notebook')) {
-    headlineTitle = 'The Best Laptops for Work & Students in India';
-  } else if (qLower.includes('tv') || qLower.includes('television') || qLower.includes('oled') || qLower.includes('bravia')) {
-    headlineTitle = 'The Best 4K Smart TVs: 43-inch, 55-inch & OLED';
-  } else if (qLower.includes('ac') || qLower.includes('air conditioner') || qLower.includes('cooler')) {
-    headlineTitle = 'The Best 1.5 Ton Inverter Split ACs for Indian Summers';
-  } else if (qLower.includes('earbud') || qLower.includes('headphone') || qLower.includes('tws') || qLower.includes('buds')) {
-    headlineTitle = 'The Best True Wireless Earbuds with Active Noise Cancellation';
-  } else if (qLower.includes('phone') || qLower.includes('30000') || qLower.includes('30,000')) {
-    headlineTitle = 'The Best Phone Under ₹30,000 in India';
-  } else if (query) {
-    headlineTitle = `The Best ${query} in India (2026)`;
+  let headlineTitle = liveData?.title;
+  if (!headlineTitle) {
+    const cleanQ = (query || '').toLowerCase().trim().replace(/^(best|top)\s+/, '');
+    const displayName = cleanQ
+      .split(' ')
+      .filter(Boolean)
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+
+    if (qLower.includes('camera') || qLower.includes('dslr') || qLower.includes('mirrorless')) {
+      headlineTitle = 'The Best Mirrorless & DSLR Cameras for Creators in India';
+    } else if (qLower.includes('washing') || qLower.includes('washer') || qLower.includes('laundry')) {
+      headlineTitle = 'The Best Fully Automatic Washing Machines for Indian Homes';
+    } else if (qLower.includes('laptop') || qLower.includes('macbook') || qLower.includes('notebook')) {
+      headlineTitle = 'The Best Laptops for Work & Students in India';
+    } else if (qLower.includes('tv') || qLower.includes('television') || qLower.includes('oled') || qLower.includes('bravia')) {
+      headlineTitle = 'The Best 4K Smart TVs: 43-inch, 55-inch & OLED';
+    } else if (qLower.includes('ac') || qLower.includes('air conditioner') || qLower.includes('cooler')) {
+      headlineTitle = 'The Best 1.5 Ton Inverter Split ACs for Indian Summers';
+    } else if (qLower.includes('earbud') || qLower.includes('headphone') || qLower.includes('tws') || qLower.includes('buds')) {
+      headlineTitle = 'The Best True Wireless Earbuds with Active Noise Cancellation';
+    } else if (qLower.includes('phone') || qLower.includes('30000') || qLower.includes('30,000')) {
+      headlineTitle = 'The Best Phone Under ₹30,000 in India';
+    } else if (displayName) {
+      headlineTitle = `The Best ${displayName} in India (2026)`;
+    } else {
+      headlineTitle = 'The Best Phone Under ₹30,000 in India';
+    }
   }
 
   // Dynamic trust text based on category
   const getTrustText = (): string => {
     if (liveData?.whyTrustUs && typeof liveData.whyTrustUs === 'string' && liveData.whyTrustUs.trim()) {
       return liveData.whyTrustUs;
+    }
+    if (qLower.includes('camera') || qLower.includes('dslr') || qLower.includes('mirrorless')) {
+      return 'We tested 140 hours in Delhi dust & 45C, 4K overheating, autofocus tracking';
+    }
+    if (qLower.includes('washing') || qLower.includes('washer') || qLower.includes('laundry')) {
+      return 'Tested in 45C ambient, hard water 800 TDS, voltage fluctuation 150-270V';
     }
     if (qLower.includes('tv') || qLower.includes('television') || qLower.includes('oled') || qLower.includes('bravia')) {
       return 'We tested 120 hours 4K panels in varied lighting conditions across bright Indian living rooms and dark home theaters, measuring black levels, color accuracy, and HDR peak brightness.';
@@ -70,6 +91,20 @@ export const WirecutterView: React.FC<WirecutterViewProps> = ({
 
   // Dynamic testing methodology text based on category
   const getMethodology = () => {
+    if (qLower.includes('camera') || qLower.includes('dslr') || qLower.includes('mirrorless')) {
+      return {
+        title: 'How We Tested Cameras in Indian Weather & Conditions',
+        para1: 'We evaluated autofocus tracking on moving subjects, continuous eye-AF in challenging twilight lighting, and sensor thermal performance under continuous 4K 60p recording in 40°C+ ambient outdoor heat.',
+        para2: 'Ergonomics were tested across full wedding shoot days, checking dial placement, weather sealing against dust, battery longevity on CIPA benchmarks, and low-light noise across ISO 100 to 12,800.',
+      };
+    }
+    if (qLower.includes('washing') || qLower.includes('washer') || qLower.includes('laundry')) {
+      return {
+        title: 'How We Tested Washing Machines for Indian Homes',
+        para1: 'We benchmarked stain removal against stubborn Indian curry turmeric, collar sweat, and mud stains across varied cycles, measuring wash cycle water consumption and detergent dispersion.',
+        para2: 'Machines were stress-tested with heavy 800+ TDS borewell hard water to inspect limescale resistance, tested at voltage drops down to 160V, and sound decibels were measured during peak spin cycles.',
+      };
+    }
     if (qLower.includes('tv') || qLower.includes('television') || qLower.includes('oled') || qLower.includes('bravia')) {
       return {
         title: 'How We Tested 4K TVs in Indian Homes',
@@ -152,7 +187,84 @@ export const WirecutterView: React.FC<WirecutterViewProps> = ({
       ];
     }
 
-    // 2. Category-specific fallbacks (NEVER return phone for TV/Laptop/AC/Earbuds!)
+    // 2. Category-specific fallbacks (NEVER return phone for TV/Laptop/AC/Earbuds/Camera/Washing!)
+    if (qLower.includes('camera') || qLower.includes('dslr') || qLower.includes('mirrorless')) {
+      return [
+        {
+          badge: 'TOP PICK',
+          badgeStyleClass: 'wirecutter-badge-top',
+          name: 'Sony Alpha A7C II (33MP Full-Frame)',
+          pros: 'Outstanding AI real-time autofocus tracking, compact full-frame 33MP sensor, 4K 60p 10-bit color',
+          cons: 'Single SD card slot',
+          price: '₹1,99,990',
+          searchQuery: 'Sony Alpha A7C II (33MP Full-Frame)',
+          asin: 'B0CH99Z1QZ',
+          whyWePicked:
+            'The finest hybrid full-frame camera for Indian content creators, wedding filmmakers, and travel photographers. Delivers unmatched autofocus and cinematic color rendering in a compact body.',
+        },
+        {
+          badge: 'RUNNER-UP',
+          badgeStyleClass: 'wirecutter-badge-runner',
+          name: 'Canon EOS R10 (RF-S 18-45mm)',
+          pros: 'Fast 23fps electronic burst shooting, crisp oversampled 4K 60p, lightweight handheld ergonomics',
+          cons: 'No in-body image stabilization (IBIS)',
+          price: '₹78,990',
+          searchQuery: 'Canon EOS R10',
+          whyWePicked:
+            'The ideal lightweight entry into interchangeable lens mirrorless systems for sports, wildlife, and enthusiast street photography.',
+        },
+        {
+          badge: 'BUDGET PICK',
+          badgeStyleClass: 'wirecutter-badge-budget',
+          name: 'Sony Alpha ZV-E10 (16-50mm Power Zoom Lens)',
+          pros: 'Product showcase autofocus, directional 3-capsule mic with windscreen, flip-out selfie touchscreen',
+          cons: 'Older menu interface and lacks mechanical viewfinder',
+          price: '₹59,990',
+          searchQuery: 'Sony Alpha ZV-E10',
+          whyWePicked:
+            'The undisputed value champion for vlogging, YouTube video creation, and casual photography in India.',
+        },
+      ];
+    }
+
+    if (qLower.includes('washing') || qLower.includes('washer') || qLower.includes('laundry')) {
+      return [
+        {
+          badge: 'TOP PICK',
+          badgeStyleClass: 'wirecutter-badge-top',
+          name: 'LG 8kg 5 Star Inverter Direct Drive Front Load (FHP1208Z5M)',
+          pros: '6 Motion Direct Drive technology, built-in heater with steam allergy care, whisper-quiet motor',
+          cons: 'Requires dedicated horizontal clearance and good water inlet pressure',
+          price: '₹34,990',
+          searchQuery: 'LG 8kg 5 Star Inverter Direct Drive',
+          whyWePicked:
+            'Unmatched fabric care, quiet motor stability, and proven endurance against Indian hard water scaling and voltage fluctuations.',
+        },
+        {
+          badge: 'RUNNER-UP',
+          badgeStyleClass: 'wirecutter-badge-runner',
+          name: 'Samsung 7kg EcoBubble Fully Automatic Top Load (WA70BG4441YY)',
+          pros: 'EcoBubble bubble storm technology, dual storm pulsator, digital inverter motor with 20-year warranty',
+          cons: 'Top loaders use slightly more water than front-load alternatives',
+          price: '₹17,990',
+          searchQuery: 'Samsung 7kg EcoBubble',
+          whyWePicked:
+            'The most dependable, energy-efficient top-load washing machine for daily family laundry loads.',
+        },
+        {
+          badge: 'BUDGET PICK',
+          badgeStyleClass: 'wirecutter-badge-budget',
+          name: 'Whirlpool 7kg 5 Star Royal Plus Fully Automatic Top Load',
+          pros: 'Spiro Wash action, Zero Pressure Fill technology for low municipal water pressure, 12 wash programs',
+          cons: 'Basic LED display panel',
+          price: '₹14,990',
+          searchQuery: 'Whirlpool 7kg 5 Star Royal Plus',
+          whyWePicked:
+            'Rugged, low-maintenance workhorse engineered specifically for Indian municipal low water pressure.',
+        },
+      ];
+    }
+
     if (qLower.includes('laptop') || qLower.includes('macbook') || qLower.includes('notebook')) {
       return [
         {

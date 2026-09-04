@@ -90,14 +90,35 @@ async function startServer() {
       await livePricesHandler(req, res);
     } catch (err: any) {
       console.warn('[server.ts live-prices error]:', err?.message || err);
-      const now = new Date();
-      res.json({
-        query: String(req.query.q || 'Best phone under 30000'),
-        market: 'IN',
-        livePrice: 'Check live price',
-        lastUpdated: `${now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'long', day: 'numeric', year: 'numeric' })} IST`,
-        affiliateTag: 'jaiguruji00-21',
-      });
+      try {
+        const { generateFallback, formatISTDate } = await import('./api/live-prices');
+        const q = String(req.query.q || 'Best phone under 30000');
+        const fallback = generateFallback(q);
+        const now = new Date();
+        return res.json({
+          query: q,
+          market: 'IN',
+          title: fallback.title,
+          topPick: fallback.topPick,
+          runnerUp: fallback.runnerUp,
+          budgetPick: fallback.budgetPick,
+          livePrice: fallback.livePrice,
+          whyTrustUs: fallback.trust,
+          lastUpdated: formatISTDate(now),
+          lastUpdatedISO: now.toISOString(),
+          affiliateTag: 'jaiguruji00-21',
+        });
+      } catch {
+        const now = new Date();
+        return res.json({
+          query: String(req.query.q || 'Best electronics in India'),
+          market: 'IN',
+          title: 'The Best Electronics in India (2026)',
+          livePrice: 'Check live price',
+          lastUpdated: `${now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'long', day: 'numeric', year: 'numeric' })} IST`,
+          affiliateTag: 'jaiguruji00-21',
+        });
+      }
     }
   });
 
