@@ -36,7 +36,11 @@ export class EntityNormalizer {
    */
   static getDeduplicationKey(rawName: string, domain: DecisionDomain): string {
     const { canonicalName } = this.cleanCanonicalName(rawName);
-    return `${domain}:${canonicalName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+    const normalized = canonicalName
+      .toLowerCase()
+      .replace(/\+/g, 'plus')
+      .replace(/[^a-z0-9]/g, '');
+    return `${domain}:${normalized}`;
   }
 
   /**

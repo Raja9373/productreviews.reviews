@@ -211,7 +211,7 @@ export const WirecutterHome: React.FC<WirecutterHomeProps> = ({
         topPickPros: 'Superb adaptive ANC, rich LDAC/Spatial audio, crystal-clear beamforming mics',
         testedHours: '95+ hours',
         editorialSummary:
-          'Whether commuting on noisy subways or working in open offices, these earbuds isolate speech and ambient engine hum better than anything else in our sound isolation chamber.',
+          'Whether commuting on noisy transit or working in bustling offices, these earbuds isolate speech and ambient engine hum effectively with adaptive ANC.',
         tag: 'AUDIO & ANC',
         filterCategory: 'audio',
       },
@@ -225,8 +225,8 @@ export const WirecutterHome: React.FC<WirecutterHomeProps> = ({
         topPickPros: 'Even 400°F crisping, ceramic non-stick basket, dishwasher-safe easy cleaning',
         testedHours: '70+ hours',
         editorialSummary:
-          'We tested over 25 batches of french fries, chicken wings, and roasted vegetables. The Ninja consistently delivered the crispiest textures with minimum oil.',
-        tag: 'KITCHEN LAB',
+          'Evaluated across cooking benchmarks. The Ninja consistently delivered crispy textures with minimal oil usage.',
+        tag: 'KITCHEN RESEARCH',
         filterCategory: 'home',
       },
       {
@@ -239,7 +239,7 @@ export const WirecutterHome: React.FC<WirecutterHomeProps> = ({
         topPickPros: 'H13 True HEPA filtration, cleans 403 sq ft in 12 min, laser particle sensor',
         testedHours: '105+ hours',
         editorialSummary:
-          'In our sealed particulate challenge chamber, the Levoit eradicated 99.9% of dust, smoke, and fine aerosolized particles in under 15 minutes on whisper-quiet mode.',
+          'Based on CADR performance benchmarks, the Levoit filters dust, smoke, and particulate matter effectively on quiet mode.',
         tag: 'HEALTH & HOME',
         filterCategory: 'home',
       },
@@ -341,11 +341,11 @@ export const WirecutterHome: React.FC<WirecutterHomeProps> = ({
             The best gear for your everyday life
           </h1>
           <p className="mt-3 text-lg sm:text-xl text-zinc-600 font-serif-wirecutter italic">
-            Tested in independent labs. Hand-picked for {store.regionName}.
+            Curated product research &amp; consensus analysis for {store.regionName}.
           </p>
 
           <p className="mt-4 text-sm sm:text-base text-zinc-600 max-w-2xl mx-auto leading-relaxed">
-            We spend thousands of hours testing technology, home appliances, and daily essentials under real conditions so you can make effortless, confident buying decisions with live {store.domain} pricing.
+            We analyze hardware specifications, expert reviews, and real user feedback under real-world conditions so you can make confident, informed buying decisions with live {store.domain} pricing.
           </p>
 
           {/* Interactive Search Bar */}
@@ -402,10 +402,10 @@ export const WirecutterHome: React.FC<WirecutterHomeProps> = ({
           <div>
             <span className="text-xs font-bold uppercase tracking-widest text-[#b80000] flex items-center gap-1.5">
               <Award className="w-3.5 h-3.5" />
-              Verified Lab Selections
+              Curated Selections
             </span>
             <h2 className="text-2xl sm:text-3xl font-normal text-zinc-950 font-serif-wirecutter mt-1">
-              Top Tested Guides &amp; Picks
+              Top Research Guides &amp; Picks
             </h2>
           </div>
 
@@ -519,19 +519,19 @@ export const WirecutterHome: React.FC<WirecutterHomeProps> = ({
         </div>
       </section>
 
-      {/* 5. "Inside Our Testing Lab" Interactive Feature (Makes the site engaging & exciting) */}
+      {/* 5. "Our Research Methodology" Feature */}
       <section className="bg-zinc-950 text-white py-16 px-4 sm:px-6 my-12">
         <div className="max-w-6xl mx-auto">
           <div className="max-w-2xl mb-10">
             <span className="text-xs font-bold uppercase tracking-widest text-[#b80000] flex items-center gap-1.5">
               <Zap className="w-3.5 h-3.5" />
-              The Wirecutter Lab Standard
+              Evaluation Standards
             </span>
             <h2 className="text-2xl sm:text-4xl font-normal text-white font-serif-wirecutter mt-2">
-              Inside Our Independent Testing Chambers
+              Multi-Source Research Methodology
             </h2>
             <p className="text-sm text-zinc-400 mt-2 leading-relaxed">
-              We don’t rely on marketing claims or press releases. Every single product recommended on productreviews.review passes hands-on empirical stress tests in our specialized chambers.
+              We aggregate verified customer reports, expert hardware teardowns, and official manufacturer specifications to deliver transparent, objective product guidance.
             </p>
           </div>
 
@@ -541,10 +541,10 @@ export const WirecutterHome: React.FC<WirecutterHomeProps> = ({
                 <Volume2 className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold text-white font-serif-wirecutter mb-2">
-                Anechoic Acoustic Lab
+                Acoustic &amp; ANC Analysis
               </h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                We measure active noise cancellation down to single decibels across pink noise, airplane cabin roar, and commuter chatter using Brüel &amp; Kjær acoustic test heads.
+                We compare active noise cancellation decibel attenuation across commuter frequencies, voice isolation, and transparency mode fidelity from leading audio benchmarks.
               </p>
             </div>
 
@@ -553,10 +553,10 @@ export const WirecutterHome: React.FC<WirecutterHomeProps> = ({
                 <Cpu className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold text-white font-serif-wirecutter mb-2">
-                FLIR Thermal Imaging
+                Thermals &amp; Performance
               </h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Infrared thermography gauges sustained heat dissipation, CPU throttling points, and surface palm-rest temperatures under peak workload stress tests.
+                We analyze sustained workload benchmarks, CPU throttling thresholds, and thermal dissipation metrics across rigorous continuous load reviews.
               </p>
             </div>
 
@@ -565,10 +565,10 @@ export const WirecutterHome: React.FC<WirecutterHomeProps> = ({
                 <Clock className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold text-white font-serif-wirecutter mb-2">
-                Robotic Battery Rigs
+                Battery Endurance Data
               </h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Custom automated robotic arms simulate real-world screen interaction, web browsing, 4K video playback, and cellular switching until the battery runs to 0%.
+                We cross-reference standardized battery rundown tests, charging curves, and long-term battery degradation statistics from multiple technical publications.
               </p>
             </div>
 
@@ -577,10 +577,10 @@ export const WirecutterHome: React.FC<WirecutterHomeProps> = ({
                 <Eye className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold text-white font-serif-wirecutter mb-2">
-                Calibrated Display Metering
+                Display &amp; Color Accuracy
               </h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Colorimeters and spectrophotometers evaluate Delta-E color accuracy, DCI-P3 gamut coverage, peak HDR nit brightness, and reflection rejection on TVs and laptops.
+                We review Delta-E color accuracy measurements, DCI-P3 color gamut coverage, peak HDR brightness (nits), and reflection rejection scores on displays.
               </p>
             </div>
           </div>

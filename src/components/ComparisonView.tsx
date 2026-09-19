@@ -1,181 +1,269 @@
 import React from 'react';
-import { ComparisonItem, LanguageCode } from '../types';
-import { getTranslation } from '../localization/languages';
+import { ComparisonItem, ComparisonResult, LanguageCode } from '../types';
+import { ComparisonHeader } from './comparison/ComparisonHeader';
+import { AspectComparison } from './comparison/AspectComparison';
+import { StrengthsWeaknesses } from './comparison/StrengthsWeaknesses';
+import { TradeoffsPanel } from './comparison/TradeoffsPanel';
+import { ContradictionsPanel } from './comparison/ContradictionsPanel';
+import { MissingInfoPanel } from './comparison/MissingInfoPanel';
+import { EvidenceTransparencyPanel } from './comparison/EvidenceTransparencyPanel';
+import { ComparisonLoading } from './comparison/ComparisonLoading';
+import { ComparisonError } from './comparison/ComparisonError';
+import { AlertCircle, ArrowLeft, Scale } from 'lucide-react';
 
-interface ComparisonViewProps {
-  comparison: ComparisonItem;
-  currentLang: LanguageCode;
+export interface ComparisonViewProps {
+  comparison?: ComparisonItem; // legacy support
+  comparisonResult?: ComparisonResult; // Phase 6.3 production authoritative result
+  currentLang?: LanguageCode;
   onBack: () => void;
+  onRetry?: () => void;
+  isLoading?: boolean;
+  errorMessage?: string | null;
 }
 
 export const ComparisonView: React.FC<ComparisonViewProps> = ({
   comparison,
-  currentLang,
+  comparisonResult,
+  currentLang = 'en',
   onBack,
+  onRetry,
+  isLoading = false,
+  errorMessage,
 }) => {
-  const t = getTranslation(currentLang);
-  const { entityA, entityB, factors, mainCompromise, verdictSummary } = comparison;
+  // 1. Loading State
+  if (isLoading) {
+    return <ComparisonLoading query={comparisonResult?.query} stage="comparing" />;
+  }
 
-  return (
-    <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-8">
-      {/* Back button */}
-      <button
-        onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-900 mb-6 group transition-colors"
-      >
-        <svg
-          className="w-4 h-4 transition-transform group-hover:-translate-x-0.5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+  // 2. Error State
+  if (errorMessage) {
+    return (
+      <ComparisonError
+        message={errorMessage}
+        onRetry={onRetry}
+        onBack={onBack}
+      />
+    );
+  }
+
+  // 3. Phase 6.3 Production Comparison Result Flow
+  if (comparisonResult) {
+    const {
+      productA = '',
+      productB = '',
+      aspects = [],
+      productAStrengths = [],
+      productBStrengths = [],
+      productAWeaknesses = [],
+      productBWeaknesses = [],
+      tradeoffs = [],
+      contradictions = [],
+      missingInformation = [],
+      overallAssessment = '',
+      confidence = 'MEDIUM',
+      evidenceStrength = 'MODERATE',
+      sourceStatus,
+      decision = 'INSUFFICIENT_EVIDENCE',
+    } = comparisonResult;
+
+    // Guard: Identical Products (Requirement 16)
+    const isIdentical =
+      productA.trim().length > 0 &&
+      productB.trim().length > 0 &&
+      productA.trim().toLowerCase() === productB.trim().toLowerCase();
+
+    if (isIdentical) {
+      return (
+        <div className="max-w-3xl mx-auto py-12 px-4" role="alert">
+          <div className="bg-zinc-50 border border-zinc-300 rounded-2xl p-6 sm:p-8 text-center">
+            <div className="w-12 h-12 rounded-full bg-zinc-200 text-zinc-700 flex items-center justify-center mx-auto mb-4">
+              <Scale className="w-6 h-6" aria-hidden="true" />
+            </div>
+            <h2 className="text-xl font-bold text-zinc-900 mb-2">
+              Identical Products Specified
+            </h2>
+            <p className="text-sm text-zinc-600 mb-6 max-w-md mx-auto leading-relaxed">
+              Both comparison targets refer to the same product (<strong>{productA}</strong>). An objective comparison requires two distinct products or variants.
+            </p>
+            <button
+              onClick={onBack}
+              className="inline-flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Back to Search</span>
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 antialiased" id="production-comparison-view">
+        {/* Decision-First Header */}
+        <ComparisonHeader
+          productA={productA || 'Product A'}
+          productB={productB || 'Product B'}
+          decision={decision}
+          overallAssessment={overallAssessment}
+          confidence={confidence}
+          evidenceStrength={evidenceStrength}
+          onBack={onBack}
+        />
+
+        {/* State-specific Explanatory Notice */}
+        {decision === 'CONDITIONAL' && (
+          <div className="mb-8 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm flex items-start gap-3">
+            <span className="text-amber-600 font-bold shrink-0 mt-0.5">ℹ</span>
+            <div className="leading-relaxed">
+              <strong>Conditional Outcome:</strong> Neither product is universally superior for every buyer. Your optimal choice depends heavily on which specific trade-offs (e.g. price vs features, portability vs capability) matter most to your workflow.
+            </div>
+          </div>
+        )}
+
+        {decision === 'NEITHER' && (
+          <div className="mb-8 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-sm flex items-start gap-3">
+            <span className="text-rose-600 font-bold shrink-0 mt-0.5">✕</span>
+            <div className="leading-relaxed">
+              <strong>Neither Product Recommended:</strong> Based on verified evidence, significant drawbacks or limitations were identified on both options for this query. Review the established weaknesses below before committing.
+            </div>
+          </div>
+        )}
+
+        {decision === 'INSUFFICIENT_EVIDENCE' && (
+          <div className="mb-8 p-4 rounded-xl bg-zinc-100 border border-zinc-300 text-zinc-800 text-sm flex items-start gap-3">
+            <span className="text-zinc-500 font-bold shrink-0 mt-0.5">?</span>
+            <div className="leading-relaxed">
+              <strong>Evidence Incomplete:</strong> We could not establish enough corroborated facts or comparative specifications to responsibly declare a verdict. Key missing data points are cataloged below.
+            </div>
+          </div>
+        )}
+
+        {/* Key Trade-offs */}
+        <TradeoffsPanel
+          tradeoffs={tradeoffs}
+          productA={productA}
+          productB={productB}
+        />
+
+        {/* Aspect-by-Aspect Breakdown */}
+        <AspectComparison
+          aspects={aspects}
+          productA={productA}
+          productB={productB}
+        />
+
+        {/* Strengths & Weaknesses */}
+        <StrengthsWeaknesses
+          productA={productA}
+          productB={productB}
+          productAStrengths={productAStrengths}
+          productAWeaknesses={productAWeaknesses}
+          productBStrengths={productBStrengths}
+          productBWeaknesses={productBWeaknesses}
+        />
+
+        {/* Contradictions / Conflicting Evidence */}
+        <ContradictionsPanel
+          contradictions={contradictions}
+        />
+
+        {/* Missing Information */}
+        <MissingInfoPanel
+          missingInformation={missingInformation}
+        />
+
+        {/* Evidence Transparency & Methodology */}
+        <EvidenceTransparencyPanel
+          confidence={confidence}
+          evidenceStrength={evidenceStrength}
+          sourceStatus={sourceStatus}
+          aspectsCount={aspects.length}
+        />
+      </div>
+    );
+  }
+
+  // 4. Legacy ComparisonItem Fallback (maintains backwards compatibility)
+  if (comparison) {
+    const { entityA, entityB, factors = [], mainCompromise, verdictSummary } = comparison;
+
+    return (
+      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6" id="legacy-comparison-view">
+        <button
+          onClick={onBack}
+          className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-600 hover:text-zinc-900 transition-colors mb-6"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-        </svg>
-        <span>{t.backToHome}</span>
-      </button>
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back to Search</span>
+        </button>
 
-      {/* Comparison Header Banner */}
-      <div className="text-center mb-10">
-        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-zinc-100 text-zinc-700 text-xs font-semibold mb-3">
-          Direct Head-to-Head Comparison
-        </span>
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-zinc-900 tracking-tight">
-          {entityA.name} <span className="text-zinc-400 font-light mx-2">VS</span> {entityB.name}
-        </h1>
-      </div>
+        <div className="border-b border-zinc-200 pb-4 mb-6">
+          <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 block mb-1">
+            Head-to-Head Comparison
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900">
+            {entityA.name} <span className="text-zinc-400 font-normal">vs</span> {entityB.name}
+          </h1>
+        </div>
 
-      {/* Side-by-Side Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-        {/* Option A */}
-        <div className="bg-white rounded-2xl border border-zinc-200 p-6 sm:p-7 shadow-sm flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
-                Option A
-              </span>
-              {entityA.brand && (
-                <span className="text-xs font-semibold text-zinc-500 uppercase">
-                  {entityA.brand}
-                </span>
-              )}
-            </div>
-            <h2 className="text-xl font-bold text-zinc-900 mb-2">{entityA.name}</h2>
-            <p className="text-xs sm:text-sm text-zinc-600 mb-4">{entityA.explanation}</p>
-          </div>
-          <div className="pt-4 border-t border-zinc-100">
-            <a
-              id="compare-action-a"
-              href={entityA.action.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full inline-flex items-center justify-center font-semibold text-sm bg-zinc-900 hover:bg-zinc-800 text-white px-4 py-2.5 rounded-xl transition-colors text-center"
-            >
-              {entityA.action.label || t.checkPrice}
-            </a>
+        {/* Main Compromise & Final Verdict */}
+        <div className="bg-zinc-900 text-white rounded-2xl p-6 sm:p-8 mb-8">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-400 mb-2">
+            Main Compromise
+          </h2>
+          <p className="text-base sm:text-lg text-zinc-200 leading-relaxed mb-6">
+            {mainCompromise}
+          </p>
+          <div className="pt-4 border-t border-zinc-800">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-1">
+              Verdict Summary
+            </h3>
+            <p className="text-sm text-zinc-300 leading-relaxed">{verdictSummary}</p>
           </div>
         </div>
 
-        {/* Option B */}
-        <div className="bg-white rounded-2xl border border-zinc-200 p-6 sm:p-7 shadow-sm flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
-                Option B
-              </span>
-              {entityB.brand && (
-                <span className="text-xs font-semibold text-zinc-500 uppercase">
-                  {entityB.brand}
-                </span>
-              )}
-            </div>
-            <h2 className="text-xl font-bold text-zinc-900 mb-2">{entityB.name}</h2>
-            <p className="text-xs sm:text-sm text-zinc-600 mb-4">{entityB.explanation}</p>
-          </div>
-          <div className="pt-4 border-t border-zinc-100">
-            <a
-              id="compare-action-b"
-              href={entityB.action.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full inline-flex items-center justify-center font-semibold text-sm bg-zinc-900 hover:bg-zinc-800 text-white px-4 py-2.5 rounded-xl transition-colors text-center"
-            >
-              {entityB.action.label || t.checkPrice}
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* Decision Factors Matrix */}
-      <section className="bg-white rounded-2xl border border-zinc-200 p-6 sm:p-8 shadow-sm mb-8">
-        <h2 className="text-lg sm:text-xl font-bold text-zinc-900 mb-6 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-zinc-900" />
-          {t.comparisonFactors}
-        </h2>
-
-        <div className="divide-y divide-zinc-100">
+        {/* Factors */}
+        <section className="space-y-4 mb-8">
+          <h2 className="text-lg font-bold text-zinc-900">Comparison Factors</h2>
           {factors.map((factor, idx) => (
-            <div key={idx} className="py-5 first:pt-0 last:pb-0 flex flex-col gap-3">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <h3 className="text-sm font-bold text-zinc-900">{factor.factor}</h3>
-                <span
-                  className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${
-                    factor.winner === 'A'
-                      ? 'bg-blue-50 text-blue-800 border-blue-200'
-                      : factor.winner === 'B'
-                      ? 'bg-purple-50 text-purple-800 border-purple-200'
-                      : 'bg-zinc-50 text-zinc-700 border-zinc-200'
-                  }`}
-                >
-                  {factor.winner === 'A'
-                    ? `Advantage: ${entityA.brand || entityA.name}`
-                    : factor.winner === 'B'
-                    ? `Advantage: ${entityB.brand || entityB.name}`
-                    : 'Tie / Equal'}
-                </span>
-              </div>
-
-              {/* Assessment Breakdown */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-zinc-600 bg-zinc-50 rounded-xl p-3.5">
-                <div>
-                  <span className="font-semibold text-zinc-800 block mb-0.5">
-                    {entityA.name}:
-                  </span>
-                  {factor.entityAAssessment}
+            <div key={idx} className="bg-white border border-zinc-200 rounded-xl p-5 shadow-2xs">
+              <h3 className="text-base font-bold text-zinc-900 capitalize mb-2">{factor.factor}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-3">
+                <div className="bg-zinc-50 p-3 rounded-lg">
+                  <div className="font-semibold text-zinc-700 text-xs mb-1">{entityA.name}</div>
+                  <div className="text-zinc-900">{factor.entityAAssessment}</div>
                 </div>
-                <div>
-                  <span className="font-semibold text-zinc-800 block mb-0.5">
-                    {entityB.name}:
-                  </span>
-                  {factor.entityBAssessment}
+                <div className="bg-zinc-50 p-3 rounded-lg">
+                  <div className="font-semibold text-zinc-700 text-xs mb-1">{entityB.name}</div>
+                  <div className="text-zinc-900">{factor.entityBAssessment}</div>
                 </div>
               </div>
-
-              {/* Why */}
               <p className="text-xs text-zinc-500 italic">
-                <span className="font-medium text-zinc-700 not-italic">Verdict on this factor: </span>
+                <span className="font-medium text-zinc-700 not-italic">Assessment: </span>
                 {factor.why}
               </p>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* Main Compromise & Final Verdict */}
-      <div className="bg-zinc-900 text-white rounded-3xl p-6 sm:p-10">
-        <h2 className="text-lg font-bold uppercase tracking-wider text-zinc-400 mb-2">
-          {t.mainCompromise}
-        </h2>
-        <p className="text-base sm:text-lg text-zinc-200 leading-relaxed mb-6">
-          {mainCompromise}
-        </p>
-
-        <div className="pt-6 border-t border-zinc-800">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-1">
-            {t.verdict}
-          </h3>
-          <p className="text-sm sm:text-base text-zinc-300 leading-relaxed">{verdictSummary}</p>
-        </div>
+        </section>
       </div>
+    );
+  }
+
+  // 5. Empty / Missing State
+  return (
+    <div className="max-w-md mx-auto py-16 px-4 text-center">
+      <AlertCircle className="w-10 h-10 text-zinc-400 mx-auto mb-3" />
+      <h2 className="text-lg font-bold text-zinc-900 mb-2">No Comparison Data Available</h2>
+      <p className="text-sm text-zinc-600 mb-6">
+        We could not locate comparison data for the requested items.
+      </p>
+      <button
+        onClick={onBack}
+        className="inline-flex items-center gap-2 bg-zinc-900 text-white text-xs font-semibold px-4 py-2 rounded-xl"
+      >
+        <ArrowLeft className="w-3.5 h-3.5" />
+        <span>Return to Home</span>
+      </button>
     </div>
   );
 };

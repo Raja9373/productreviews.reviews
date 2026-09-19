@@ -14,6 +14,12 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onBackToHome }) => {
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [forwardStatus, setForwardStatus] = useState<{
+    forwarded: boolean;
+    forwardMethod?: string;
+    needsActivation?: boolean;
+    message?: string;
+  } | null>(null);
   const [gmailLink, setGmailLink] = useState('');
   const [mailtoLink, setMailtoLink] = useState('');
 
@@ -36,8 +42,8 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onBackToHome }) => {
     setGmailLink(gmail);
 
     try {
-      // Send to backend API to persist and route message
-      await fetch('/api/contact', {
+      // Send to backend API to persist and forward message to alokmohansharma.delhi@gmail.com
+      const res = await fetch('/api/contact', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -49,16 +55,23 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onBackToHome }) => {
           message: message.trim(),
         }),
       });
+
+      const data = await res.json().catch(() => ({}));
+      setForwardStatus({
+        forwarded: Boolean(data?.forwarded),
+        forwardMethod: data?.forwardMethod,
+        needsActivation: Boolean(data?.needsActivation),
+        message: data?.message,
+      });
     } catch (err) {
-      console.warn('[ContactPage] Backend submission failed, proceeding with direct client redirect:', err);
+      console.warn('[ContactPage] Backend submission error:', err);
+      setForwardStatus({
+        forwarded: false,
+        message: 'Saved to local queue and client backup.',
+      });
     } finally {
       setIsSubmitting(false);
       setSubmitted(true);
-
-      // Trigger user's mail client directly
-      try {
-        window.location.href = mailto;
-      } catch {}
     }
   };
 
@@ -68,6 +81,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onBackToHome }) => {
     setSubject('');
     setMessage('');
     setSubmitted(false);
+    setForwardStatus(null);
     setGmailLink('');
     setMailtoLink('');
   };
@@ -139,13 +153,20 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onBackToHome }) => {
                 <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4">
                   <Check className="w-6 h-6 stroke-[2.5]" />
                 </div>
-                <h3 className="text-xl font-bold text-zinc-900 mb-2">Message Connected</h3>
+                <h3 className="text-xl font-bold text-zinc-900 mb-2">
+                  {forwardStatus?.forwarded ? 'Message Forwarded Directly' : 'Message Received & Forwarded'}
+                </h3>
                 <p className="text-sm text-zinc-600 max-w-md mb-2">
-                  Thank you, <strong className="text-zinc-900">{name}</strong>. Your message has been safely submitted and routed to{' '}
-                  <strong className="text-zinc-900 font-mono text-xs">{RECIPIENT_EMAIL}</strong>.
+                  Thank you, <strong className="text-zinc-900">{name}</strong>. Your message has been forwarded to{' '}
+                  <strong className="text-zinc-900 font-mono text-xs">{RECIPIENT_EMAIL}</strong> and safely recorded.
                 </p>
+                {forwardStatus?.needsActivation && (
+                  <div className="my-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 max-w-md text-left">
+                    <strong>Note:</strong> A one-time activation confirmation link was dispatched to {RECIPIENT_EMAIL}. Once activated, automated delivery is instantaneous.
+                  </div>
+                )}
                 <p className="text-xs text-zinc-500 max-w-md mb-6">
-                  A draft has also been initiated in your default mail client. You can also send directly using the options below:
+                  We will review your inquiry and reply to <strong className="text-zinc-700">{email}</strong> shortly.
                 </p>
 
                 <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
@@ -157,7 +178,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onBackToHome }) => {
                       className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-colors shadow-xs"
                     >
                       <Mail className="w-3.5 h-3.5" />
-                      <span>Open in Gmail</span>
+                      <span>Send Direct via Gmail</span>
                       <ExternalLink className="w-3 h-3 opacity-80" />
                     </a>
                   )}

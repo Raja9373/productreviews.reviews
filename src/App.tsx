@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Header } from './components/Header';
 import { HeroSearch } from './components/HeroSearch';
+import { Breadcrumbs } from './components/Breadcrumbs';
 import { ResultCard } from './components/ResultCard';
 import { ExactEntityView } from './components/ExactEntityView';
 import { ComparisonView } from './components/ComparisonView';
@@ -21,7 +22,7 @@ import { DisclaimerPage } from './components/pages/DisclaimerPage';
 import { DecisionResult, EntityItem, LanguageCode, MarketCode } from './types';
 import { getTranslation } from './localization/languages';
 import { resolveTargetMarket, SUPPORTED_MARKETS } from './localization/markets';
-import { executeSearch } from './search/decisionEngine';
+import { executeSearch } from './search/discoveryEngine';
 import { updateDocumentMeta } from './seo/metaManager';
 import { trackEvent } from './analytics/tracker';
 
@@ -230,11 +231,16 @@ export default function App() {
         }
 
         // SEO Safety: Do not index thin, failed, or insufficient-data search results
+        const isSuccessfulComparison = res.status === 'SUCCESS' && (!!res.comparisonResult || !!res.comparison);
         updateDocumentMeta({
-          title: searchQuery,
-          description: `Objective decision results, pros and cons for "${searchQuery}" on ProductReviews.review.`,
+          title: res.comparisonResult
+            ? `${res.comparisonResult.productA} vs ${res.comparisonResult.productB} — Comparison & Trade-Offs`
+            : searchQuery,
+          description: res.comparisonResult
+            ? `Head-to-head comparison between ${res.comparisonResult.productA} and ${res.comparisonResult.productB}. Objective evidence, trade-offs, and decision synthesis on ProductReviews.review.`
+            : `Objective decision results, pros and cons for "${searchQuery}" on ProductReviews.review.`,
           canonicalPath: `/search?q=${encodeURIComponent(searchQuery)}`,
-          noIndex: res.status !== 'SUCCESS' || res.items.length === 0,
+          noIndex: res.status !== 'SUCCESS' || (!isSuccessfulComparison && res.items.length === 0),
         });
 
         trackEvent({
@@ -341,7 +347,7 @@ export default function App() {
         activeSearchKeyRef.current = '';
         updateDocumentMeta({
           title: 'productreviews.review — The best gear for your everyday life',
-          description: 'Tested by experts. The exact Wirecutter clone for India with transparent ratings and unbiased reviews.',
+          description: 'Curated product research and consensus analysis with transparent source evaluation.',
           canonicalPath: '/',
         });
       }
@@ -424,6 +430,11 @@ export default function App() {
           <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-8">
             {/* Search Bar at top of Results */}
             <div className="max-w-2xl mx-auto mb-8">
+              <Breadcrumbs
+                onHomeClick={handleResetToHome}
+                domain={decisionResult?.parsedQuery.domain || 'PRODUCT'}
+                query={query}
+              />
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -477,11 +488,25 @@ export default function App() {
             {!isLoading && decisionResult && (
               <div>
                 {/* 1. Comparison Intent */}
-                {decisionResult.comparison ? (
+                {decisionResult.comparisonResult ? (
+                  <ComparisonView
+                    comparisonResult={decisionResult.comparisonResult}
+                    currentLang={currentLang}
+                    onBack={handleResetToHome}
+                    onRetry={() => handleSearch(query)}
+                  />
+                ) : decisionResult.comparison ? (
                   <ComparisonView
                     comparison={decisionResult.comparison}
                     currentLang={currentLang}
                     onBack={handleResetToHome}
+                  />
+                ) : decisionResult.parsedQuery?.intent === 'COMPARISON' && decisionResult.status === 'ERROR' ? (
+                  <ComparisonView
+                    errorMessage={decisionResult.message || 'Comparison could not be completed.'}
+                    currentLang={currentLang}
+                    onBack={handleResetToHome}
+                    onRetry={() => handleSearch(query)}
                   />
                 ) : decisionResult.parsedQuery.intent === 'EXACT_ENTITY' &&
                   decisionResult.items.length > 0 ? (
@@ -506,6 +531,8 @@ export default function App() {
                     liveData={data}
                     lastUpdated={lastUpdated}
                     onBackToHome={handleResetToHome}
+                    decision={decisionResult.decision}
+                    nichod={decisionResult.nichod}
                   />
                 )}
               </div>

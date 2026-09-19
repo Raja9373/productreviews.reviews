@@ -55,7 +55,7 @@ export class ServerGroundedAdapter implements SourceAdapter {
         rawName: p.name || p.title || cleanQuery,
         sourceAdapterId: this.id,
         sourceType: this.sourceType,
-        sourceUrl: p.sourceUrl || p.sources?.[0]?.url || 'https://google.com',
+        sourceUrl: p.sourceUrl || p.sources?.[0]?.url || undefined,
         domain,
         market,
         language: lang,

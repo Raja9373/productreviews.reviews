@@ -24,6 +24,12 @@ function getProductCategory(text: string): string | null {
   if (/\b(?:smartwatch|fitness tracker|apple watch)\b/.test(t)) {
     return 'wearable';
   }
+  if (/\b(?:tablet|ipad|galaxy tab)\b/.test(t)) {
+    return 'tablet';
+  }
+  if (/\b(?:e-reader|kindle|ereader|ebook reader)\b/.test(t)) {
+    return 'ereader';
+  }
   return null;
 }
 

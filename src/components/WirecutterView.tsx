@@ -1,8 +1,13 @@
 import React from 'react';
-import { MarketCode, ParsedQuery } from '../types';
+import { MarketCode, ParsedQuery, DecisionEngineResult, NichodResult } from '../types';
 import { ArrowLeft, ExternalLink, Clock, Check, AlertCircle, ShieldCheck } from 'lucide-react';
 import { cleanQuery, getTestingDetails, matchMainCategory } from '../lib/productTesting';
 import { getStoreConfig, buildAffiliateUrl } from '../affiliate/affiliateConfig';
+import { DecisionCard } from './DecisionCard';
+import { NichodSummary } from './NichodSummary';
+import { EvidencePanel } from './EvidencePanel';
+import { ContradictionPanel } from './ContradictionPanel';
+import { LimitationsPanel } from './LimitationsPanel';
 
 interface WirecutterViewProps {
   query: string;
@@ -11,6 +16,8 @@ interface WirecutterViewProps {
   liveData?: any;
   lastUpdated?: string;
   onBackToHome?: () => void;
+  decision?: DecisionEngineResult;
+  nichod?: NichodResult;
 }
 
 interface PickItem {
@@ -222,6 +229,8 @@ export const WirecutterView: React.FC<WirecutterViewProps> = ({
   liveData,
   lastUpdated = 'September 4, 2026, 3:30 PM IST',
   onBackToHome,
+  decision,
+  nichod,
 }) => {
   // 1. Clean query & retrieve regional market settings
   const { q, titleQ } = cleanQuery(query);
@@ -359,6 +368,22 @@ export const WirecutterView: React.FC<WirecutterViewProps> = ({
         >
           {headlineTitle}
         </h1>
+
+        {/* DECISION-FIRST UI */}
+        {decision && (
+          <div className="mt-8 space-y-6">
+            <DecisionCard decision={decision} />
+            {nichod && (
+              <>
+                <NichodSummary nichod={nichod} />
+                <EvidencePanel nichod={nichod} />
+                <ContradictionPanel nichod={nichod} />
+                <LimitationsPanel nichod={nichod} decision={decision} />
+              </>
+            )}
+          </div>
+        )}
+        {/* END DECISION-FIRST UI */}
 
         {/* Byline & Timestamps */}
         <div className="mt-4 pt-4 border-t border-zinc-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-zinc-600">

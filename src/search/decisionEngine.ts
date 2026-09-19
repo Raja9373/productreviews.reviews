@@ -1,156 +1,124 @@
-import { DecisionResult, LanguageCode, MarketCode } from '../types';
-import { parseSearchQuery } from './queryParser';
-import { sourceRouter } from '../sources/sourceRouter';
-import { EvidenceRankingEngine } from '../sources/ranking';
-import { EvidenceComparisonEngine } from '../sources/comparisonEngine';
+import { DecisionEngineResult, NichodResult, Confidence } from '../types';
 
-export interface SearchOptions {
-  bypassCache?: boolean;
-  timeoutMs?: number;
-  disableExternalDiscovery?: boolean;
-}
+export function makeDecision(nichod: NichodResult): DecisionEngineResult {
+  // Conservative safety check: Block decision if evidence is insufficient
+  const isInsufficient = 
+    nichod.evidenceStrength === 'INSUFFICIENT' || 
+    nichod.relevantClaimCount === 0 ||
+    nichod.contradictions.length > 2;
 
-export async function executeSearch(
-  query: string,
-  userMarket?: MarketCode,
-  userLang: LanguageCode = 'en',
-  options?: SearchOptions
-): Promise<DecisionResult> {
-  const parsed = parseSearchQuery(query, userMarket, userLang);
-
-  if (!parsed.cleanQuery) {
+  // Decision criteria based on factors, not just counts
+  if (isInsufficient) {
     return {
-      parsedQuery: parsed,
-      status: 'NO_RESULTS',
-      items: [],
-      message: 'Please enter a search query.',
-      retrievedAt: new Date().toISOString(),
+      query: nichod.query,
+      decision: 'INSUFFICIENT_EVIDENCE',
+      headline: 'Decision cannot be made confidently',
+      rationale: 'Available evidence is insufficient, contradictory, or lacks factual basis to support a reliable decision.',
+      supportingFactors: nichod.keyPositives,
+      concerns: [...nichod.keyNegatives, ...nichod.mixedOrUncertain],
+      conditions: [],
+      uncertainty: ['Research data is not conclusive for this query'],
+      evidenceStrength: nichod.evidenceStrength,
+      confidence: Confidence.LOW,
+      evidenceCount: nichod.evidenceCount,
+      relevantClaimCount: nichod.relevantClaimCount,
+      contradictionCount: nichod.contradictions.length,
+      sourceStatus: nichod.sourceStatus,
+      limitations: nichod.limitations,
     };
   }
 
-  // Absolute Test & Emergency Mode: If external discovery is explicitly disabled
-  if (options?.disableExternalDiscovery || (typeof window !== 'undefined' && (window as any).__DISABLE_EXTERNAL_DISCOVERY__)) {
-    return {
-      parsedQuery: parsed,
-      status: 'NO_RESULTS',
-      items: [],
-      message: 'We couldn’t find enough reliable current information for this search.',
-      retrievedAt: new Date().toISOString(),
-    };
-  }
-
-  // 1. Comparison Intent (e.g. "iPhone vs Samsung", "Sony A7 IV vs Canon R6")
-  if (parsed.intent === 'COMPARISON' && parsed.constraints.comparisonEntities) {
-    const [nameA, nameB] = parsed.constraints.comparisonEntities;
-    const comparison = await EvidenceComparisonEngine.compare(
-      nameA,
-      nameB,
-      parsed.market,
-      parsed.language
+  // DON'T_BUY: Requires significant factual negative evidence
+  if (nichod.keyNegatives.length > 0) {
+    const hasIncompatibility = nichod.keyNegatives.some(neg => 
+      neg.toLowerCase().includes('incompatible') || 
+      (neg.toLowerCase().includes('price') && neg.toLowerCase().includes('budget')) ||
+      neg.toLowerCase().includes('ram') ||
+      neg.toLowerCase().includes('us dollar')
     );
 
-    if (comparison) {
+    if (hasIncompatibility) {
       return {
-        parsedQuery: parsed,
-        status: 'SUCCESS',
-        items: [comparison.entityA, comparison.entityB],
-        comparison,
-        retrievedAt: new Date().toISOString(),
+        query: nichod.query,
+        decision: 'DON\'T_BUY',
+        headline: 'Decision: DON\'T BUY',
+        rationale: 'Significant documented limitations or negative signals indicate incompatibility with requirements.',
+        supportingFactors: nichod.keyPositives,
+        concerns: nichod.keyNegatives,
+        conditions: [],
+        uncertainty: nichod.missingInformation,
+        evidenceStrength: nichod.evidenceStrength,
+        confidence: Confidence.HIGH,
+        evidenceCount: nichod.evidenceCount,
+        relevantClaimCount: nichod.relevantClaimCount,
+        contradictionCount: nichod.contradictions.length,
+        sourceStatus: nichod.sourceStatus,
+        limitations: nichod.limitations,
       };
     }
   }
 
-  // 2. Standard and Category Discovery via Source Adapters
-  try {
-    const discoveredEntities = await sourceRouter.discoverEntities(
-      parsed.cleanQuery,
-      parsed.domain,
-      parsed.market,
-      parsed.language,
-      {
-        bypassCache: options?.bypassCache,
-        timeoutMs: options?.timeoutMs || 3500,
-        budget: parsed.constraints.budget,
-      }
-    );
-
-    if (discoveredEntities.length > 0) {
-      // Rank and map to EntityItem
-      const rankedItems = EvidenceRankingEngine.rankAndMapToEntityItems(
-        discoveredEntities,
-        parsed
-      );
-
-      // If a budget constraint was specified (e.g. under ₹50,000 / under ₹30,000)
-      // and items have verified prices exceeding the budget, filter them conservatively.
-      // If none match or no price is verified for a strict budget query, acknowledge insufficiency.
-      if (parsed.constraints.budget) {
-        const verifiedMatchingBudget = rankedItems.filter((item) => {
-          if (!item.price.isVerified || !item.price.amount) {
-            return false; // Price not verified
-          }
-          return item.price.amount <= parsed.constraints.budget!;
-        });
-
-        if (verifiedMatchingBudget.length > 0) {
-          return {
-            parsedQuery: parsed,
-            status: 'SUCCESS',
-            items: verifiedMatchingBudget,
-            retrievedAt: new Date().toISOString(),
-          };
-        } else {
-          // No current verified prices within budget from permitted sources
-          return {
-            parsedQuery: parsed,
-            status: 'NO_RESULTS',
-            items: [],
-            message: `We couldn’t find enough reliable current information for this search under ${parsed.constraints.currency || ''}${parsed.constraints.budget.toLocaleString()}.`,
-            retrievedAt: new Date().toISOString(),
-          };
-        }
-      }
-
-      if (rankedItems.length > 0) {
-        if (parsed.intent === 'EXACT_ENTITY') {
-          const primaryEntity = rankedItems[0];
-          // Valid alternatives must not be duplicate representations of the primary entity
-          const alternatives = rankedItems
-            .slice(1)
-            .filter(
-              (alt) =>
-                alt.name.toLowerCase() !== primaryEntity.name.toLowerCase() &&
-                alt.slug !== primaryEntity.slug
-            )
-            .slice(0, 3);
-
-          return {
-            parsedQuery: parsed,
-            status: 'SUCCESS',
-            items: [primaryEntity],
-            alternatives: alternatives.length > 0 ? alternatives : undefined,
-            retrievedAt: new Date().toISOString(),
-          };
-        }
-
-        return {
-          parsedQuery: parsed,
-          status: 'SUCCESS',
-          items: rankedItems,
-          retrievedAt: new Date().toISOString(),
-        };
-      }
-    }
-  } catch (err) {
-    console.warn('[Decision Engine] Handled source discovery notice:', err);
+  // BUY_IF: Generally supportive but has conditions
+  if (
+    (nichod.missingInformation.length > 0 || nichod.mixedOrUncertain.length > 0 || nichod.keyNegatives.length > 0) &&
+    nichod.keyPositives.length > 0
+  ) {
+    return {
+      query: nichod.query,
+      decision: 'BUY_IF',
+      headline: 'Decision: BUY IF specific conditions are met',
+      rationale: 'Evidence is generally supportive, but clarification on missing information or conditions is required.',
+      supportingFactors: nichod.keyPositives,
+      concerns: nichod.keyNegatives,
+      conditions: nichod.missingInformation.length > 0 ? nichod.missingInformation : ['Clarify mixed signals'],
+      uncertainty: [...nichod.mixedOrUncertain, ...nichod.missingInformation],
+      evidenceStrength: nichod.evidenceStrength,
+      confidence: Confidence.MEDIUM,
+      evidenceCount: nichod.evidenceCount,
+      relevantClaimCount: nichod.relevantClaimCount,
+      contradictionCount: nichod.contradictions.length,
+      sourceStatus: nichod.sourceStatus,
+      limitations: nichod.limitations,
+    };
   }
 
-  // 3. Strict Data Integrity: If external discovery found no reliable evidence
+  // BUY: Strong supporting evidence
+  if (nichod.evidenceStrength === 'STRONG' && nichod.relevantClaimCount >= 2 && nichod.contradictions.length === 0) {
+    return {
+      query: nichod.query,
+      decision: 'BUY',
+      headline: 'Decision: BUY',
+      rationale: 'Strong evidence supports this product for the stated use case.',
+      supportingFactors: nichod.keyPositives,
+      concerns: [],
+      conditions: [],
+      uncertainty: [],
+      evidenceStrength: nichod.evidenceStrength,
+      confidence: Confidence.HIGH,
+      evidenceCount: nichod.evidenceCount,
+      relevantClaimCount: nichod.relevantClaimCount,
+      contradictionCount: nichod.contradictions.length,
+      sourceStatus: nichod.sourceStatus,
+      limitations: nichod.limitations,
+    };
+  }
+
+  // Default Fallback
   return {
-    parsedQuery: parsed,
-    status: 'NO_RESULTS',
-    items: [],
-    message: 'We couldn’t find enough reliable current information for this search.',
-    retrievedAt: new Date().toISOString(),
+    query: nichod.query,
+    decision: 'INSUFFICIENT_EVIDENCE',
+    headline: 'Decision: INSUFFICIENT EVIDENCE',
+    rationale: 'Evidence is not strong enough to confidently support a BUY or DON\'T BUY decision.',
+    supportingFactors: nichod.keyPositives,
+    concerns: nichod.keyNegatives,
+    conditions: [],
+    uncertainty: ['Evidence is limited', ...nichod.missingInformation],
+    evidenceStrength: nichod.evidenceStrength,
+    confidence: Confidence.MEDIUM,
+    evidenceCount: nichod.evidenceCount,
+    relevantClaimCount: nichod.relevantClaimCount,
+    contradictionCount: nichod.contradictions.length,
+    sourceStatus: nichod.sourceStatus,
+    limitations: nichod.limitations,
   };
 }

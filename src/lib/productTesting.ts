@@ -55,9 +55,9 @@ export function getTestingDetails(q: string, titleQ: string, market: MarketCode 
     qLower.includes('toaster') ||
     qLower.includes('kettle')
   ) {
-    summary = `Tested in real household kitchens: voltage stability, motor torque, thermal regulation, noise & food-grade durability`;
-    para1 = `We tested ${titleQ} across real home kitchens in ${region}, benchmarking motor endurance under heavy loads, municipal water conditions, and continuous operational heating.`;
-    para2 = 'Motor strain, operational noise decibels, and food-grade stainless steel longevity were measured under prolonged stress cycles to guarantee everyday reliability.';
+    summary = `Evaluated across everyday kitchen usability: build materials, motor performance, thermal control, and food-grade durability`;
+    para1 = `We analyzed ${titleQ} across real home kitchen reports in ${region}, reviewing motor performance under heavy loads, municipal water conditions, and continuous operational heating.`;
+    para2 = 'Motor strain, operational noise levels, and food-grade stainless steel longevity were evaluated across owner reports and teardowns to assess everyday reliability.';
   } else if (
     qLower.includes('ac') ||
     qLower.includes('cooler') ||
@@ -66,9 +66,9 @@ export function getTestingDetails(q: string, titleQ: string, market: MarketCode 
     qLower.includes('geyser') ||
     qLower.includes('heater')
   ) {
-    summary = `Tested across dynamic climate conditions, 180 sq ft chamber, continuous energy consumption monitoring`;
-    para1 = `Testing for ${titleQ} was conducted during real seasonal climatic extremes in ${region}, measuring rapid thermal and air filtration pull-down across an insulated room environment.`;
-    para2 = 'Digital energy meters logged kilowatt-hour electricity consumption continuously to calculate genuine seasonal running costs and long-term hardware resilience.';
+    summary = `Evaluated across regional climate conditions, room coverage, and energy efficiency ratings`;
+    para1 = `Research for ${titleQ} evaluated performance during seasonal climate extremes in ${region}, analyzing room temperature pull-down and air filtration metrics across technical benchmarks.`;
+    para2 = 'Energy efficiency ratings (ISEER/BEE/Energy Star) were analyzed to compare seasonal operating costs and long-term hardware resilience.';
   } else if (
     qLower.includes('tv') ||
     qLower.includes('television') ||
@@ -78,9 +78,9 @@ export function getTestingDetails(q: string, titleQ: string, market: MarketCode 
     qLower.includes('tablet') ||
     qLower.includes('monitor')
   ) {
-    summary = `140+ hours real-world battery endurance, thermal throttling under load, peak nit brightness and drop resistance`;
-    para1 = `We logged over 140 hours testing ${titleQ}, measuring real-world battery endurance, thermal throttling under sustained heavy load, and display legibility under direct ambient daylight in peak nits.`;
-    para2 = `Hardware durability was verified with drop tests, port stress cycling, and real-world network performance across cellular and modern Wi-Fi networks in ${region}.`;
+    summary = `Battery endurance benchmarks, thermal throttling metrics, display brightness, and long-term durability`;
+    para1 = `We synthesized extensive technical evaluations of ${titleQ}, reviewing real-world battery endurance, thermal throttling under sustained heavy load, and display legibility in peak nits.`;
+    para2 = `Hardware durability, port reliability, and real-world network performance were cross-referenced across expert benchmarks and customer feedback in ${region}.`;
   } else {
     summary = `Material build quality, verified owner feedback, manufacturer warranty support and value in ${region}`;
     para1 = `We evaluated ${titleQ} for real-world durability in ${region}, analyzing material build quality, verified local customer feedback, and manufacturer after-sales support networks.`;
@@ -88,7 +88,7 @@ export function getTestingDetails(q: string, titleQ: string, market: MarketCode 
   }
 
   return {
-    heading: `How We Tested ${titleQ} in ${region}`,
+    heading: `Research & Evaluation for ${titleQ} in ${region}`,
     summary,
     para1,
     para2,

@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
+import { adaptGeminiResponse } from './src/search/researchAdapter';
 
 async function startServer() {
   const app = express();
@@ -276,15 +277,17 @@ async function startServer() {
         },
       });
 
-      const promptText = `Evaluate this decision query: "${query}". Provide a concise factual verdict without hallucinated prices or fake review counts.`;
-
+      const promptText = `Use Google Search to evaluate this decision query: "${query}". Provide a concise factual verdict, citing sources. Do not hallucinate prices or fake review counts.`;
+      
       let response;
       try {
         response = await ai.models.generateContent({
           model: 'gemini-3.8-flash',
           contents: promptText,
-        });
+          tools: [{ googleSearch: {} }],
+        } as any);
       } catch (primaryErr: any) {
+        console.error('[Gemini API Grounded Route] Primary model failure:', primaryErr);
         const isTransient =
           primaryErr?.status === 503 ||
           primaryErr?.status === 504 ||
@@ -302,16 +305,31 @@ async function startServer() {
           response = await ai.models.generateContent({
             model: 'gemini-3.1-flash-lite',
             contents: promptText,
-          });
+            tools: [{ googleSearch: {} }],
+          } as any);
         } else {
           throw primaryErr;
         }
       }
 
+      const responseText = response.text || (response as any).candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (!responseText) {
+        console.error('[Gemini API Grounded Route] Response object:', JSON.stringify(response, null, 2));
+      }
+      const adaptedResponse = adaptGeminiResponse(responseText, false, query);
+
       return res.status(200).json({
         success: true,
         status: 'RESULTS_FOUND',
-        verdict: response.text,
+        verdict: responseText,
+        // Diagnostic: Capture grounding metadata if present
+        groundingMetadataExists: !!(response as any).candidates?.[0]?.groundingMetadata,
+        groundingMetadata: (response as any).candidates?.[0]?.groundingMetadata,
+        // Phase 3.1/3.2: Include extracted evidence and NICHOD synthesis
+        evidencePoints: adaptedResponse.evidencePoints,
+        nichod: adaptedResponse.nichod,
+        decision: adaptedResponse.decision,
+        sourceStatus: adaptedResponse.sourceStatus,
         products: [],
         retrievedAt: new Date().toISOString(),
       });
@@ -338,6 +356,16 @@ async function startServer() {
 
   app.post('/api/gemini/grounded-search', handleGroundedSearch);
   app.get('/api/gemini/grounded-search', handleGroundedSearch);
+
+  // API Route: Comparison Search Engine
+  app.get('/api/comparison-search', async (req, res) => {
+    const { handleComparisonSearch } = await import('./api/comparison-search');
+    await handleComparisonSearch(req, res);
+  });
+  app.post('/api/comparison-search', async (req, res) => {
+    const { handleComparisonSearch } = await import('./api/comparison-search');
+    await handleComparisonSearch(req, res);
+  });
 
   // Contact Form API - connects and routes messages to alokmohansharma.delhi@gmail.com
   app.post('/api/contact', async (req, res) => {
