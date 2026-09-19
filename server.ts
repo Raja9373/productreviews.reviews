@@ -10,10 +10,16 @@ async function startServer() {
   app.use(express.json());
 
   // Canonical Domain Normalization (WWW to non-WWW 301 redirect)
+  // Exempt sitemap.xml and robots.txt so crawlers (Google Search Console) fetch them directly without redirecting
   app.use((req, res, next) => {
-    const host = req.headers.host || '';
-    if (host.toLowerCase().startsWith('www.productreviews.review')) {
-      const targetUrl = `https://productreviews.review${req.originalUrl}`;
+    const host = (req.headers['host'] || req.hostname || '').toString();
+    const pathName = req.url || req.path || '';
+    if (
+      host.toLowerCase().startsWith('www.productreviews.review') &&
+      !pathName.startsWith('/sitemap.xml') &&
+      !pathName.startsWith('/robots.txt')
+    ) {
+      const targetUrl = `https://productreviews.review${req.originalUrl || '/'}`;
       return res.redirect(301, targetUrl);
     }
     next();
