@@ -397,15 +397,17 @@ async function startServer() {
     res.send('User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: https://productreviews.review/sitemap.xml\n');
   });
 
-  // Dynamic /sitemap.xml generated from CACHED_CATEGORY_DATA keys + live-${q}-IN cache keys
+  // Dynamic /sitemap.xml generated from canonical keys + live cache
   const serveDynamicSitemap = async (req: express.Request, res: express.Response) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     try {
       const sitemapModule = await import('./api/sitemap');
       await sitemapModule.default(req, res);
     } catch (err: any) {
       console.warn('[server.ts sitemap generation error]:', err?.message || err);
       res.type('application/xml; charset=utf-8');
-      res.status(500).send('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>https://productreviews.review/</loc></url>\n</urlset>');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.status(200).send('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>https://productreviews.review/</loc><lastmod>2026-09-23</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>\n</urlset>');
     }
   };
 
