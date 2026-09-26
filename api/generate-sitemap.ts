@@ -4,7 +4,9 @@ import path from 'node:path';
 
 export const BASE_CANONICAL_URL = 'https://productreviews.review';
 
-// Core canonical routes as specified
+/**
+ * Strict set of static canonical routes permitted in the sitemap
+ */
 export const CANONICAL_ROUTES = [
   '/',
   '/about',
@@ -15,7 +17,7 @@ export const CANONICAL_ROUTES = [
 ] as const;
 
 /**
- * Formats a Date or timestamp to standard sitemap YYYY-MM-DD format
+ * Formats a Date or timestamp into standard YYYY-MM-DD format
  */
 export function formatSitemapDate(date?: Date | string | number): string {
   try {
@@ -28,7 +30,7 @@ export function formatSitemapDate(date?: Date | string | number): string {
 }
 
 /**
- * Escapes characters for XML safety
+ * Escapes characters for strict XML entity compliance
  */
 export function escapeXmlText(str: string): string {
   return str.replace(/[<>&'"]/g, (c) => {
@@ -50,13 +52,60 @@ export function escapeXmlText(str: string): string {
 }
 
 /**
- * Constructs a clean XML sitemap string including only the canonical routes.
- * Ensures zero script tags, zero search tags, and strict XML formatting.
+ * Validates and filters routes against dynamic query strings, search paths, 
+ * and browser extension injection artifacts.
+ */
+export function sanitizeRoute(route: string): string | null {
+  if (!route || typeof route !== 'string') return null;
+  const trimmed = route.trim();
+
+  // 1. Exclude browser extension artifacts, script URLs, data URIs
+  if (
+    trimmed.includes('chrome-extension://') ||
+    trimmed.includes('moz-extension://') ||
+    trimmed.includes('safari-extension://') ||
+    trimmed.includes('javascript:') ||
+    trimmed.includes('data:') ||
+    trimmed.includes('eval(') ||
+    trimmed.includes('<script') ||
+    trimmed.includes('</script>') ||
+    /<[^>]+>/i.test(trimmed)
+  ) {
+    return null;
+  }
+
+  // 2. Exclude dynamic search results, query parameters, tracking parameters, and API routes
+  if (
+    trimmed.includes('?') ||
+    trimmed.includes('&') ||
+    trimmed.includes('/search') ||
+    trimmed.includes('/api/') ||
+    trimmed.includes('localhost') ||
+    trimmed.includes('127.0.0.1')
+  ) {
+    return null;
+  }
+
+  // Ensure normalized route starting with slash
+  const normalized = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+
+  // Only permit strictly allowed static canonical routes
+  const isAllowed = (CANONICAL_ROUTES as readonly string[]).includes(normalized);
+  return isAllowed ? normalized : null;
+}
+
+/**
+ * Constructs a clean XML sitemap string including only verified canonical routes.
+ * Strictly guarantees zero script tags, zero search tags, and zero browser extension code.
  */
 export function generateCanonicalSitemapXml(dateFormatted?: string): string {
   const lastmod = dateFormatted || formatSitemapDate();
 
-  const urlEntries = CANONICAL_ROUTES.map((route) => {
+  const validRoutes = CANONICAL_ROUTES
+    .map(sanitizeRoute)
+    .filter((r): r is string => r !== null);
+
+  const urlEntries = validRoutes.map((route) => {
     const loc = route === '/' ? `${BASE_CANONICAL_URL}/` : `${BASE_CANONICAL_URL}${route}`;
     const priority = route === '/' ? '1.0' : '0.8';
     const changefreq = route === '/' ? 'daily' : 'monthly';
@@ -74,14 +123,15 @@ export function generateCanonicalSitemapXml(dateFormatted?: string): string {
 ${urlEntries.join('\n')}
 </urlset>`;
 
-  // Sanitization check: ensure absolutely NO script tags or search query patterns
+  // Secondary assertion: reject any disallowed strings or extension markers
   if (
     /<script/i.test(rawXml) ||
     /<\/script>/i.test(rawXml) ||
-    /\/search\?/i.test(rawXml) ||
+    /extension:\/\//i.test(rawXml) ||
+    /\/search/i.test(rawXml) ||
     /\?q=/i.test(rawXml)
   ) {
-    throw new Error('Sitemap validation error: Disallowed tags or search patterns detected.');
+    throw new Error('Sitemap validation error: disallowed elements or dynamic query parameters detected.');
   }
 
   return rawXml;
@@ -146,6 +196,7 @@ export async function generateSitemapHandler(req: Request, res: Response) {
           hasUrlset: xml.includes('<urlset') && xml.includes('</urlset>'),
           scriptTagsPresent: false,
           searchTagsPresent: false,
+          browserExtensionsFiltered: true,
         },
       },
     });

@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowLeft, Sparkles, ShieldCheck, Globe, Cpu, Database, CheckCircle } from 'lucide-react';
+import { FaqSchemaGenerator } from '../seo/FaqSchemaGenerator';
 
 interface AboutPageProps {
   onBackToHome: () => void;
@@ -83,6 +84,11 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onBackToHome }) => {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Structured FAQ Section & Schema.org JSON-LD */}
+      <div className="mt-10">
+        <FaqSchemaGenerator renderUi={true} />
       </div>
     </div>
   );
