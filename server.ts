@@ -399,20 +399,48 @@ async function startServer() {
 
   // Dynamic /sitemap.xml generated from canonical keys + live cache
   const serveDynamicSitemap = async (req: express.Request, res: express.Response) => {
-    res.setHeader('X-Content-Type-Options', 'nosniff');
     try {
-      const sitemapModule = await import('./api/sitemap');
-      await sitemapModule.default(req, res);
+      const { serveSitemapXml } = await import('./api/sitemap');
+      await serveSitemapXml(req, res);
     } catch (err: any) {
       console.warn('[server.ts sitemap generation error]:', err?.message || err);
       res.type('application/xml; charset=utf-8');
       res.setHeader('X-Content-Type-Options', 'nosniff');
-      res.status(200).send('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>https://productreviews.review/</loc><lastmod>2026-09-23</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>\n</urlset>');
+      res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'none'; style-src 'unsafe-inline'");
+      res.status(200).send('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>https://productreviews.review/</loc><lastmod>' + new Date().toISOString().split('T')[0] + '</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>\n</urlset>');
     }
   };
 
+  const handleSitemapGenerateRoute = async (req: express.Request, res: express.Response) => {
+    try {
+      const { handleGenerateSitemapApi } = await import('./api/sitemap');
+      await handleGenerateSitemapApi(req, res);
+    } catch (err: any) {
+      console.warn('[server.ts sitemap generate error]:', err?.message || err);
+      res.status(500).json({ error: 'Failed to generate sitemap', message: err?.message || String(err) });
+    }
+  };
+
+  // API Route: /api/generate-sitemap specifically requested for canonical sitemap generation
+  const handleGenerateSitemapDirect = async (req: express.Request, res: express.Response) => {
+    try {
+      const { generateSitemapHandler } = await import('./api/generate-sitemap');
+      await generateSitemapHandler(req, res);
+    } catch (err: any) {
+      console.warn('[server.ts /api/generate-sitemap error]:', err?.message || err);
+      res.status(500).json({ error: 'Failed to generate sitemap', message: err?.message || String(err) });
+    }
+  };
+
+  app.get('/api/generate-sitemap', handleGenerateSitemapDirect);
+  app.post('/api/generate-sitemap', handleGenerateSitemapDirect);
+
   app.get('/sitemap.xml', serveDynamicSitemap);
   app.get('/api/sitemap', serveDynamicSitemap);
+  app.post('/api/sitemap/generate', handleSitemapGenerateRoute);
+  app.post('/api/sitemap/rebuild', handleSitemapGenerateRoute);
+  app.post('/api/sitemap', handleSitemapGenerateRoute);
+  app.get('/api/sitemap/generate', handleSitemapGenerateRoute);
 
   // Vite middleware in development mode
   if (process.env.NODE_ENV !== 'production') {
