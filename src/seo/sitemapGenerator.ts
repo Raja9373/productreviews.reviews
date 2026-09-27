@@ -122,23 +122,13 @@ export function getCanonicalSitemapEntries(dateFormatted?: string): SitemapUrlEn
     priority: '1.0',
   });
 
-  // 2. Multilingual canonical root routes (23 languages)
-  for (const lang of CANONICAL_LANGUAGES) {
-    entries.push({
-      loc: `${BASE_CANONICAL_URL}/${lang}/`,
-      lastmod,
-      changefreq: 'daily',
-      priority: '0.8',
-    });
-  }
-
-  // 3. Static info and legal canonical pages
+  // 2. Core static and legal canonical pages
   for (const page of CANONICAL_STATIC_PAGES) {
     entries.push({
       loc: `${BASE_CANONICAL_URL}/${page}`,
       lastmod,
       changefreq: 'monthly',
-      priority: '0.7',
+      priority: '0.8',
     });
   }
 

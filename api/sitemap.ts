@@ -27,7 +27,6 @@ export async function serveSitemapXml(req: Request, res: Response) {
     const xml = getCachedSitemapXml();
     res.setHeader('Content-Type', 'application/xml; charset=utf-8');
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'none'; style-src 'unsafe-inline'");
     res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
     return res.status(200).send(xml);
   } catch (err: any) {
@@ -35,7 +34,7 @@ export async function serveSitemapXml(req: Request, res: Response) {
     const fallbackXml = generateCleanSitemapXml();
     res.setHeader('Content-Type', 'application/xml; charset=utf-8');
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'none'; style-src 'unsafe-inline'");
+    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
     return res.status(200).send(fallbackXml);
   }
 }
