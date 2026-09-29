@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
+import { HIGH_PRIORITY_COMPARISONS } from '../src/seo/comparisonData';
 
 export const BASE_CANONICAL_URL = 'https://productreviews.review';
 
@@ -14,7 +15,8 @@ export const CANONICAL_ROUTES = [
   '/privacy',
   '/terms',
   '/disclaimer',
-] as const;
+  ...HIGH_PRIORITY_COMPARISONS.filter((c) => c.isSuccessful).map((c) => `/compare/${c.slug}`),
+] as string[];
 
 /**
  * Formats a Date or timestamp into standard YYYY-MM-DD format
@@ -89,8 +91,8 @@ export function sanitizeRoute(route: string): string | null {
   // Ensure normalized route starting with slash
   const normalized = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
 
-  // Only permit strictly allowed static canonical routes
-  const isAllowed = (CANONICAL_ROUTES as readonly string[]).includes(normalized);
+  // Permit allowed static routes or /compare/ comparison paths
+  const isAllowed = CANONICAL_ROUTES.includes(normalized) || normalized.startsWith('/compare/');
   return isAllowed ? normalized : null;
 }
 
@@ -107,8 +109,9 @@ export function generateCanonicalSitemapXml(dateFormatted?: string): string {
 
   const urlEntries = validRoutes.map((route) => {
     const loc = route === '/' ? `${BASE_CANONICAL_URL}/` : `${BASE_CANONICAL_URL}${route}`;
-    const priority = route === '/' ? '1.0' : '0.8';
-    const changefreq = route === '/' ? 'daily' : 'monthly';
+    const isComparison = route.startsWith('/compare/');
+    const priority = route === '/' ? '1.0' : isComparison ? '0.9' : '0.8';
+    const changefreq = route === '/' ? 'daily' : isComparison ? 'weekly' : 'monthly';
 
     return `  <url>
     <loc>${escapeXmlText(loc)}</loc>

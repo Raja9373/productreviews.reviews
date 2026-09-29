@@ -107,8 +107,10 @@ export function sanitizeUrl(rawUrl: string): string | null {
   return trimmed;
 }
 
+import { HIGH_PRIORITY_COMPARISONS } from './comparisonData';
+
 /**
- * Compiles the list of canonical routes
+ * Compiles the list of canonical routes including core pages and high-priority product comparisons
  */
 export function getCanonicalSitemapEntries(dateFormatted?: string): SitemapUrlEntry[] {
   const lastmod = dateFormatted || formatSitemapDate();
@@ -130,6 +132,18 @@ export function getCanonicalSitemapEntries(dateFormatted?: string): SitemapUrlEn
       changefreq: 'monthly',
       priority: '0.8',
     });
+  }
+
+  // 3. High-priority successful product comparison pages
+  for (const comp of HIGH_PRIORITY_COMPARISONS) {
+    if (comp.isSuccessful && comp.slug) {
+      entries.push({
+        loc: `${BASE_CANONICAL_URL}/compare/${comp.slug}`,
+        lastmod: comp.lastmod ? formatSitemapDate(comp.lastmod) : lastmod,
+        changefreq: comp.changefreq || 'weekly',
+        priority: comp.priority || '0.85',
+      });
+    }
   }
 
   // Strictly filter and sanitize all entries

@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { HIGH_PRIORITY_COMPARISONS } from '../src/seo/comparisonData';
 
 /**
  * Base canonical domain for productreviews.review
@@ -16,6 +17,7 @@ export const CANONICAL_ROUTES: string[] = [
   '/privacy',
   '/terms',
   '/disclaimer',
+  ...HIGH_PRIORITY_COMPARISONS.filter((c) => c.isSuccessful).map((c) => `/compare/${c.slug}`),
 ];
 
 /**
@@ -95,8 +97,9 @@ export function generateCanonicalSitemapXml(
   const urlEntries = sanitizedRoutes.map((route) => {
     const cleanRoute = route.startsWith('/') ? route : `/${route}`;
     const loc = cleanRoute === '/' ? `${baseUrl}/` : `${baseUrl}${cleanRoute}`;
-    const priority = cleanRoute === '/' ? '1.0' : '0.8';
-    const changefreq = cleanRoute === '/' ? 'daily' : 'monthly';
+    const isComparison = cleanRoute.startsWith('/compare/');
+    const priority = cleanRoute === '/' ? '1.0' : isComparison ? '0.9' : '0.8';
+    const changefreq = cleanRoute === '/' ? 'daily' : isComparison ? 'weekly' : 'monthly';
 
     return `  <url>
     <loc>${escapeXml(loc)}</loc>

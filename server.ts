@@ -402,7 +402,6 @@ async function startServer() {
       console.warn('[server.ts sitemap generation error]:', err?.message || err);
       res.type('application/xml; charset=utf-8');
       res.setHeader('X-Content-Type-Options', 'nosniff');
-      res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'none'; style-src 'unsafe-inline'");
       res.status(200).send('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>https://productreviews.review/</loc><lastmod>' + new Date().toISOString().split('T')[0] + '</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>\n</urlset>');
     }
   };

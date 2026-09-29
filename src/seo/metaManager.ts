@@ -77,11 +77,17 @@ export function cleanMetaText(input?: string, maxLength: number = 200): string {
 }
 
 /**
- * Checks whether a given path is an approved static canonical route.
+ * Checks whether a given path is an approved static canonical route or comparison page.
  */
 export function isApprovedStaticRoute(path: string): boolean {
   const normalized = normalizePath(path);
-  return (APPROVED_CANONICAL_ROUTES as readonly string[]).includes(normalized);
+  if ((APPROVED_CANONICAL_ROUTES as readonly string[]).includes(normalized)) {
+    return true;
+  }
+  if (normalized.startsWith('/compare/')) {
+    return true;
+  }
+  return false;
 }
 
 /**
