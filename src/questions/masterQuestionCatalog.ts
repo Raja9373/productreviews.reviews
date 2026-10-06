@@ -12,6 +12,8 @@ import {
 } from './masterQuestionTypes';
 import { normalizeMasterQuestion, extractIntentTokens } from './questionNormalizer';
 import { generatePhase15ExpansionCatalog } from './phase15Expansion';
+import { generatePhase21ExpansionCatalog } from './phase21Expansion';
+import { generatePhase22ExpansionCatalog } from './phase22Expansion';
 
 // Import chunk files statically or on-demand
 import chunk1 from './data/questions_chunk_1.json';
@@ -56,8 +58,12 @@ class MasterQuestionCatalogStore {
     ];
 
     const phase15Questions = generatePhase15ExpansionCatalog(baseQuestions);
+    const baseAndPhase15 = [...baseQuestions, ...phase15Questions];
+    const phase21Questions = generatePhase21ExpansionCatalog(baseAndPhase15);
+    const upTo50k = [...baseAndPhase15, ...phase21Questions];
+    const phase22Questions = generatePhase22ExpansionCatalog(upTo50k);
 
-    this.questions = [...baseQuestions, ...phase15Questions];
+    this.questions = [...upTo50k, ...phase22Questions];
 
     // Build indices for O(1) lookups
     for (const q of this.questions) {
