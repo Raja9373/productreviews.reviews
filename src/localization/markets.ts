@@ -116,6 +116,7 @@ const COUNTRY_KEYWORD_MAP: Record<string, MarketCode> = {
   singaporean: 'SG',
 
   // United States
+  us: 'US',
   usa: 'US',
   america: 'US',
   american: 'US',

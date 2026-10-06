@@ -25,6 +25,9 @@ export interface ResearchSource {
   publishedAt?: string;
   sourceStatus: SourceStatus;
   citationType?: string;
+  evidenceMarket?: string;
+  sourceCountry?: string;
+  marketRelevance?: 'LOCAL' | 'REGIONAL' | 'GLOBAL' | 'UNKNOWN';
 }
 
 export enum Sentiment {
@@ -78,6 +81,9 @@ export interface EvidencePoint {
   supportsClaim: boolean;
   provenance: SourceProvenance;
   sourceStatus: SourceStatus;
+  evidenceMarket?: string;
+  sourceCountry?: string;
+  marketRelevance?: 'LOCAL' | 'REGIONAL' | 'GLOBAL' | 'UNKNOWN';
 }
 
 export interface ResearchResult {
@@ -88,6 +94,13 @@ export interface ResearchResult {
   generatedVerdict: string;
   nichod?: NichodResult;
   decision?: DecisionEngineResult;
+  researchContext?: any;
+  researchScope?: 'GLOBAL' | 'LOCAL' | 'REGIONAL' | 'MIXED';
+  marketCoverage?: 'LOCAL_EVIDENCE_AVAILABLE' | 'LOCAL_EVIDENCE_LIMITED' | 'LOCAL_EVIDENCE_UNAVAILABLE' | 'GLOBAL_ONLY' | 'MIXED';
+  localEvidenceAvailable?: boolean;
+  globalEvidenceAvailable?: boolean;
+  missingMarketEvidence?: string[];
+  researchLimitations?: string[];
 }
 
 export interface NichodResult {

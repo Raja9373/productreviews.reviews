@@ -21,14 +21,20 @@ export async function handleComparisonSearch(req: express.Request, res: express.
   const [prodA, prodB] = [products[0], products[1]];
 
   try {
-      const ai = new GoogleGenAI({ apiKey, httpOptions: { timeout: 10000 } });
+      const ai = new GoogleGenAI({ apiKey, httpOptions: { timeout: 30000 } });
       
       const research = async (product: string) => {
           const prompt = `Research ${product} for query: "${query}". Provide factual evidence points.`;
-          // Correct API usage for model
-          const response = await ai.models.generateContent({ model: 'gemini-3.8-flash', contents: [{ role: 'user', parts: [{ text: prompt }] }] } as any);
+          let response;
+          try {
+            response = await ai.models.generateContent({ model: 'gemini-3.8-flash', contents: [{ role: 'user', parts: [{ text: prompt }] }] } as any);
+          } catch (modelErr: any) {
+            console.warn('[Comparison Search API] Notice: Primary model returned status:', modelErr?.status || modelErr?.message || 'transient error');
+            // Fallback to gemini-3.1-flash-lite during demand spikes or timeouts
+            response = await ai.models.generateContent({ model: 'gemini-3.1-flash-lite', contents: [{ role: 'user', parts: [{ text: prompt }] }] } as any);
+          }
           const text = response.text || '';
-          const claims = await extractClaims(text, [product]);
+          const claims = extractClaims(text, [product]);
           return {
               evidencePoints: claims,
               nichod: synthesizeNichod(claims, product)

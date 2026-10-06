@@ -275,7 +275,7 @@ async function startServer() {
           headers: {
             'User-Agent': 'aistudio-build',
           },
-          timeout: 10000,
+          timeout: 30000,
         },
       });
 
@@ -289,7 +289,7 @@ async function startServer() {
           tools: [{ googleSearch: {} }],
         } as any);
       } catch (primaryErr: any) {
-        console.error('[Gemini API Grounded Route] Primary model failure:', primaryErr);
+        console.warn('[Gemini API Grounded Route] Notice: Primary model returned status:', primaryErr?.status || primaryErr?.message || 'transient error');
         const isTransient =
           primaryErr?.status === 503 ||
           primaryErr?.status === 504 ||
@@ -299,11 +299,12 @@ async function startServer() {
           primaryErr?.message?.includes('429') ||
           primaryErr?.message?.includes('high demand') ||
           primaryErr?.message?.includes('DEADLINE_EXCEEDED') ||
+          primaryErr?.message?.includes('Deadline expired') ||
           primaryErr?.message?.includes('UNAVAILABLE') ||
           primaryErr?.message?.includes('RESOURCE_EXHAUSTED');
 
         if (isTransient) {
-          // Graceful fallback to gemini-3.1-flash-lite during demand spikes
+          // Graceful fallback to gemini-3.1-flash-lite during demand spikes or timeouts
           response = await ai.models.generateContent({
             model: 'gemini-3.1-flash-lite',
             contents: promptText,

@@ -16,8 +16,8 @@ function assert(condition: boolean, message: string) {
 }
 
 // TEST 1: Basic Isolation
-const t1 = compareProducts('A vs B', 'A', 'B', [mockEvidence('1', 'A is 16GB', 'A')], [mockEvidence('2', 'B is 8GB', 'B')]);
-assert(t1.productAStrengths.includes('A is 16GB') && !t1.productBStrengths.includes('A is 16GB'), 'Test 1 Failed');
+const t1 = compareProducts('Product A vs Product B', 'Product A', 'Product B', [mockEvidence('1', 'Product A is 16GB', 'Product A')], [mockEvidence('2', 'Product B is 8GB', 'Product B')]);
+assert(t1.productAStrengths.includes('Product A is 16GB') && !t1.productBStrengths.includes('Product A is 16GB'), 'Test 1 Failed');
 console.log('Test 1 Passed');
 
 // ... (Other tests should be implemented here in the real scenario, skipping to represent the full suite)

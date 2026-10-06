@@ -68,7 +68,12 @@ function normalizeQuery(query: string): string[] {
  */
 export function synthesizeNichod(
   evidence: EvidencePoint[],
-  query: string
+  query: string,
+  marketOptions?: {
+    marketName?: string;
+    missingMarketEvidence?: string[];
+    marketLimitations?: string[];
+  }
 ): NichodResult {
   const normalizedQuery = normalizeQuery(query);
   
@@ -177,12 +182,19 @@ export function synthesizeNichod(
     suitableFor: [],
     notSuitableFor: [],
     contradictions,
-    missingInformation: ['Current merchant stock availability', 'Live local currency checkout price'],
+    missingInformation: [
+      'Current merchant stock availability',
+      'Live local currency checkout price',
+      ...(marketOptions?.missingMarketEvidence || [])
+    ],
     evidenceCount: evidence.length,
     relevantClaimCount: relevantEvidence.length,
     confidence,
     evidenceStrength: evidenceStrength as any,
-    limitations: ['Extracted claims not independently verified.'],
+    limitations: [
+      'Extracted claims not independently verified.',
+      ...(marketOptions?.marketLimitations || [])
+    ],
     structuredEvidenceAvailable: isStructured,
     sourceStatus: isStructured ? SourceStatus.STRUCTURED : 
                   isUnstructured ? SourceStatus.UNSTRUCTURED : SourceStatus.UNAVAILABLE,
