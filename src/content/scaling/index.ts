@@ -10,3 +10,5 @@ export * from './batchPlanner';
 export * from './contentExpansionController';
 export * from './phase8ExpansionPilot';
 export * from './phase9ProductionExpansion';
+export * from './phase10Coverage';
+export * from './phase10Expansion';

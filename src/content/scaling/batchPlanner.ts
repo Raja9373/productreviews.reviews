@@ -12,10 +12,11 @@ import { SCALING_SAFETY_CONSTANTS, checkCategoryConcentration } from './scalingS
  */
 export function planBatch(
   requestedLimit: number,
-  candidates: ScalingCandidate[]
+  candidates: ScalingCandidate[],
+  maxLimit: number = SCALING_SAFETY_CONSTANTS.MAX_BATCH_SIZE
 ): { batch: ContentBatch; plannedCandidates: ScalingCandidate[] } {
-  // Enforce safety maximum limit (e.g. 100 max per batch, or pilot max 25)
-  const safeLimit = Math.min(requestedLimit, SCALING_SAFETY_CONSTANTS.MAX_BATCH_SIZE);
+  // Enforce safety maximum limit (e.g. 100 max per sub-batch, or expansion max 250)
+  const safeLimit = Math.min(requestedLimit, maxLimit);
   const plannedCandidates = candidates.slice(0, safeLimit);
 
   const concentration = checkCategoryConcentration(plannedCandidates);
