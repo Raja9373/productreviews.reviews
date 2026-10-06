@@ -104,7 +104,7 @@ export function checkMarketAssertionSafety(
   content: string,
   targetCountryCode: string,
   hasLocalEvidence: boolean,
-  verifiedClaims: ContentClaim[]
+  verifiedClaims: ContentClaim[] = []
 ): SafetyCheckResult {
   const violations: string[] = [];
 

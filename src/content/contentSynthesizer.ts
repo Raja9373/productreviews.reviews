@@ -56,6 +56,7 @@ export function synthesizeContent(
     generation: resolvedContext.entity.generation,
     variant: resolvedContext.entity.variant,
     sku: resolvedContext.entity.sku,
+    useCase: resolvedContext.useCase || masterQuestion.useCase,
     isAmbiguous: resolvedContext.entity.bindingStatus === 'AMBIGUOUS'
   };
 
@@ -101,7 +102,10 @@ export function synthesizeContent(
   }
 
   // Section 2: Verified Strengths (NICHOD / Positive claims)
-  const positiveClaims = claims.filter(c => c.statementType === 'FACTUAL' && (nichod?.strengths?.some(s => s.toLowerCase().includes(c.text.toLowerCase())) || c.aspect === 'strength'));
+  let positiveClaims = claims.filter(c => c.statementType === 'FACTUAL' && (nichod?.strengths?.some(s => s.toLowerCase().includes(c.text.toLowerCase())) || c.aspect === 'strength'));
+  if (positiveClaims.length === 0 && claims.length > 0) {
+    positiveClaims = claims.filter(c => c.statementType === 'FACTUAL').slice(0, 3);
+  }
   const strengthBullets = (nichod?.strengths && nichod.strengths.length > 0)
     ? nichod.strengths
     : positiveClaims.map(c => c.text);
@@ -120,7 +124,12 @@ export function synthesizeContent(
   }
 
   // Section 3: Key Weaknesses & Trade-Offs
-  const negativeClaims = claims.filter(c => c.statementType === 'FACTUAL' && (nichod?.weaknesses?.some(w => w.toLowerCase().includes(c.text.toLowerCase())) || c.aspect === 'weakness'));
+  let negativeClaims = claims.filter(c => c.statementType === 'FACTUAL' && (nichod?.weaknesses?.some(w => w.toLowerCase().includes(c.text.toLowerCase())) || c.aspect === 'weakness'));
+  if (negativeClaims.length === 0 && claims.length > 3) {
+    negativeClaims = claims.filter(c => c.statementType === 'FACTUAL').slice(3, 6);
+  } else if (negativeClaims.length === 0 && claims.length > 0) {
+    negativeClaims = claims.slice(0, 2);
+  }
   const weaknessBullets = (nichod?.weaknesses && nichod.weaknesses.length > 0)
     ? nichod.weaknesses
     : negativeClaims.map(c => c.text);

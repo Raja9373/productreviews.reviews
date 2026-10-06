@@ -52,6 +52,7 @@ export interface ContentEntityMetadata {
   generation?: string;
   variant?: string;
   sku?: string;
+  useCase?: string;
   isAmbiguous?: boolean;
 }
 

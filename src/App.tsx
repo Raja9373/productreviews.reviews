@@ -18,6 +18,9 @@ import { ContactPage } from './components/pages/ContactPage';
 import { PrivacyPage } from './components/pages/PrivacyPage';
 import { TermsPage } from './components/pages/TermsPage';
 import { DisclaimerPage } from './components/pages/DisclaimerPage';
+import { PublishedContentView } from './components/PublishedContentView';
+import { contentRepository } from './content/store/contentRepository';
+import { ContentRecord } from './content/store/contentStoreTypes';
 
 import { DecisionResult, EntityItem, LanguageCode, MarketCode } from './types';
 import { getTranslation } from './localization/languages';
@@ -26,7 +29,7 @@ import { executeSearch } from './search/discoveryEngine';
 import { updateDocumentMeta } from './seo/metaManager';
 import { trackEvent } from './analytics/tracker';
 
-type Screen = 'HOME' | 'SEARCH' | 'DETAIL' | 'ABOUT' | 'CONTACT' | 'PRIVACY' | 'TERMS' | 'DISCLAIMER';
+type Screen = 'HOME' | 'SEARCH' | 'DETAIL' | 'ABOUT' | 'CONTACT' | 'PRIVACY' | 'TERMS' | 'DISCLAIMER' | 'PUBLISHED_REVIEW';
 
 export default function App() {
   const [currentLang, setCurrentLang] = useState<LanguageCode>(() => {
@@ -60,6 +63,7 @@ export default function App() {
   const [loadingStage, setLoadingStage] = useState<'searching' | 'finding' | 'comparing'>('searching');
   const [decisionResult, setDecisionResult] = useState<DecisionResult | null>(null);
   const [selectedEntity, setSelectedEntity] = useState<EntityItem | null>(null);
+  const [selectedPublishedRecord, setSelectedPublishedRecord] = useState<ContentRecord | null>(null);
 
   // AUTO-UPDATE PATCH: Live Prices state from /api/live-prices
   const [data, setData] = useState<any>(null);
@@ -322,6 +326,26 @@ export default function App() {
         if (searchKey !== activeSearchKeyRef.current) {
           handleSearch(rawQ, validMarket);
         }
+      } else if (hash.startsWith('#/review/') || pathname.startsWith('/review/')) {
+        const slug = hash.startsWith('#/review/')
+          ? hash.replace(/^#\/review\//, '').split('?')[0]
+          : pathname.replace(/^\/review\//, '').split('?')[0];
+
+        const record = contentRepository.getBySlug(slug);
+        if (record && record.status === 'PUBLISHED') {
+          setSelectedPublishedRecord(record);
+          setScreen('PUBLISHED_REVIEW');
+          updateDocumentMeta({
+            title: record.title,
+            description: record.metadata.metaDescription,
+            canonicalPath: `/review/${record.slug}`,
+            noIndex: record.indexability === 'NOINDEX'
+          });
+        } else {
+          // Unapproved, draft, or non-existent review -> redirect safely to home
+          setScreen('HOME');
+          updateDocumentMeta({});
+        }
       } else if (hash === '#/about' || pathname === '/about') {
         setScreen('ABOUT');
       } else if (hash === '#/contact' || pathname === '/contact') {
@@ -546,6 +570,14 @@ export default function App() {
             entity={selectedEntity}
             currentLang={currentLang}
             onBack={() => setScreen('SEARCH')}
+          />
+        )}
+
+        {/* VIEW: PUBLISHED CONTENT REVIEW */}
+        {screen === 'PUBLISHED_REVIEW' && selectedPublishedRecord && (
+          <PublishedContentView
+            record={selectedPublishedRecord}
+            onBack={handleResetToHome}
           />
         )}
 

@@ -108,6 +108,7 @@ export function sanitizeUrl(rawUrl: string): string | null {
 }
 
 import { HIGH_PRIORITY_COMPARISONS } from './comparisonData';
+import { contentRepository } from '../content/store/contentRepository';
 
 /**
  * Compiles the list of canonical routes including core pages and high-priority product comparisons
@@ -142,6 +143,19 @@ export function getCanonicalSitemapEntries(dateFormatted?: string): SitemapUrlEn
         lastmod: comp.lastmod ? formatSitemapDate(comp.lastmod) : lastmod,
         changefreq: comp.changefreq || 'weekly',
         priority: comp.priority || '0.85',
+      });
+    }
+  }
+
+  // 4. Controlled Published & Indexable Content Records (Phase 6 Architecture)
+  const publishedRecords = contentRepository.getPublishedIndexableRecords();
+  for (const record of publishedRecords) {
+    if (record.slug && record.canonicalUrl) {
+      entries.push({
+        loc: record.canonicalUrl,
+        lastmod: record.publishedAt ? formatSitemapDate(record.publishedAt) : lastmod,
+        changefreq: 'weekly',
+        priority: '0.9',
       });
     }
   }

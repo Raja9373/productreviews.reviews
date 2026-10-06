@@ -87,6 +87,9 @@ export function isApprovedStaticRoute(path: string): boolean {
   if (normalized.startsWith('/compare/')) {
     return true;
   }
+  if (normalized.startsWith('/review/')) {
+    return true;
+  }
   return false;
 }
 

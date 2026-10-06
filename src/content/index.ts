@@ -10,3 +10,5 @@ export * from './contentSynthesizer';
 export * from './contentQualityGate';
 export * from './contentPipeline';
 export * from './contentTestFixtures';
+export * from './store';
+export * from './scaling';
