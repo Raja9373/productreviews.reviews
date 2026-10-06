@@ -6,6 +6,8 @@ import {
   getCanonicalSitemapEntries,
   invalidateSitemapCache,
 } from '../src/seo/sitemapGenerator';
+import { contentRepository } from '../src/content/store/contentRepository';
+import { seedPhase12BaselinePages, runPhase13OpportunityExpansion } from '../src/content/scaling/phase13Opportunity';
 
 export {
   generateCleanSitemapXml,
@@ -18,12 +20,27 @@ export {
 // Backwards compatibility alias
 export const generateSitemapXml = generateCleanSitemapXml;
 
+let isSeeded = false;
+async function ensureSeeded() {
+  if (!isSeeded) {
+    try {
+      await seedPhase12BaselinePages(contentRepository);
+      await runPhase13OpportunityExpansion(contentRepository);
+      isSeeded = true;
+      invalidateSitemapCache();
+    } catch (e) {
+      console.warn('[sitemap] Failed to seed content repository:', e);
+    }
+  }
+}
+
 /**
  * Express Handler for GET /sitemap.xml and GET /api/sitemap
  * Serves clean XML with appropriate security and caching headers.
  */
 export async function serveSitemapXml(req: Request, res: Response) {
   try {
+    await ensureSeeded();
     const xml = getCachedSitemapXml();
     res.setHeader('Content-Type', 'application/xml; charset=utf-8');
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -31,6 +48,7 @@ export async function serveSitemapXml(req: Request, res: Response) {
     return res.status(200).send(xml);
   } catch (err: any) {
     console.error('[sitemap] Error delivering sitemap:', err?.message || err);
+    await ensureSeeded();
     const fallbackXml = generateCleanSitemapXml();
     res.setHeader('Content-Type', 'application/xml; charset=utf-8');
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -46,6 +64,7 @@ export async function serveSitemapXml(req: Request, res: Response) {
  */
 export async function handleGenerateSitemapApi(req: Request, res: Response) {
   try {
+    await ensureSeeded();
     const result = await generateAndWriteStaticSitemap();
     return res.status(200).json({
       success: true,
