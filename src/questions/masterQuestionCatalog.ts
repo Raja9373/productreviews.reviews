@@ -11,6 +11,7 @@ import {
   MasterIntentType
 } from './masterQuestionTypes';
 import { normalizeMasterQuestion, extractIntentTokens } from './questionNormalizer';
+import { generatePhase15ExpansionCatalog } from './phase15Expansion';
 
 // Import chunk files statically or on-demand
 import chunk1 from './data/questions_chunk_1.json';
@@ -40,8 +41,8 @@ class MasterQuestionCatalogStore {
   private init() {
     if (this.isInitialized) return;
 
-    // Concatenate all 10 chunks
-    this.questions = [
+    // Concatenate all 10 chunks plus Phase 15 expansion to reach 25,000
+    const baseQuestions = [
       ...(chunk1 as MasterQuestion[]),
       ...(chunk2 as MasterQuestion[]),
       ...(chunk3 as MasterQuestion[]),
@@ -53,6 +54,10 @@ class MasterQuestionCatalogStore {
       ...(chunk9 as MasterQuestion[]),
       ...(chunk10 as MasterQuestion[])
     ];
+
+    const phase15Questions = generatePhase15ExpansionCatalog(baseQuestions);
+
+    this.questions = [...baseQuestions, ...phase15Questions];
 
     // Build indices for O(1) lookups
     for (const q of this.questions) {
