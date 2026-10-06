@@ -176,8 +176,8 @@ export default function App() {
       setScreen('SEARCH');
       setSelectedEntity(null);
 
-      // Preserve market in URL hash so reloads / direct navigation maintain market
-      window.location.hash = `#/search?q=${encodeURIComponent(searchQuery)}&market=${targetMarket}`;
+      // Preserve market in clean search URL
+      window.history.pushState({}, '', `/search?q=${encodeURIComponent(searchQuery)}&market=${targetMarket}`);
 
       // Step-by-step loading progression per Phase 3 Section 16
       const stageTimer1 = setTimeout(() => {
@@ -280,14 +280,25 @@ export default function App() {
     []
   );
 
-  // Handle URL hash and pathname routing with current market preservation
+  // Handle History API and clean pathname routing with legacy hash migration
   useEffect(() => {
     const handleNavigation = () => {
-      const hash = window.location.hash || '';
-      const pathname = (window.location.pathname || '/').replace(/\/$/, '') || '/';
-      const searchParams = new URLSearchParams(window.location.search);
+      let hash = window.location.hash || '';
+      let pathname = (window.location.pathname || '/').replace(/\/$/, '') || '/';
+      let search = window.location.search || '';
 
-      // Check for search queries: query parameter ?q=..., /search?q=..., or #/search?q=...
+      // Legacy hash migration (e.g. /#/about -> /about, /#/search?q=... -> /search?q=...)
+      if (hash && hash.startsWith('#/')) {
+        const cleanHashRoute = hash.replace(/^#/, '');
+        const [hPath, hQuery] = cleanHashRoute.split('?');
+        const targetCleanUrl = hQuery ? `${hPath}?${hQuery}` : hPath;
+        window.history.replaceState({}, '', targetCleanUrl);
+        pathname = (window.location.pathname || '/').replace(/\/$/, '') || '/';
+        search = window.location.search || '';
+        hash = '';
+      }
+
+      const searchParams = new URLSearchParams(search);
       let rawQ = (searchParams.get('q') || '').trim();
       let marketParam = searchParams.get('market') as MarketCode | null;
 
@@ -326,10 +337,8 @@ export default function App() {
         if (searchKey !== activeSearchKeyRef.current) {
           handleSearch(rawQ, validMarket);
         }
-      } else if (hash.startsWith('#/review/') || pathname.startsWith('/review/')) {
-        const slug = hash.startsWith('#/review/')
-          ? hash.replace(/^#\/review\//, '').split('?')[0]
-          : pathname.replace(/^\/review\//, '').split('?')[0];
+      } else if (pathname.startsWith('/review/')) {
+        const slug = pathname.replace(/^\/review\//, '').split('?')[0];
 
         const record = contentRepository.getBySlug(slug);
         if (record && record.status === 'PUBLISHED') {
@@ -346,24 +355,21 @@ export default function App() {
           setScreen('HOME');
           updateDocumentMeta({});
         }
-      } else if (hash === '#/about' || pathname === '/about') {
+      } else if (pathname === '/about') {
         setScreen('ABOUT');
-      } else if (hash === '#/contact' || pathname === '/contact') {
+      } else if (pathname === '/contact') {
         setScreen('CONTACT');
-      } else if (hash === '#/privacy' || pathname === '/privacy') {
+      } else if (pathname === '/privacy') {
         setScreen('PRIVACY');
-      } else if (hash === '#/terms' || pathname === '/terms') {
+      } else if (pathname === '/terms') {
         setScreen('TERMS');
       } else if (
-        hash === '#/affiliate-disclosure' ||
-        hash === '#/disclaimer' ||
         pathname === '/disclaimer' ||
         pathname === '/affiliate-disclosure'
       ) {
         setScreen('DISCLAIMER');
-      } else if (!hash || hash === '#' || hash === '#/' || hash === '/' || hash === '') {
-        // Wirecutter Homepage: On "/" or no query, DO NOT show "Best Phone under 30000".
-        // Show Wirecutter.com exact homepage
+      } else if (!pathname || pathname === '/' || pathname === '') {
+        // Wirecutter Homepage: On "/" or no query, show Wirecutter homepage
         setScreen('HOME');
         setQuery('');
         setDecisionResult(null);
@@ -378,11 +384,11 @@ export default function App() {
     };
 
     handleNavigation();
-    window.addEventListener('hashchange', handleNavigation);
     window.addEventListener('popstate', handleNavigation);
+    window.addEventListener('hashchange', handleNavigation);
     return () => {
-      window.removeEventListener('hashchange', handleNavigation);
       window.removeEventListener('popstate', handleNavigation);
+      window.removeEventListener('hashchange', handleNavigation);
     };
   }, [handleSearch]);
 
@@ -417,7 +423,7 @@ export default function App() {
     setDecisionResult(null);
     setSelectedEntity(null);
     activeSearchKeyRef.current = '';
-    window.location.hash = '';
+    window.history.pushState({}, '', '/');
     updateDocumentMeta({});
   };
 
@@ -627,7 +633,7 @@ export default function App() {
             <button
               onClick={() => {
                 setScreen('ABOUT');
-                window.location.hash = '#/about';
+                window.history.pushState({}, '', '/about');
               }}
               className="hover:text-zinc-950 hover:underline transition-colors cursor-pointer"
             >
@@ -636,7 +642,7 @@ export default function App() {
             <button
               onClick={() => {
                 setScreen('DISCLAIMER');
-                window.location.hash = '#/affiliate-disclosure';
+                window.history.pushState({}, '', '/affiliate-disclosure');
               }}
               className="hover:text-zinc-950 hover:underline transition-colors cursor-pointer"
             >
@@ -645,7 +651,7 @@ export default function App() {
             <button
               onClick={() => {
                 setScreen('CONTACT');
-                window.location.hash = '#/contact';
+                window.history.pushState({}, '', '/contact');
               }}
               className="hover:text-zinc-950 hover:underline transition-colors cursor-pointer"
             >
@@ -654,7 +660,7 @@ export default function App() {
             <button
               onClick={() => {
                 setScreen('PRIVACY');
-                window.location.hash = '#/privacy';
+                window.history.pushState({}, '', '/privacy');
               }}
               className="hover:text-zinc-950 hover:underline transition-colors cursor-pointer"
             >
@@ -663,7 +669,7 @@ export default function App() {
             <button
               onClick={() => {
                 setScreen('TERMS');
-                window.location.hash = '#/terms';
+                window.history.pushState({}, '', '/terms');
               }}
               className="hover:text-zinc-950 hover:underline transition-colors cursor-pointer"
             >
@@ -672,7 +678,7 @@ export default function App() {
             <button
               onClick={() => {
                 setScreen('DISCLAIMER');
-                window.location.hash = '#/affiliate-disclosure';
+                window.history.pushState({}, '', '/affiliate-disclosure');
               }}
               className="hover:text-zinc-950 hover:underline transition-colors cursor-pointer"
             >

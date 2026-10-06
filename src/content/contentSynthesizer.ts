@@ -243,7 +243,7 @@ export function synthesizeContent(
   if (entityMeta.category) {
     internalLinks.push({
       title: `Best ${entityMeta.category} Guide`,
-      urlPath: `/#/${entityMeta.category}`,
+      urlPath: `/${entityMeta.category}`,
       linkType: 'CATEGORY',
       targetIntent: 'BUYING_GUIDE',
       isAvailable: true
@@ -252,7 +252,7 @@ export function synthesizeContent(
   if (entityMeta.name) {
     internalLinks.push({
       title: `Reported Issues for ${entityMeta.name}`,
-      urlPath: `/#/search?q=${encodeURIComponent(entityMeta.name + ' problems')}`,
+      urlPath: `/search?q=${encodeURIComponent(entityMeta.name + ' problems')}`,
       linkType: 'PROBLEM',
       targetIntent: 'PROBLEM_SOLUTION',
       isAvailable: true

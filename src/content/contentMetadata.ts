@@ -152,7 +152,7 @@ export function generateStructuredData(content: Partial<SynthesizedContent>): Co
           '@type': 'ListItem',
           position: 2,
           name: content.entity?.category ? capitalize(content.entity.category) : 'Research',
-          item: `${BASE_CANONICAL_URL}/#/${content.entity?.category || 'research'}`
+          item: `${BASE_CANONICAL_URL}/${content.entity?.category || 'research'}`
         },
         {
           '@type': 'ListItem',
