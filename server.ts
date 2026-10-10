@@ -391,7 +391,16 @@ async function startServer() {
   app.get('/robots.txt', (req, res) => {
     res.type('text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=86400');
-    res.send('User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: https://productreviews.review/sitemap.xml\n');
+    res.send('User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: https://productreviews.review/sitemap.xml\nSitemap: https://productreviews.review/sitemap_index.xml\n');
+  });
+
+  // Serve sitemap_index.xml directly
+  app.get('/sitemap_index.xml', (req, res) => {
+    res.type('application/xml; charset=utf-8');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
+    const indexXml = `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <sitemap>\n    <loc>https://productreviews.review/sitemap.xml</loc>\n    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>\n  </sitemap>\n</sitemapindex>`;
+    res.status(200).send(indexXml);
   });
 
   // Dynamic /sitemap.xml generated from canonical keys + live cache

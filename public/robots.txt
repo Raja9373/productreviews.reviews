@@ -3,3 +3,4 @@ Allow: /
 Disallow: /api/
 
 Sitemap: https://productreviews.review/sitemap.xml
+Sitemap: https://productreviews.review/sitemap_index.xml
