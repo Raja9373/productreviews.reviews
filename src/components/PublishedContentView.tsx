@@ -4,6 +4,8 @@ import { DecisionCard } from './DecisionCard';
 import { NichodSummary } from './NichodSummary';
 import { Breadcrumbs } from './Breadcrumbs';
 import { CheckCircle, AlertTriangle, HelpCircle, ArrowLeft, ExternalLink, ShieldCheck } from 'lucide-react';
+import { FaqSchemaGenerator } from './seo/FaqSchemaGenerator';
+import { getFaqsForCategory } from '../seo/faqData';
 
 interface PublishedContentViewProps {
   record: ContentRecord;
@@ -105,22 +107,21 @@ export const PublishedContentView: React.FC<PublishedContentViewProps> = ({ reco
         ))}
       </div>
 
-      {/* Frequently Asked Questions */}
-      {content.faqs && content.faqs.length > 0 && (
-        <section className="mt-12 bg-zinc-50 p-6 rounded-lg border border-zinc-200">
-          <h2 className="text-xl font-bold font-serif-wirecutter text-zinc-900 mb-4">
-            Frequently Asked Questions
-          </h2>
-          <div className="space-y-4">
-            {content.faqs.map((faq, idx) => (
-              <div key={idx} className="border-b border-zinc-200/60 pb-3 last:border-b-0">
-                <h3 className="font-semibold text-zinc-900 text-sm mb-1">{faq.question}</h3>
-                <p className="text-zinc-600 text-sm leading-relaxed">{faq.answer}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* Frequently Asked Questions (Structured Data & Visual UI) */}
+      <section className="mt-12">
+        <FaqSchemaGenerator
+          faqs={
+            content.faqs && content.faqs.length > 0
+              ? [...content.faqs, ...getFaqsForCategory(record.title).slice(0, 2)]
+              : getFaqsForCategory(record.title)
+          }
+          renderUi={true}
+          title="Frequently Asked Questions & Buying Advice"
+          subtitle={`High-intent questions and verified facts regarding ${record.title}, return policies, warranties, and alternatives.`}
+          schemaId={`${record.canonicalUrl || 'https://productreviews.review'}#faq`}
+          scriptId={`published-faq-${record.slug}`}
+        />
+      </section>
 
       {/* Internal Link Recommendations */}
       {content.internalLinks && content.internalLinks.length > 0 && (

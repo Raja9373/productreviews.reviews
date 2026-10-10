@@ -75,6 +75,23 @@
           "value": "public, max-age=3600, s-maxage=86400"
         }
       ]
+    },
+    {
+      "source": "/faq-manifest.json",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json; charset=utf-8"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, s-maxage=86400"
+        }
+      ]
     }
   ]
 }

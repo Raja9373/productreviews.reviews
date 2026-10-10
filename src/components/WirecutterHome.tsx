@@ -19,6 +19,7 @@ import {
 import { MarketCode, LanguageCode } from '../types';
 import { getStoreConfig, buildAffiliateUrl } from '../affiliate/affiliateConfig';
 import { getMarketInfo } from '../localization/markets';
+import { FaqSchemaGenerator } from './seo/FaqSchemaGenerator';
 
 interface WirecutterHomeProps {
   lastUpdated: string;
@@ -640,6 +641,18 @@ export const WirecutterHome: React.FC<WirecutterHomeProps> = ({
             </div>
           </div>
         </div>
+      </section>
+
+      {/* 6.5. Comprehensive Amazon Buying & Product Decision Intelligence FAQs (Google People Also Ask Rich Snippets) */}
+      <section className="bg-white border-t border-zinc-200 py-12 px-4 sm:px-6">
+        <FaqSchemaGenerator
+          renderUi={true}
+          showCategories={true}
+          schemaId="https://productreviews.review/#home-faq"
+          scriptId="home-faq-schema"
+          title="Frequently Asked Questions: Amazon Buying & Product Decision Guide"
+          subtitle="Essential, objective answers to the top questions asked on Google and Amazon regarding product authenticity, return windows, warranties, and category buying criteria."
+        />
       </section>
 
       {/* 7. Affiliate Disclosure Notice with Dynamic Country Store ID */}

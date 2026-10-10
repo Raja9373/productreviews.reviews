@@ -43,6 +43,7 @@
     <meta name="author" content="productreviews.review" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <link rel="canonical" href="https://productreviews.review/" />
+    <link rel="alternate" type="application/json" href="https://productreviews.review/faq-manifest.json" title="Search Engine FAQ Knowledge Manifest" />
     
     <!-- Open Graph / Facebook -->
     <meta property="og:title" content="productreviews.review — The Best Gear for Your Everyday Life | Tested by Experts" />
@@ -126,6 +127,54 @@
           "mainEntity": [
             {
               "@type": "Question",
+              "name": "How do I check if a product on Amazon is sold by an authorized, genuine seller?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Look for listings Fulfilled by Amazon (FBA) or sold directly by official brand stores (e.g. Appario Retail, Cocoblu, or brand flagship stores). Check seller ratings, confirm the listing specifies official manufacturer warranty, and verify that serial numbers match your invoice upon delivery."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What is Amazon Open Box Delivery and how does it protect buyers of electronics?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Open Box Delivery allows you to physically inspect electronics in front of the delivery agent before sharing your OTP. You can verify the product is undamaged, sealed, and authentic. If defective or incorrect, you can reject delivery on the spot for an immediate full refund."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Which is the best all-round smartphone under ₹30,000 on Amazon in 2026?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The OnePlus Nord CE4 leads the sub-₹30,000 category with rapid 100W SUPERVOOC charging, Snapdragon 7 Gen 3 performance, clean OxygenOS software, and durable IP54 splash resistance."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is an Apple MacBook Air with 8GB unified memory enough in 2026, or is 16GB required?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "For daily web browsing, document workflows, and college studies, 8GB unified memory remains smooth. For developers, creative multimedia workflows, and long-term 4-5 year future-proofing, 16GB unified memory is strongly recommended."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "OLED vs QLED 4K TVs: which display technology should you choose for bright rooms?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "QLED (Mini-LED) TVs provide substantially higher peak brightness (1,000 to 2,000+ nits) and zero burn-in risk, making them best for bright rooms. OLED TVs deliver perfect infinite contrast and true blacks, ideal for dark cinema rooms."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Which is better for Indian summers: 3-Star or 5-Star 1.5 Ton Inverter Split AC?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "If operated for more than 6-8 hours daily during summer, a 5-Star inverter AC repays its initial price premium in electricity bill savings within 18-24 months. For moderate 3-4 hours daily use, a 3-Star inverter AC offers the best upfront value."
+              }
+            },
+            {
+              "@type": "Question",
               "name": "How does productreviews.review evaluate and score products?",
               "acceptedAnswer": {
                 "@type": "Answer",
@@ -155,43 +204,215 @@
                 "@type": "Answer",
                 "text": "Our comparison engine performs side-by-side spec alignment, calculating distinct trade-offs, strengths, and drawbacks across hardware performance, battery endurance, software support, ergonomics, and cost efficiency."
               }
-            },
-            {
-              "@type": "Question",
-              "name": "Can I compare products across different brands and categories?",
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "Yes. You can enter any comparison query (for example, 'Sony A7 IV vs Canon R6 Mark II' or 'M3 MacBook Air vs Dell XPS 13') to receive instant, structured side-by-side trade-off matrices and verdict summaries."
-              }
-            },
-            {
-              "@type": "Question",
-              "name": "How often are product reviews and pricing recommendations updated?",
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "Product specifications and market pricing are continuously verified and refreshed against global merchant inventories and new product release cycles to maintain high editorial and decision accuracy."
-              }
-            },
-            {
-              "@type": "Question",
-              "name": "What makes productreviews.review different from traditional review blogs?",
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "Unlike conventional blogs filled with affiliate fluff and narrative padding, productreviews.review delivers concise, data-backed decision syntheses, clear winner callouts, explicit trade-offs, and interactive criteria filters in a fast, ad-light interface."
-              }
-            },
-            {
-              "@type": "Question",
-              "name": "How does the search and decision engine analyze pros and cons?",
-              "acceptedAnswer": {
-                "@type": "Answer",
-                "text": "Pros and cons are extracted and categorized across real customer long-term reliability reports, thermal performance, build materials, firmware stability, and customer support history."
-              }
             }
           ]
         }
       ]
     }
+    </script>
+
+    <!-- Dynamic Category-Specific FAQPage Schema Injector for Google Rich Snippets & Search Visibility -->
+    <script id="dynamic-faq-injector">
+      (function() {
+        const FAQ_DATABASE = {
+          phone: [
+            {
+              q: "How do I check if a smartphone on Amazon is brand new, sealed, and authentic?",
+              a: "Verify that the seller is an authorized brand seller or Fulfilled by Amazon (FBA). Inspect the sealed outer box upon delivery using Open Box Delivery, and enter the IMEI/Serial Number on the manufacturer's official warranty check portal to verify activation status."
+            },
+            {
+              q: "Does 100W or 120W fast charging damage mobile battery health over time?",
+              a: "Modern fast chargers utilize dual-cell battery designs, GaN power delivery chips, and thermal throttles that keep temperatures below 40°C during charging, retaining over 80% original capacity after 800 to 1,600 charging cycles."
+            },
+            {
+              q: "Which smartphone offers the best camera and battery balance in 2026?",
+              a: "In the flagship tier, iPhone 16 Pro and Samsung Galaxy S24 Ultra lead in camera consistency and battery longevity. In the sub-₹30,000 tier, OnePlus Nord CE4 and Redmi Note 13 Pro provide the highest performance-per-dollar ratio."
+            },
+            {
+              q: "What is Amazon's replacement and return policy for smartphones?",
+              a: "Amazon provides a 7-day replacement window for hardware defects and Dead-on-Arrival (DOA) units. Following technical diagnostic verification, an exact replacement unit is dispatched at zero additional fee."
+            }
+          ],
+          laptop: [
+            {
+              q: "Is 8GB RAM enough for a laptop in 2026, or is 16GB required?",
+              a: "For students, everyday web research, document editing, and media streaming, 8GB unified memory on Apple Silicon is usable. For multi-tasking, developers, photo/video editing, and future-proofing over 4-5 years, 16GB RAM is strongly recommended."
+            },
+            {
+              q: "MacBook Air M2/M3 vs Windows Laptop: which is better for college and office work?",
+              a: "MacBook Air leads by a wide margin in battery life (15-18 real-world hours), silent fanless operation, and aluminium chassis build. Windows laptops offer greater port variety, upgradable RAM/storage, and broader engineering software compatibility."
+            },
+            {
+              q: "Does Amazon provide official brand warranty for laptops?",
+              a: "Yes. All laptops sold by authorized Amazon merchants include full brand manufacturer warranties. The GST tax invoice downloaded from your Amazon order history serves as valid proof of purchase."
+            },
+            {
+              q: "What specifications should I look for in a work laptop on Amazon?",
+              a: "Aim for at least an Intel Core i5 or AMD Ryzen 5 processor, 16GB RAM, 512GB NVMe SSD storage, and an IPS anti-glare display with at least 300 nits of brightness."
+            }
+          ],
+          tv: [
+            {
+              q: "OLED vs QLED 4K TVs: which display technology is best for bright living rooms?",
+              a: "QLED (Mini-LED) TVs provide substantially higher peak brightness (1,000 to 2,000+ nits) and are immune to screen burn-in, making them best for bright rooms. OLED TVs deliver infinite contrast and pitch blacks for cinema rooms."
+            },
+            {
+              q: "Does Amazon provide free wall-mount installation for smart TVs?",
+              a: "Yes. For most branded smart TVs (Sony, LG, Samsung, TCL, Xiaomi), complimentary standard table-top or wall-mount installation is provided by the brand or Amazon Home Services within 48 hours of delivery."
+            },
+            {
+              q: "What should I inspect immediately when a new TV is delivered from Amazon?",
+              a: "Always use Open Box Delivery. Check the display panel for hairline cracks, inspect the bezel corners, and ensure the delivery agent connects power to verify the screen powers on without dead pixels."
+            },
+            {
+              q: "What is the recommended viewing distance for a 43-inch, 55-inch, or 65-inch 4K TV?",
+              a: "For 4K resolution, optimal viewing distances are approximately 4.5-6 feet for a 43-inch TV, 6-8 feet for a 55-inch TV, and 8-10 feet for a 65-inch TV."
+            }
+          ],
+          ac: [
+            {
+              q: "Which is better for Indian summers: 3-Star or 5-Star 1.5 Ton Inverter Split AC?",
+              a: "If your AC operates for more than 6-8 hours daily during summer months, a 5-Star inverter AC repays its initial price premium in electricity bill savings within 18-24 months. For moderate 3-4 hours daily use, a 3-Star AC offers the best upfront value."
+            },
+            {
+              q: "Why is 100% copper condenser coil essential when buying an AC on Amazon?",
+              a: "Copper coils conduct heat significantly faster than aluminum coils, resist corrosion caused by humidity, and are easily repairable and solderable if a leak occurs, ensuring a longer operational lifespan."
+            },
+            {
+              q: "How much are standard installation charges for a split AC on Amazon?",
+              a: "Standard brand installation typically costs between ₹1,199 and ₹1,499 + GST for labor, which includes mounting indoor/outdoor units and up to 3 meters of connecting copper piping."
+            }
+          ],
+          audio: [
+            {
+              q: "Sony WH-1000XM5 vs Bose QuietComfort Ultra: which has superior noise cancellation?",
+              a: "Both lead the industry, but Bose QuietComfort Ultra delivers slightly superior passive seal and low-frequency engine drone isolation for air travel, while Sony WH-1000XM5 offers LDAC hi-res codec support and customizable EQ."
+            },
+            {
+              q: "How can I ensure earbuds bought online are authentic and not counterfeit?",
+              a: "Genuine earbuds immediately connect to their official companion smartphone app (e.g. Sony Headphones Connect, Apple Settings / Find My, Bose Music). Counterfeit copies fail to register with official brand apps."
+            },
+            {
+              q: "What should I look for in true wireless earbuds (TWS) on Amazon?",
+              a: "Prioritize earbuds with active noise cancellation (30dB+ ANC), Bluetooth 5.3+ for stable low-latency connection, IPX4+ sweat resistance, and at least 6-8 hours of standalone earbud battery life."
+            }
+          ],
+          general: [
+            {
+              q: "How do I check if an Amazon seller is verified and authorized?",
+              a: "Look for items listed as Fulfilled by Amazon (FBA) or sold directly by official brand stores. Check seller rating feedback, ensure official manufacturer warranty is included, and inspect serial numbers upon delivery."
+            },
+            {
+              q: "What is Amazon Open Box Delivery and how does it protect buyers?",
+              a: "Open Box Delivery allows you to physically inspect electronics in front of the delivery agent before sharing your OTP. If damaged or incorrect, you can reject delivery on the spot for an immediate full refund."
+            },
+            {
+              q: "How does productreviews.review evaluate products without sponsor bias?",
+              a: "We never accept paid placement, merchant sponsorships, or free reviewer units. Products are ranked strictly by objective benchmarks, technical specifications, build quality, and verified value-for-money."
+            },
+            {
+              q: "Why do Amazon prices change daily and when is the best time to buy?",
+              a: "Amazon uses dynamic pricing based on inventory, demand curves, and merchant competition. Major price drops occur during seasonal festival sales (Prime Day, Great Indian Festival) accompanied by bank card discounts."
+            }
+          ]
+        };
+
+        function getCategoryFromQuery(str) {
+          if (!str) return 'general';
+          var s = str.toLowerCase();
+          if (s.includes('phone') || s.includes('mobile') || s.includes('iphone') || s.includes('samsung') || s.includes('oneplus') || s.includes('redmi') || s.includes('pixel') || s.includes('5g') || s.includes('nord')) return 'phone';
+          if (s.includes('laptop') || s.includes('macbook') || s.includes('dell') || s.includes('asus') || s.includes('hp') || s.includes('lenovo') || s.includes('computer') || s.includes('notebook')) return 'laptop';
+          if (s.includes('tv') || s.includes('television') || s.includes('oled') || s.includes('qled') || s.includes('bravia') || s.includes('4k')) return 'tv';
+          if (s.includes('ac') || s.includes('conditioner') || s.includes('cooler') || s.includes('split ac') || s.includes('daikin') || s.includes('appliance')) return 'ac';
+          if (s.includes('audio') || s.includes('earbud') || s.includes('headphone') || s.includes('tws') || s.includes('earphone') || s.includes('sony wh') || s.includes('bose') || s.includes('anc')) return 'audio';
+          return 'general';
+        }
+
+        function extractQuery() {
+          try {
+            var url = new URL(window.location.href);
+            var q = url.searchParams.get('q') || url.searchParams.get('query');
+            if (q) return q.trim();
+
+            var path = url.pathname;
+            if (path.indexOf('/review/') === 0) {
+              return decodeURIComponent(path.substring(8).replace(/[-_]/g, ' ')).trim();
+            }
+            if (path.indexOf('/compare/') === 0) {
+              return decodeURIComponent(path.substring(9).replace(/[-_]/g, ' ')).trim();
+            }
+
+            if (url.hash) {
+              var hash = url.hash.replace(/^#\/?/, '');
+              var hQuery = (hash.indexOf('?') >= 0) ? hash.split('?')[1] : hash;
+              var hp = new URLSearchParams(hQuery);
+              var hq = hp.get('q') || hp.get('query');
+              if (hq) return hq.trim();
+            }
+          } catch (e) {}
+          return '';
+        }
+
+        function injectFaqSchema() {
+          var query = extractQuery();
+          var category = getCategoryFromQuery(query);
+          var faqs = FAQ_DATABASE[category] || FAQ_DATABASE.general;
+
+          var schemaName = query ? ("Frequently Asked Questions about " + query) : "Frequently Asked Questions: Amazon Buying & Product Decisions";
+
+          var schema = {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "@id": "https://productreviews.review/#dynamic-faq",
+            "name": schemaName,
+            "mainEntity": faqs.map(function(item) {
+              var qText = item.q;
+              if (query && qText.toLowerCase().indexOf(query.toLowerCase()) === -1) {
+                qText = qText.replace(/\?$/, '') + " (" + query + ")?";
+              }
+              return {
+                "@type": "Question",
+                "name": qText,
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": item.a
+                }
+              };
+            })
+          };
+
+          var scriptEl = document.getElementById('dynamic-faq-schema');
+          if (!scriptEl) {
+            scriptEl = document.createElement('script');
+            scriptEl.id = 'dynamic-faq-schema';
+            scriptEl.type = 'application/ld+json';
+            document.head.appendChild(scriptEl);
+          }
+          scriptEl.textContent = JSON.stringify(schema, null, 2);
+        }
+
+        if (typeof window !== 'undefined') {
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', injectFaqSchema);
+          } else {
+            injectFaqSchema();
+          }
+
+          window.addEventListener('popstate', injectFaqSchema);
+          window.addEventListener('hashchange', injectFaqSchema);
+
+          ['pushState', 'replaceState'].forEach(function(m) {
+            var orig = window.history[m];
+            if (typeof orig === 'function') {
+              window.history[m] = function() {
+                var res = orig.apply(this, arguments);
+                try { injectFaqSchema(); } catch(e) {}
+                return res;
+              };
+            }
+          });
+        }
+      })();
     </script>
   </head>
   <body class="font-sans antialiased bg-[#FAFAFA] text-zinc-900 selection:bg-zinc-900 selection:text-white">

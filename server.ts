@@ -440,6 +440,24 @@ async function startServer() {
   app.get('/api/generate-sitemap', handleGenerateSitemapDirect);
   app.post('/api/generate-sitemap', handleGenerateSitemapDirect);
 
+  // Serve static/dynamic FAQ Knowledge Graph Manifest for search engine indexing
+  const serveFaqManifest = async (req: express.Request, res: express.Response) => {
+    try {
+      const { exportFaqManifestJson } = await import('./src/seo/faqData');
+      const manifestJson = exportFaqManifestJson('https://productreviews.review', true);
+      res.type('application/json; charset=utf-8');
+      res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.status(200).send(manifestJson);
+    } catch (err: any) {
+      console.warn('[server.ts serveFaqManifest error]:', err?.message || err);
+      res.status(500).json({ error: 'Failed to generate FAQ manifest', message: err?.message || String(err) });
+    }
+  };
+
+  app.get('/faq-manifest.json', serveFaqManifest);
+  app.get('/api/faq-manifest.json', serveFaqManifest);
+
   app.get('/sitemap.xml', serveDynamicSitemap);
   app.get('/api/sitemap', serveDynamicSitemap);
   app.post('/api/sitemap/generate', handleSitemapGenerateRoute);

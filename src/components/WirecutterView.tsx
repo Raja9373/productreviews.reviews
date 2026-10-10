@@ -8,6 +8,8 @@ import { NichodSummary } from './NichodSummary';
 import { EvidencePanel } from './EvidencePanel';
 import { ContradictionPanel } from './ContradictionPanel';
 import { LimitationsPanel } from './LimitationsPanel';
+import { FaqSchemaGenerator } from './seo/FaqSchemaGenerator';
+import { getFaqsForCategory } from '../seo/faqData';
 
 interface WirecutterViewProps {
   query: string;
@@ -534,6 +536,18 @@ export const WirecutterView: React.FC<WirecutterViewProps> = ({
         <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
           {methodologyPara2}
         </p>
+      </div>
+
+      {/* Category-Targeted Google PAA & Amazon Buying FAQs (Rich Snippets) */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 mt-12 pt-8 border-t border-zinc-200">
+        <FaqSchemaGenerator
+          faqs={getFaqsForCategory(query)}
+          renderUi={true}
+          title={`Frequently Asked Questions: ${headlineTitle}`}
+          subtitle={`Verified Google search queries regarding ${headlineTitle}, seller warranty on ${store.domain}, return policies, and specifications.`}
+          schemaId={`https://productreviews.review/review/${encodeURIComponent(query)}#faq`}
+          scriptId={`review-faq-${encodeURIComponent(query).slice(0, 20)}`}
+        />
       </div>
 
       {/* Affiliate Tag Compliance Notice */}

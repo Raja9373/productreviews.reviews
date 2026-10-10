@@ -10,6 +10,8 @@ import { EvidenceTransparencyPanel } from './comparison/EvidenceTransparencyPane
 import { ComparisonLoading } from './comparison/ComparisonLoading';
 import { ComparisonError } from './comparison/ComparisonError';
 import { AlertCircle, ArrowLeft, Scale } from 'lucide-react';
+import { FaqSchemaGenerator } from './seo/FaqSchemaGenerator';
+import { getComparisonFaqs } from '../seo/faqData';
 
 export interface ComparisonViewProps {
   comparison?: ComparisonItem; // legacy support
@@ -179,6 +181,18 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({
           sourceStatus={sourceStatus}
           aspectsCount={aspects.length}
         />
+
+        {/* Head-to-Head Comparison FAQs & Schema.org FAQPage for Google PAA Ranking */}
+        <section className="mt-12 border-t border-zinc-200 pt-8">
+          <FaqSchemaGenerator
+            faqs={getComparisonFaqs(productA, productB)}
+            renderUi={true}
+            title={`Frequently Asked Questions: ${productA} vs ${productB}`}
+            subtitle={`Common Google search queries comparing ${productA} and ${productB} on Amazon, specs, battery, and warranty.`}
+            schemaId={`https://productreviews.review/compare/${encodeURIComponent(productA)}-vs-${encodeURIComponent(productB)}#faq`}
+            scriptId={`compare-faq-${encodeURIComponent(productA).slice(0, 10)}-${encodeURIComponent(productB).slice(0, 10)}`}
+          />
+        </section>
       </div>
     );
   }
@@ -244,6 +258,18 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({
               </p>
             </div>
           ))}
+        </section>
+
+        {/* Head-to-Head Comparison FAQs & Schema.org FAQPage for Google PAA Ranking */}
+        <section className="mt-12 border-t border-zinc-200 pt-8">
+          <FaqSchemaGenerator
+            faqs={getComparisonFaqs(entityA.name, entityB.name)}
+            renderUi={true}
+            title={`Frequently Asked Questions: ${entityA.name} vs ${entityB.name}`}
+            subtitle={`Common Google search queries comparing ${entityA.name} and ${entityB.name} on Amazon, specs, battery, and warranty.`}
+            schemaId={`https://productreviews.review/compare/${encodeURIComponent(entityA.name)}-vs-${encodeURIComponent(entityB.name)}#faq`}
+            scriptId={`compare-legacy-faq-${encodeURIComponent(entityA.name).slice(0, 10)}-${encodeURIComponent(entityB.name).slice(0, 10)}`}
+          />
         </section>
       </div>
     );
