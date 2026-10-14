@@ -10,6 +10,7 @@ import { ContradictionPanel } from './ContradictionPanel';
 import { LimitationsPanel } from './LimitationsPanel';
 import { FaqSchemaGenerator } from './seo/FaqSchemaGenerator';
 import { getFaqsForCategory } from '../seo/faqData';
+import { RelatedResearch } from './RelatedResearch';
 
 interface WirecutterViewProps {
   query: string;
