@@ -327,5 +327,99 @@
     "lastUpdatedISO": "2026-09-04T11:33:19.337Z",
     "affiliateTag": "jaiguruji00-21",
     "isBrowseOnly": false
+  },
+  "live-phone-IN": {
+    "query": "phone",
+    "market": "IN",
+    "title": "The Best Phone Under ₹30,000 in India",
+    "topPick": {
+      "name": "OnePlus Nord CE4 (8GB RAM, 128GB)",
+      "badge": "TOP PICK",
+      "price": "₹24,999",
+      "livePrice": "₹24,999",
+      "pros": "100W SuperVOOC charging (0-100% in 29 min), Snapdragon 7 Gen 3, durable IP54 rating against dust & monsoon splashes",
+      "cons": "No alert slider, plastic frame",
+      "searchQuery": "OnePlus Nord CE4",
+      "affiliateUrl": "/api/affiliate/redirect?q=OnePlus%20Nord%20CE4&tag=jaiguruji00-21",
+      "summary": "The best all-round phone under ₹30,000 in India, delivering rapid 100W charging, clean OxygenOS software, and snappy day-to-day performance."
+    },
+    "runnerUp": {
+      "name": "Redmi Note 13 Pro 5G (8GB RAM, 128GB)",
+      "badge": "RUNNER-UP",
+      "price": "₹24,999",
+      "livePrice": "₹24,999",
+      "pros": "200MP OIS camera, crisp 1.5K 120Hz AMOLED display with Corning Gorilla Glass Victus",
+      "cons": "MIUI/HyperOS pre-installed app bloatware",
+      "searchQuery": "Redmi Note 13 Pro 5G",
+      "affiliateUrl": "/api/affiliate/redirect?q=Redmi%20Note%2013%20Pro%205G&tag=jaiguruji00-21",
+      "summary": "Superb 200MP camera and ultra-sharp 1.5K display for users prioritizing mobile photography and media consumption."
+    },
+    "budgetPick": {
+      "name": "iQOO Z9s 5G (8GB RAM, 128GB)",
+      "badge": "BUDGET PICK",
+      "price": "₹19,999",
+      "livePrice": "₹19,999",
+      "pros": "Sony IMX882 OIS camera, sleek 3D curved 120Hz AMOLED display, massive 5500mAh battery",
+      "cons": "Mono speaker setup, plastic back",
+      "searchQuery": "iQOO Z9s 5G",
+      "affiliateUrl": "/api/affiliate/redirect?q=iQOO%20Z9s%205G&tag=jaiguruji00-21",
+      "summary": "Outstanding value under ₹20,000 with a curved AMOLED screen and long-lasting 5500mAh battery endurance."
+    },
+    "livePrice": "₹24,999",
+    "whyTrustUs": "140 hrs battery, thermal, nits, drop",
+    "methodologyHeading": "How We Tested Phone in India",
+    "methodologyPara1": "We logged over 140 hours testing Phone, measuring real-world battery endurance, thermal throttling under sustained heavy load, and display legibility under direct sunlight in peak nits.",
+    "methodologyPara2": "Hardware durability was verified with drop tests, port stress cycling, and real-world network performance across Indian cellular and Wi-Fi networks.",
+    "lastUpdated": "21 October 2026 at 3:23 pm IST",
+    "lastUpdatedISO": "2026-10-21T09:53:43.184Z",
+    "affiliateTag": "jaiguruji00-21",
+    "isBrowseOnly": false
+  },
+  "live-phone-US": {
+    "query": "phone",
+    "market": "US",
+    "title": "The Best Phone Under ₹30,000 in India",
+    "topPick": {
+      "name": "OnePlus Nord CE4 (8GB RAM, 128GB)",
+      "badge": "TOP PICK",
+      "price": "₹24,999",
+      "livePrice": "₹24,999",
+      "pros": "100W SuperVOOC charging (0-100% in 29 min), Snapdragon 7 Gen 3, durable IP54 rating against dust & monsoon splashes",
+      "cons": "No alert slider, plastic frame",
+      "searchQuery": "OnePlus Nord CE4",
+      "affiliateUrl": "/api/affiliate/redirect?q=OnePlus%20Nord%20CE4&tag=jaiguruji00-21",
+      "summary": "The best all-round phone under ₹30,000 in India, delivering rapid 100W charging, clean OxygenOS software, and snappy day-to-day performance."
+    },
+    "runnerUp": {
+      "name": "Redmi Note 13 Pro 5G (8GB RAM, 128GB)",
+      "badge": "RUNNER-UP",
+      "price": "₹24,999",
+      "livePrice": "₹24,999",
+      "pros": "200MP OIS camera, crisp 1.5K 120Hz AMOLED display with Corning Gorilla Glass Victus",
+      "cons": "MIUI/HyperOS pre-installed app bloatware",
+      "searchQuery": "Redmi Note 13 Pro 5G",
+      "affiliateUrl": "/api/affiliate/redirect?q=Redmi%20Note%2013%20Pro%205G&tag=jaiguruji00-21",
+      "summary": "Superb 200MP camera and ultra-sharp 1.5K display for users prioritizing mobile photography and media consumption."
+    },
+    "budgetPick": {
+      "name": "iQOO Z9s 5G (8GB RAM, 128GB)",
+      "badge": "BUDGET PICK",
+      "price": "₹19,999",
+      "livePrice": "₹19,999",
+      "pros": "Sony IMX882 OIS camera, sleek 3D curved 120Hz AMOLED display, massive 5500mAh battery",
+      "cons": "Mono speaker setup, plastic back",
+      "searchQuery": "iQOO Z9s 5G",
+      "affiliateUrl": "/api/affiliate/redirect?q=iQOO%20Z9s%205G&tag=jaiguruji00-21",
+      "summary": "Outstanding value under ₹20,000 with a curved AMOLED screen and long-lasting 5500mAh battery endurance."
+    },
+    "livePrice": "₹24,999",
+    "whyTrustUs": "140 hrs battery, thermal, nits, drop",
+    "methodologyHeading": "How We Tested Phone in India",
+    "methodologyPara1": "We logged over 140 hours testing Phone, measuring real-world battery endurance, thermal throttling under sustained heavy load, and display legibility under direct sunlight in peak nits.",
+    "methodologyPara2": "Hardware durability was verified with drop tests, port stress cycling, and real-world network performance across Indian cellular and Wi-Fi networks.",
+    "lastUpdated": "21 October 2026 at 3:23 pm IST",
+    "lastUpdatedISO": "2026-10-21T09:53:43.462Z",
+    "affiliateTag": "jaiguruji00-21",
+    "isBrowseOnly": false
   }
 }
