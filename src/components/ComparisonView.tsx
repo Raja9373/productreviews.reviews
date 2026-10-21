@@ -11,6 +11,7 @@ import { ComparisonLoading } from './comparison/ComparisonLoading';
 import { ComparisonError } from './comparison/ComparisonError';
 import { AlertCircle, ArrowLeft, Scale } from 'lucide-react';
 import { FaqSchemaGenerator } from './seo/FaqSchemaGenerator';
+import { ProductReviewSchemaInjector } from './seo/ProductReviewSchemaInjector';
 import { getComparisonFaqs } from '../seo/faqData';
 
 export interface ComparisonViewProps {
@@ -101,6 +102,12 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({
 
     return (
       <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 antialiased" id="production-comparison-view">
+        <ProductReviewSchemaInjector
+          productName={`${productA || 'Product A'} vs ${productB || 'Product B'}`}
+          category="Product Comparisons"
+          description={overallAssessment}
+          reviewBody={overallAssessment}
+        />
         {/* Decision-First Header */}
         <ComparisonHeader
           productA={productA || 'Product A'}

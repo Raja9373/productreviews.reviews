@@ -5,6 +5,7 @@ import { NichodSummary } from './NichodSummary';
 import { Breadcrumbs } from './Breadcrumbs';
 import { CheckCircle, AlertTriangle, HelpCircle, ArrowLeft, ExternalLink, ShieldCheck } from 'lucide-react';
 import { FaqSchemaGenerator } from './seo/FaqSchemaGenerator';
+import { ProductReviewSchemaInjector } from './seo/ProductReviewSchemaInjector';
 import { getFaqsForCategory } from '../seo/faqData';
 import { SEOStatusIndicator } from './seo/SEOStatusIndicator';
 
@@ -18,6 +19,13 @@ export const PublishedContentView: React.FC<PublishedContentViewProps> = ({ reco
 
   return (
     <article className="max-w-4xl mx-auto px-4 py-8">
+      <ProductReviewSchemaInjector
+        productName={record.title}
+        category="Consumer Electronics"
+        description={content.introduction}
+        canonicalUrl={record.canonicalUrl}
+        reviewBody={content.introduction}
+      />
       {/* Navigation Breadcrumb & Back */}
       <div className="mb-6 flex items-center justify-between">
         <button

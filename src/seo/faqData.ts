@@ -261,7 +261,7 @@ export function getFaqsForCategory(categoryKey: string): FAQItem[] {
   if (normalized.includes('ac') || normalized.includes('conditioner') || normalized.includes('appliance')) {
     return APPLIANCES_FAQS;
   }
-  if (normalized.includes('audio') || normalized.includes('earbud') || normalized.includes('headphone')) {
+  if (normalized.includes('audio') || normalized.includes('earbud') || normalized.includes('headphone') || normalized.includes('headset') || normalized.includes('sound')) {
     return AUDIO_FAQS;
   }
   return AMAZON_SHOPPING_FAQS;

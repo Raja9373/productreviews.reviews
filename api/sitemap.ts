@@ -204,6 +204,36 @@ export async function generateAndWriteStaticSitemap(customTargetPaths?: string[]
     } catch {}
   }
 
+  // Also write sitemap_index.xml
+  const indexXml = `<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>${BASE_CANONICAL_URL}/sitemap.xml</loc>
+    <lastmod>${dateFormatted}</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>${BASE_CANONICAL_URL}/sitemap-main.xml</loc>
+    <lastmod>${dateFormatted}</lastmod>
+  </sitemap>
+</sitemapindex>`;
+
+  const indexPaths = [
+    path.join(rootDir, 'public', 'sitemap_index.xml'),
+  ];
+  if (fs.existsSync(distDir)) {
+    indexPaths.push(path.join(distDir, 'sitemap_index.xml'));
+  }
+  for (const indexPath of indexPaths) {
+    try {
+      const parentDir = path.dirname(indexPath);
+      if (!fs.existsSync(parentDir)) {
+        fs.mkdirSync(parentDir, { recursive: true });
+      }
+      fs.writeFileSync(indexPath, indexXml, 'utf-8');
+      writtenFiles.push(indexPath);
+    } catch {}
+  }
+
   const entries = getCanonicalSitemapEntries(dateFormatted);
   return {
     success: true,
