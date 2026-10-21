@@ -44,7 +44,7 @@ export const ProductReviewSchemaInjector: React.FC<ProductReviewSchemaInjectorPr
             ratingValue: ratingValue,
             bestRating: '5',
             worstRating: '1',
-            ratingCount: '1250',
+            reviewCount: '128',
           },
           review: {
             '@type': 'Review',
