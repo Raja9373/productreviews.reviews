@@ -34,6 +34,15 @@ export const ProductReviewSchemaInjector: React.FC<ProductReviewSchemaInjectorPr
       '@context': 'https://schema.org',
       '@graph': [
         {
+          '@type': 'BreadcrumbList',
+          '@id': `${canonicalUrl}#breadcrumb`,
+          itemListElement: [
+            { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': 'https://productreviews.review/' },
+            { '@type': 'ListItem', 'position': 2, 'name': category, 'item': 'https://productreviews.review/?category=smartphones' },
+            { '@type': 'ListItem', 'position': 3, 'name': productName, 'item': canonicalUrl }
+          ]
+        },
+        {
           '@type': 'Product',
           '@id': `${canonicalUrl}#product`,
           name: productName,
@@ -48,11 +57,11 @@ export const ProductReviewSchemaInjector: React.FC<ProductReviewSchemaInjectorPr
           },
           review: {
             '@type': 'Review',
-            name: `${productName} Review & Verdict`,
-            reviewBody: reviewBody || `Rigorous hands-on testing and verification of ${productName} performance, value, and alternatives.`,
+            name: 'Hardware Review',
+            reviewBody: reviewBody || 'Key verdict and findings...',
             author: {
               '@type': 'Organization',
-              name: 'productreviews.review Editorial Board',
+              name: 'Editorial Research Board',
             },
             publisher: {
               '@type': 'Organization',
