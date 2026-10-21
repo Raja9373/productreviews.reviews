@@ -11,6 +11,7 @@ import { LimitationsPanel } from './LimitationsPanel';
 import { FaqSchemaGenerator } from './seo/FaqSchemaGenerator';
 import { getFaqsForCategory } from '../seo/faqData';
 import { RelatedResearch } from './RelatedResearch';
+import { SEOStatusIndicator } from './seo/SEOStatusIndicator';
 
 interface WirecutterViewProps {
   query: string;
@@ -408,6 +409,9 @@ export const WirecutterView: React.FC<WirecutterViewProps> = ({
             <strong className="text-zinc-900">Why you should trust us:</strong> {trustText}
           </p>
         </div>
+
+        {/* Live SEO & Schema Structured Data Monitor */}
+        <SEOStatusIndicator variant="inline" pageTitle={headlineTitle} />
 
         {/* Cooldown / Unknown category honest browse banner */}
         {isBrowseOnly && (

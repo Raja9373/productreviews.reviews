@@ -22,6 +22,7 @@ import { PublishedContentView } from './components/PublishedContentView';
 import { contentRepository } from './content/store/contentRepository';
 import { ContentRecord } from './content/store/contentStoreTypes';
 import { PILOT_PAGES, createClientRecordFromPilot } from './ssr/pilotData';
+import { SEOStatusIndicator } from './components/seo/SEOStatusIndicator';
 
 import { DecisionResult, EntityItem, LanguageCode, MarketCode } from './types';
 import { getTranslation } from './localization/languages';
@@ -724,6 +725,9 @@ export default function App() {
           <span>Amazon IN Tag: jaiguruji00-21 • Google AdSense Publisher: ca-pub-9048615701580913</span>
         </div>
       </footer>
+
+      {/* Real-Time Live SEO & Schema Structured Data Health Monitor */}
+      <SEOStatusIndicator variant="floating" />
 
       {/* Lightweight Cookie / Local Storage Consent */}
       <CookieConsent />

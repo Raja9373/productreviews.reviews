@@ -6,6 +6,7 @@ import { Breadcrumbs } from './Breadcrumbs';
 import { CheckCircle, AlertTriangle, HelpCircle, ArrowLeft, ExternalLink, ShieldCheck } from 'lucide-react';
 import { FaqSchemaGenerator } from './seo/FaqSchemaGenerator';
 import { getFaqsForCategory } from '../seo/faqData';
+import { SEOStatusIndicator } from './seo/SEOStatusIndicator';
 
 interface PublishedContentViewProps {
   record: ContentRecord;
@@ -26,9 +27,12 @@ export const PublishedContentView: React.FC<PublishedContentViewProps> = ({ reco
           <ArrowLeft className="w-4 h-4" />
           <span>Back</span>
         </button>
-        <span className="text-xs font-mono px-2 py-1 bg-zinc-100 text-zinc-600 rounded">
-          Published • Version {record.version}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-mono px-2 py-1 bg-zinc-100 text-zinc-600 rounded">
+            Published • Version {record.version}
+          </span>
+          <SEOStatusIndicator variant="compact" pageTitle={record.title} />
+        </div>
       </div>
 
       <Breadcrumbs
@@ -53,6 +57,9 @@ export const PublishedContentView: React.FC<PublishedContentViewProps> = ({ reco
           <span>Verified Claims: {content.claims.length}</span>
         </div>
       </header>
+
+      {/* Live Review SEO & Structured Data Health Monitor */}
+      <SEOStatusIndicator variant="inline" pageTitle={record.title} />
 
       {/* Authoritative Decision Card */}
       {decisionSnapshot && (
