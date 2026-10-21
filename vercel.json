@@ -1,7 +1,19 @@
 {
-  "buildCommand": "vite build",
+  "buildCommand": "vite build && npx tsx scripts/prerender_static.ts",
   "outputDirectory": "dist",
   "rewrites": [
+    {
+      "source": "/sitemap.xml",
+      "destination": "/sitemap.xml"
+    },
+    {
+      "source": "/sitemap-main.xml",
+      "destination": "/sitemap-main.xml"
+    },
+    {
+      "source": "/sitemap_index.xml",
+      "destination": "/sitemap_index.xml"
+    },
     {
       "source": "/robots.txt",
       "destination": "/robots.txt"
@@ -11,6 +23,18 @@
       "destination": "/ads.txt"
     },
     {
+      "source": "/faq-manifest.json",
+      "destination": "/faq-manifest.json"
+    },
+    {
+      "source": "/review/:slug",
+      "destination": "/review/:slug/index.html"
+    },
+    {
+      "source": "/compare/:slug",
+      "destination": "/compare/:slug/index.html"
+    },
+    {
       "source": "/((?!api/|.*\\..*).*)",
       "destination": "/index.html"
     }
@@ -18,6 +42,23 @@
   "headers": [
     {
       "source": "/sitemap.xml",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/xml; charset=utf-8"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, s-maxage=86400"
+        }
+      ]
+    },
+    {
+      "source": "/sitemap-main.xml",
       "headers": [
         {
           "key": "Content-Type",

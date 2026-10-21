@@ -1,9 +1,38 @@
 import type { Request, Response } from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
-import { HIGH_PRIORITY_COMPARISONS } from '../src/seo/comparisonData';
 
 export const BASE_CANONICAL_URL = 'https://productreviews.review';
+
+const COMPARISON_SLUGS = [
+  'iphone-16-pro-vs-samsung-galaxy-s24-ultra',
+  'macbook-air-m3-vs-dell-xps-13',
+  'sony-a7-iv-vs-canon-eos-r6-mark-ii',
+  'sony-wh-1000xm5-vs-bose-quietcomfort-ultra',
+  'ipad-pro-m4-vs-samsung-galaxy-tab-s9-ultra',
+  'airpods-pro-2-vs-sony-wf-1000xm5',
+  'lg-c3-oled-vs-samsung-s90c-oled',
+  'playstation-5-pro-vs-xbox-series-x',
+  'asus-rog-ally-x-vs-steam-deck-oled',
+  'dyson-v15-detect-vs-shark-stratos-cordless',
+  'google-pixel-9-pro-vs-iphone-16-pro',
+  'garmin-fenix-8-vs-apple-watch-ultra-2',
+  'macbook-pro-m3-max-vs-razer-blade-16',
+  'nintendo-switch-oled-vs-steam-deck-oled',
+  'bose-soundlink-max-vs-jbl-xtreme-4',
+  'canon-eos-r5-mark-ii-vs-nikon-z8',
+  'kindle-paperwhite-signature-vs-kobo-libra-colour',
+  'logitech-mx-master-3s-vs-razer-pro-click',
+  'keychron-q1-pro-vs-nuphy-halo75-v2',
+  'sonos-arc-ultra-vs-samsung-hw-q990d',
+];
+
+const PILOT_REVIEW_ROUTES = [
+  '/review/iphone-16-pro',
+  '/review/macbook-air-m4',
+  '/review/iphone-16-pro-comparison',
+  '/review/iphone-16-pro-india-pricing',
+];
 
 /**
  * Strict set of static canonical routes permitted in the sitemap
@@ -15,7 +44,8 @@ export const CANONICAL_ROUTES = [
   '/privacy',
   '/terms',
   '/disclaimer',
-  ...HIGH_PRIORITY_COMPARISONS.filter((c) => c.isSuccessful).map((c) => `/compare/${c.slug}`),
+  ...PILOT_REVIEW_ROUTES,
+  ...COMPARISON_SLUGS.map((slug) => `/compare/${slug}`),
 ] as string[];
 
 /**
@@ -91,8 +121,11 @@ export function sanitizeRoute(route: string): string | null {
   // Ensure normalized route starting with slash
   const normalized = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
 
-  // Permit allowed static routes or /compare/ comparison paths
-  const isAllowed = CANONICAL_ROUTES.includes(normalized) || normalized.startsWith('/compare/');
+  // Permit allowed static routes or /compare/ or /review/ paths
+  const isAllowed =
+    CANONICAL_ROUTES.includes(normalized) ||
+    normalized.startsWith('/compare/') ||
+    normalized.startsWith('/review/');
   return isAllowed ? normalized : null;
 }
 
@@ -109,9 +142,9 @@ export function generateCanonicalSitemapXml(dateFormatted?: string): string {
 
   const urlEntries = validRoutes.map((route) => {
     const loc = route === '/' ? `${BASE_CANONICAL_URL}/` : `${BASE_CANONICAL_URL}${route}`;
-    const isComparison = route.startsWith('/compare/');
-    const priority = route === '/' ? '1.0' : isComparison ? '0.9' : '0.8';
-    const changefreq = route === '/' ? 'daily' : isComparison ? 'weekly' : 'monthly';
+    const isHighPriority = route.startsWith('/compare/') || route.startsWith('/review/');
+    const priority = route === '/' ? '1.0' : isHighPriority ? '0.9' : '0.8';
+    const changefreq = route === '/' ? 'daily' : isHighPriority ? 'weekly' : 'monthly';
 
     return `  <url>
     <loc>${escapeXmlText(loc)}</loc>
@@ -142,27 +175,34 @@ ${urlEntries.join('\n')}
 
 /**
  * Saves the generated XML string to /public/sitemap.xml (and /dist/sitemap.xml if dist exists)
+ * Safely ignores read-only filesystem errors in serverless environments.
  */
 export function writeSitemapToDisk(xml: string): string[] {
   const rootDir = process.cwd();
   const targetPaths = [
     path.join(rootDir, 'public', 'sitemap.xml'),
+    path.join(rootDir, 'public', 'sitemap-main.xml'),
   ];
 
   const distDir = path.join(rootDir, 'dist');
   if (fs.existsSync(distDir)) {
     targetPaths.push(path.join(distDir, 'sitemap.xml'));
+    targetPaths.push(path.join(distDir, 'sitemap-main.xml'));
   }
 
   const writtenFiles: string[] = [];
 
   for (const targetPath of targetPaths) {
-    const parentDir = path.dirname(targetPath);
-    if (!fs.existsSync(parentDir)) {
-      fs.mkdirSync(parentDir, { recursive: true });
+    try {
+      const parentDir = path.dirname(targetPath);
+      if (!fs.existsSync(parentDir)) {
+        fs.mkdirSync(parentDir, { recursive: true });
+      }
+      fs.writeFileSync(targetPath, xml, 'utf-8');
+      writtenFiles.push(targetPath);
+    } catch {
+      // Serverless runtime (/var/task) is read-only; ignore gracefully
     }
-    fs.writeFileSync(targetPath, xml, 'utf-8');
-    writtenFiles.push(targetPath);
   }
 
   return writtenFiles;

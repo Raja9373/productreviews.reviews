@@ -109,16 +109,26 @@ export function sanitizeUrl(rawUrl: string): string | null {
 
 import { HIGH_PRIORITY_COMPARISONS } from './comparisonData';
 import { contentRepository } from '../content/store/contentRepository';
+import { PILOT_PAGES } from '../ssr/pilotData';
 
 /**
- * Compiles the list of canonical routes including core pages and high-priority product comparisons
+ * Compiles the list of canonical routes including core pages, verified SSR pilot pages,
+ * and high-priority product comparisons.
  */
 export function getCanonicalSitemapEntries(dateFormatted?: string): SitemapUrlEntry[] {
   const lastmod = dateFormatted || formatSitemapDate();
   const entries: SitemapUrlEntry[] = [];
+  const seenLocs = new Set<string>();
+
+  const addEntry = (entry: SitemapUrlEntry) => {
+    const sanitized = sanitizeUrl(entry.loc);
+    if (!sanitized || seenLocs.has(sanitized)) return;
+    seenLocs.add(sanitized);
+    entries.push({ ...entry, loc: sanitized });
+  };
 
   // 1. Root canonical page
-  entries.push({
+  addEntry({
     loc: `${BASE_CANONICAL_URL}/`,
     lastmod,
     changefreq: 'daily',
@@ -127,7 +137,7 @@ export function getCanonicalSitemapEntries(dateFormatted?: string): SitemapUrlEn
 
   // 2. Core static and legal canonical pages
   for (const page of CANONICAL_STATIC_PAGES) {
-    entries.push({
+    addEntry({
       loc: `${BASE_CANONICAL_URL}/${page}`,
       lastmod,
       changefreq: 'monthly',
@@ -135,10 +145,22 @@ export function getCanonicalSitemapEntries(dateFormatted?: string): SitemapUrlEn
     });
   }
 
-  // 3. High-priority successful product comparison pages
+  // 3. Verified SSR/SSG Pilot Pages (10 high-priority product review & comparison pages)
+  for (const pilot of Object.values(PILOT_PAGES)) {
+    if (pilot.canonicalUrl) {
+      addEntry({
+        loc: pilot.canonicalUrl,
+        lastmod,
+        changefreq: 'weekly',
+        priority: '0.95',
+      });
+    }
+  }
+
+  // 4. High-priority successful product comparison pages
   for (const comp of HIGH_PRIORITY_COMPARISONS) {
     if (comp.isSuccessful && comp.slug) {
-      entries.push({
+      addEntry({
         loc: `${BASE_CANONICAL_URL}/compare/${comp.slug}`,
         lastmod: comp.lastmod ? formatSitemapDate(comp.lastmod) : lastmod,
         changefreq: comp.changefreq || 'weekly',
@@ -147,11 +169,11 @@ export function getCanonicalSitemapEntries(dateFormatted?: string): SitemapUrlEn
     }
   }
 
-  // 4. Controlled Published & Indexable Content Records (Phase 6 Architecture)
+  // 5. Controlled Published & Indexable Content Records (excluding numbered fixture clones -\d+$)
   const publishedRecords = contentRepository.getPublishedIndexableRecords();
   for (const record of publishedRecords) {
-    if (record.slug && record.canonicalUrl) {
-      entries.push({
+    if (record.slug && record.canonicalUrl && !/-\d+$/.test(record.slug)) {
+      addEntry({
         loc: record.canonicalUrl,
         lastmod: record.publishedAt ? formatSitemapDate(record.publishedAt) : lastmod,
         changefreq: 'weekly',
@@ -160,11 +182,7 @@ export function getCanonicalSitemapEntries(dateFormatted?: string): SitemapUrlEn
     }
   }
 
-  // Strictly filter and sanitize all entries
-  return entries.filter((item) => {
-    const sanitized = sanitizeUrl(item.loc);
-    return sanitized !== null;
-  });
+  return entries;
 }
 
 /**
@@ -191,6 +209,20 @@ ${urlElements}
 </urlset>`;
 }
 
+/**
+ * Generates clean Sitemap Index XML referencing both sitemap.xml and sitemap-main.xml
+ */
+export function generateCleanSitemapIndexXml(dateFormatted?: string): string {
+  const lastmod = dateFormatted || formatSitemapDate();
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>${BASE_CANONICAL_URL}/sitemap-main.xml</loc>
+    <lastmod>${lastmod}</lastmod>
+  </sitemap>
+</sitemapindex>`;
+}
+
 // In-memory cache for ultra-fast server response
 let cachedXml: string | null = null;
 let lastCacheUpdate: string | null = null;
@@ -209,9 +241,9 @@ export function invalidateSitemapCache(): void {
 }
 
 /**
- * Server-side utility function that generates a static sitemap.xml file dynamically
- * based on defined canonical routes, excluding all search-result pages and tracking scripts.
- * Overwrites public/sitemap.xml and dist/sitemap.xml (if dist exists) and refreshes in-memory cache.
+ * Server-side utility function that generates static sitemap.xml, sitemap-main.xml,
+ * and sitemap_index.xml files dynamically based on defined canonical routes.
+ * Overwrites public/ and dist/ (if dist exists) and refreshes in-memory cache.
  */
 export async function generateAndWriteStaticSitemap(
   customTargetPaths?: string[]
@@ -219,6 +251,7 @@ export async function generateAndWriteStaticSitemap(
   const generatedAt = new Date().toISOString();
   const dateFormatted = formatSitemapDate(generatedAt);
   const xml = generateCleanSitemapXml(dateFormatted);
+  const indexXml = generateCleanSitemapIndexXml(dateFormatted);
 
   // Update in-memory cache
   cachedXml = xml;
@@ -228,11 +261,17 @@ export async function generateAndWriteStaticSitemap(
   const rootDir = process.cwd();
   const defaultPaths = [
     path.join(rootDir, 'public', 'sitemap.xml'),
+    path.join(rootDir, 'public', 'sitemap-main.xml'),
+  ];
+  const indexPaths = [
+    path.join(rootDir, 'public', 'sitemap_index.xml'),
   ];
 
   const distDir = path.join(rootDir, 'dist');
   if (fs.existsSync(distDir)) {
     defaultPaths.push(path.join(distDir, 'sitemap.xml'));
+    defaultPaths.push(path.join(distDir, 'sitemap-main.xml'));
+    indexPaths.push(path.join(distDir, 'sitemap_index.xml'));
   }
 
   const targets = customTargetPaths && customTargetPaths.length > 0 ? customTargetPaths : defaultPaths;
@@ -248,6 +287,21 @@ export async function generateAndWriteStaticSitemap(
       writtenFiles.push(targetPath);
     } catch (err: any) {
       console.warn(`[sitemapGenerator] Failed to write sitemap to ${targetPath}:`, err?.message || err);
+    }
+  }
+
+  if (!customTargetPaths || customTargetPaths.length === 0) {
+    for (const indexPath of indexPaths) {
+      try {
+        const parentDir = path.dirname(indexPath);
+        if (!fs.existsSync(parentDir)) {
+          fs.mkdirSync(parentDir, { recursive: true });
+        }
+        fs.writeFileSync(indexPath, indexXml, 'utf-8');
+        writtenFiles.push(indexPath);
+      } catch (err: any) {
+        console.warn(`[sitemapGenerator] Failed to write sitemap index to ${indexPath}:`, err?.message || err);
+      }
     }
   }
 

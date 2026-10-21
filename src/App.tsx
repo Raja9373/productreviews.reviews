@@ -21,6 +21,7 @@ import { DisclaimerPage } from './components/pages/DisclaimerPage';
 import { PublishedContentView } from './components/PublishedContentView';
 import { contentRepository } from './content/store/contentRepository';
 import { ContentRecord } from './content/store/contentStoreTypes';
+import { PILOT_PAGES, createClientRecordFromPilot } from './ssr/pilotData';
 
 import { DecisionResult, EntityItem, LanguageCode, MarketCode } from './types';
 import { getTranslation } from './localization/languages';
@@ -340,7 +341,14 @@ export default function App() {
       } else if (pathname.startsWith('/review/')) {
         const slug = pathname.replace(/^\/review\//, '').split('?')[0];
 
-        const record = contentRepository.getBySlug(slug);
+        let record = contentRepository.getBySlug(slug);
+        if (!record && PILOT_PAGES[slug]) {
+          record = createClientRecordFromPilot(PILOT_PAGES[slug]);
+          try {
+            contentRepository.createRecord(record.content);
+          } catch {}
+        }
+
         if (record && record.status === 'PUBLISHED') {
           setSelectedPublishedRecord(record);
           setScreen('PUBLISHED_REVIEW');
@@ -352,6 +360,30 @@ export default function App() {
           });
         } else {
           // Unapproved, draft, or non-existent review -> redirect safely to home
+          setScreen('HOME');
+          updateDocumentMeta({});
+        }
+      } else if (pathname.startsWith('/compare/')) {
+        const slug = pathname.replace(/^\/compare\//, '').split('?')[0];
+
+        let record = contentRepository.getBySlug(slug);
+        if (!record && PILOT_PAGES[slug]) {
+          record = createClientRecordFromPilot(PILOT_PAGES[slug]);
+          try {
+            contentRepository.createRecord(record.content);
+          } catch {}
+        }
+
+        if (record && record.status === 'PUBLISHED') {
+          setSelectedPublishedRecord(record);
+          setScreen('PUBLISHED_REVIEW');
+          updateDocumentMeta({
+            title: record.title,
+            description: record.metadata.metaDescription,
+            canonicalPath: `/compare/${record.slug}`,
+            noIndex: record.indexability === 'NOINDEX'
+          });
+        } else {
           setScreen('HOME');
           updateDocumentMeta({});
         }

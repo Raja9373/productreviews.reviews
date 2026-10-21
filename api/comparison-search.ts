@@ -56,3 +56,6 @@ export async function handleComparisonSearch(req: express.Request, res: express.
       return res.status(200).json({ success: false, errorMessage: 'Comparison failed.' });
   }
 }
+
+export default handleComparisonSearch;
+

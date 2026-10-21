@@ -391,7 +391,7 @@ async function startServer() {
   app.get('/robots.txt', (req, res) => {
     res.type('text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=86400');
-    res.send('User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: https://productreviews.review/sitemap.xml\nSitemap: https://productreviews.review/sitemap_index.xml\n');
+    res.send('User-agent: *\nAllow: /\n\nSitemap: https://productreviews.review/sitemap.xml\nSitemap: https://productreviews.review/sitemap-main.xml\nSitemap: https://productreviews.review/sitemap_index.xml\n');
   });
 
   // Serve sitemap_index.xml directly
@@ -399,11 +399,12 @@ async function startServer() {
     res.type('application/xml; charset=utf-8');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
-    const indexXml = `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <sitemap>\n    <loc>https://productreviews.review/sitemap.xml</loc>\n    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>\n  </sitemap>\n</sitemapindex>`;
+    const today = new Date().toISOString().split('T')[0];
+    const indexXml = `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <sitemap>\n    <loc>https://productreviews.review/sitemap-main.xml</loc>\n    <lastmod>${today}</lastmod>\n  </sitemap>\n</sitemapindex>`;
     res.status(200).send(indexXml);
   });
 
-  // Dynamic /sitemap.xml generated from canonical keys + live cache
+  // Dynamic /sitemap.xml and /sitemap-main.xml generated from canonical keys + live cache
   const serveDynamicSitemap = async (req: express.Request, res: express.Response) => {
     try {
       const { serveSitemapXml } = await import('./api/sitemap');
@@ -459,11 +460,66 @@ async function startServer() {
   app.get('/api/faq-manifest.json', serveFaqManifest);
 
   app.get('/sitemap.xml', serveDynamicSitemap);
+  app.get('/sitemap-main.xml', serveDynamicSitemap);
   app.get('/api/sitemap', serveDynamicSitemap);
   app.post('/api/sitemap/generate', handleSitemapGenerateRoute);
   app.post('/api/sitemap/rebuild', handleSitemapGenerateRoute);
   app.post('/api/sitemap', handleSitemapGenerateRoute);
   app.get('/api/sitemap/generate', handleSitemapGenerateRoute);
+
+  // Pilot SSR & Canonical Route Handler for /review/:slug and /compare/:slug
+  let viteDevServer: any = null;
+
+  const handleReviewOrCompareRoute = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    try {
+      const { getPilotPage, renderPilotHtml, render404Html } = await import('./src/ssr/pilotRenderer');
+      const { contentRepository } = await import('./src/content/store/contentRepository');
+      const fs = await import('node:fs');
+      
+      const distIndex = path.join(process.cwd(), 'dist', 'index.html');
+      const devIndex = path.join(process.cwd(), 'index.html');
+      const templatePath = fs.existsSync(distIndex) ? distIndex : devIndex;
+
+      let baseHtml = fs.readFileSync(templatePath, 'utf-8');
+
+      if (process.env.NODE_ENV !== 'production' && viteDevServer) {
+        try {
+          baseHtml = await viteDevServer.transformIndexHtml(req.originalUrl || req.path, baseHtml);
+        } catch {}
+      }
+
+      const pilotPage = getPilotPage(req.path);
+      if (pilotPage) {
+        const rendered = renderPilotHtml(pilotPage, baseHtml);
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        return res.status(200).send(rendered);
+      }
+
+      // Check if it's an existing published record in contentRepository
+      const rawParam = req.params.slug;
+      const slug = (Array.isArray(rawParam) ? rawParam[0] : rawParam) || req.path.split('/').pop() || '';
+      const record = contentRepository.getBySlug(slug);
+      if (record && record.status === 'PUBLISHED') {
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        return res.status(200).send(baseHtml);
+      }
+
+      // Neither pilot nor published record: return HTTP 404 with noindex
+      const notFoundHtml = render404Html(baseHtml, req.path);
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+      return res.status(404).send(notFoundHtml);
+    } catch (err) {
+      console.error('[SSR handler error]:', err);
+      next();
+    }
+  };
+
+  app.get('/review/:slug', handleReviewOrCompareRoute);
+  app.get('/compare/:slug', handleReviewOrCompareRoute);
 
   // Vite middleware in development mode
   if (process.env.NODE_ENV !== 'production') {
@@ -471,6 +527,7 @@ async function startServer() {
       server: { middlewareMode: true },
       appType: 'spa',
     });
+    viteDevServer = vite;
     app.use(vite.middlewares);
   } else {
     // Production static serving
