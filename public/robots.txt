@@ -1,6 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://productreviews.review/sitemap.xml
-Sitemap: https://productreviews.review/sitemap-main.xml
-Sitemap: https://productreviews.review/sitemap_index.xml

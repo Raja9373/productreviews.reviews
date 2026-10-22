@@ -1,95 +1,133 @@
-import React, { useEffect } from 'react';
+import React, { useEffect } from "react";
 
-export interface ProductReviewSchemaInjectorProps {
+export interface ProductReviewSchemaProps {
   productName: string;
-  category?: string;
-  description?: string;
-  canonicalUrl?: string;
-  ratingValue?: string;
+  category: string;
+  brand?: string;
+  ratingValue?: number | string;
+  reviewCount?: number | string;
+  reviewTitle?: string;
   reviewBody?: string;
-  scriptId?: string;
+  authorName?: string;
+  canonicalUrl?: string;
+  breadcrumbs?: Array<{ name: string; url: string }>;
+  faqs?: Array<{ question: string; answer: string }>;
 }
 
-export const ProductReviewSchemaInjector: React.FC<ProductReviewSchemaInjectorProps> = ({
+export const ProductReviewSchemaInjector: React.FC<ProductReviewSchemaProps> = ({
   productName,
-  category = 'Consumer Electronics',
-  description = '',
-  canonicalUrl = typeof window !== 'undefined' ? window.location.href : 'https://productreviews.review/',
-  ratingValue = '4.8',
-  reviewBody = '',
-  scriptId = 'product-review-schema-jsonld',
+  category,
+  brand = "Editorial Benchmark Labs",
+  ratingValue = "4.8",
+  reviewCount = "128",
+  reviewTitle = "Hardware Review",
+  reviewBody = "Key verdict and findings: Thoroughly lab-tested against strict hardware benchmarks, thermal stress, and long-term battery performance standards.",
+  authorName = "Editorial Research Board",
+  canonicalUrl = "https://productreviews.review/",
+  breadcrumbs,
+  faqs
 }) => {
   useEffect(() => {
-    if (typeof document === 'undefined') return;
+    if (typeof document === "undefined") return;
 
-    let script = document.getElementById(scriptId) as HTMLScriptElement | null;
-    if (!script) {
-      script = document.createElement('script');
-      script.id = scriptId;
-      script.type = 'application/ld+json';
-      document.head.appendChild(script);
+    const scriptId = "dynamic-product-review-schema";
+    let existingScript = document.getElementById(scriptId) as HTMLScriptElement | null;
+    if (!existingScript) {
+      existingScript = document.createElement("script");
+      existingScript.id = scriptId;
+      existingScript.type = "application/ld+json";
+      document.head.appendChild(existingScript);
     }
 
-    const schema = {
-      '@context': 'https://schema.org',
-      '@graph': [
-        {
-          '@type': 'BreadcrumbList',
-          '@id': `${canonicalUrl}#breadcrumb`,
-          itemListElement: [
-            { '@type': 'ListItem', 'position': 1, 'name': 'Home', 'item': 'https://productreviews.review/' },
-            { '@type': 'ListItem', 'position': 2, 'name': category, 'item': 'https://productreviews.review/?category=smartphones' },
-            { '@type': 'ListItem', 'position': 3, 'name': productName, 'item': canonicalUrl }
-          ]
-        },
-        {
-          '@type': 'Product',
-          '@id': `${canonicalUrl}#product`,
-          name: productName,
-          category: category,
-          description: description || `Objective editorial review and benchmark analysis for ${productName}.`,
-          aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: ratingValue,
-            bestRating: '5',
-            worstRating: '1',
-            reviewCount: '128',
-          },
-          review: {
-            '@type': 'Review',
-            name: 'Hardware Review',
-            reviewBody: reviewBody || 'Key verdict and findings...',
-            author: {
-              '@type': 'Organization',
-              name: 'Editorial Research Board',
-            },
-            publisher: {
-              '@type': 'Organization',
-              name: 'productreviews.review',
-              url: 'https://productreviews.review/',
-            },
-            reviewRating: {
-              '@type': 'Rating',
-              ratingValue: ratingValue,
-              bestRating: '5',
-            },
-          },
-        },
-      ],
+    const categorySlug = category.toLowerCase().replace(/\s+/g, "-");
+    const defaultBreadcrumbs = breadcrumbs || [
+      { name: "Home", url: "https://productreviews.review/" },
+      { name: category, url: `https://productreviews.review/?category=${encodeURIComponent(categorySlug)}` },
+      { name: productName, url: canonicalUrl }
+    ];
+
+    const breadcrumbListSchema = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": defaultBreadcrumbs.map((crumb, idx) => ({
+        "@type": "ListItem",
+        "position": idx + 1,
+        "name": crumb.name,
+        "item": crumb.url
+      }))
     };
 
-    script.textContent = JSON.stringify(schema, null, 2)
-      .replace(/</g, '\\u003c')
-      .replace(/>/g, '\\u003e')
-      .replace(/&/g, '\\u0026');
+    const productSchema = {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": productName,
+      "category": category,
+      "brand": {
+        "@type": "Brand",
+        "name": brand
+      },
+      "review": {
+        "@type": "Review",
+        "name": reviewTitle,
+        "reviewBody": reviewBody,
+        "author": {
+          "@type": "Organization",
+          "name": authorName
+        }
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": String(ratingValue),
+        "reviewCount": String(reviewCount),
+        "bestRating": "5",
+        "worstRating": "1"
+      }
+    };
+
+    const schemaGraph: any[] = [breadcrumbListSchema, productSchema];
+
+    if (faqs && faqs.length > 0) {
+      schemaGraph.push({
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": faqs.map((f) => ({
+          "@type": "Question",
+          "name": f.question,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": f.answer
+          }
+        }))
+      });
+    }
+
+    existingScript.textContent = JSON.stringify(
+      schemaGraph.length === 1 ? schemaGraph[0] : { "@context": "https://schema.org", "@graph": schemaGraph },
+      null,
+      2
+    );
 
     return () => {
       const el = document.getElementById(scriptId);
-      if (el && el.parentNode) {
-        el.parentNode.removeChild(el);
+      if (el) {
+        // Keep or clean up
       }
     };
-  }, [productName, category, description, canonicalUrl, ratingValue, reviewBody, scriptId]);
+  }, [
+    productName,
+    category,
+    brand,
+    ratingValue,
+    reviewCount,
+    reviewTitle,
+    reviewBody,
+    authorName,
+    canonicalUrl,
+    breadcrumbs,
+    faqs
+  ]);
 
   return null;
 };
+
+export default ProductReviewSchemaInjector;

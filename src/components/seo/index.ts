@@ -1,9 +1,4 @@
-export * from './seoAuditTypes';
-export * from './useSeoAudit';
-export * from './SEOStatusReport';
-export * from './SEOStatusIndicator';
-export * from './FaqSchemaGenerator';
-export * from './FAQGenerator';
-export * from './ProductReviewSchemaInjector';
-
-
+export { ProductReviewSchemaInjector } from "./ProductReviewSchemaInjector";
+export { SEOStatusIndicator } from "./SEOStatusIndicator";
+export { useSeoAudit, runDeepSeoAudit } from "./useSeoAudit";
+export type { SeoAuditCheck, SeoAuditResult } from "./useSeoAudit";

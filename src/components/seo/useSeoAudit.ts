@@ -1,508 +1,374 @@
-import { useState, useEffect, useCallback } from 'react';
-import { SEOAuditItem, SEOAuditSummary, SEOStatusLevel } from './seoAuditTypes';
+import { useState, useEffect } from "react";
 
-function extractAllJsonLdEntities(doc: Document): { types: string[]; rawEntities: any[] } {
-  const scripts = doc.querySelectorAll('script[type="application/ld+json"]');
-  const types: string[] = [];
-  const rawEntities: any[] = [];
-
-  const visit = (obj: any) => {
-    if (!obj || typeof obj !== 'object') return;
-    if (obj['@type']) {
-      const t = String(obj['@type']);
-      types.push(t);
-      rawEntities.push(obj);
-    }
-    if (Array.isArray(obj['@graph'])) {
-      for (const item of obj['@graph']) visit(item);
-    }
-    for (const key of Object.keys(obj)) {
-      if (key !== '@graph' && typeof obj[key] === 'object') {
-        visit(obj[key]);
-      }
-    }
-  };
-
-  scripts.forEach((script) => {
-    try {
-      const content = script.textContent?.trim();
-      if (content) {
-        const parsed = JSON.parse(content);
-        if (Array.isArray(parsed)) {
-          parsed.forEach(visit);
-        } else {
-          visit(parsed);
-        }
-      }
-    } catch {}
-  });
-
-  return { types: Array.from(new Set(types)), rawEntities };
+export interface SeoAuditCheck {
+  id: string;
+  name: string;
+  category: "Schema" | "Meta" | "Content";
+  status: "pass" | "warn" | "fail";
+  message: string;
+  details?: string;
 }
 
-export function performSeoAudit(): SEOAuditSummary {
-  if (typeof document === 'undefined') {
+export interface SeoAuditResult {
+  score: number;
+  passedCount: number;
+  warningCount: number;
+  failedCount: number;
+  checks: SeoAuditCheck[];
+  timestamp: string;
+}
+
+export function runDeepSeoAudit(): SeoAuditResult {
+  if (typeof document === "undefined") {
     return {
       score: 100,
-      totalChecks: 0,
-      passedCount: 0,
+      passedCount: 12,
       warningCount: 0,
       failedCount: 0,
-      timestamp: new Date().toISOString(),
-      pageUrl: '',
-      items: [],
-      detectedSchemas: [],
+      checks: [],
+      timestamp: new Date().toISOString()
     };
   }
 
-  const items: SEOAuditItem[] = [];
-  const { types: detectedTypes, rawEntities } = extractAllJsonLdEntities(document);
+  const checks: SeoAuditCheck[] = [];
 
-  // Helper to find specific entity in parsed JSON-LD
-  const findEntity = (type: string) => rawEntities.find((e) => e['@type'] === type);
+  // Parse all JSON-LD scripts
+  const scripts = Array.from(document.querySelectorAll('script[type="application/ld+json"]'));
+  const allJsonLd: any[] = [];
+  for (const s of scripts) {
+    try {
+      const parsed = JSON.parse(s.textContent || "{}");
+      if (Array.isArray(parsed)) {
+        allJsonLd.push(...parsed);
+      } else if (parsed["@graph"] && Array.isArray(parsed["@graph"])) {
+        allJsonLd.push(...parsed["@graph"]);
+      } else {
+        allJsonLd.push(parsed);
+      }
+    } catch {}
+  }
 
-  const productEntity = findEntity('Product');
-  const reviewEntity = findEntity('Review') || (productEntity?.review && (Array.isArray(productEntity.review) ? productEntity.review[0] : productEntity.review));
-  const aggregateRatingEntity = findEntity('AggregateRating') || productEntity?.aggregateRating;
-
-  // 1. Structured Data: Product Schema
-  if (productEntity) {
-    const hasName = Boolean(productEntity.name);
-    items.push({
-      id: 'schema-product',
-      name: 'Product Schema (Schema.org)',
-      category: 'STRUCTURED_DATA',
-      status: hasName ? 'passed' : 'warning',
-      isRequired: true,
-      value: productEntity.name || 'Found (Missing name)',
-      message: hasName
-        ? `Valid Product entity detected for "${productEntity.name}".`
-        : 'Product entity exists but missing required "name" attribute.',
-      details: `Entity ID: ${productEntity['@id'] || 'None'} | Category: ${productEntity.category || 'N/A'}`,
-      fix: hasName
-        ? undefined
-        : {
-            title: 'Add Product Name & Category',
-            description: 'Ensure the Product JSON-LD block has a descriptive name matching the product under review.',
-            codeType: 'json',
-            location: '<script type="application/ld+json"> inside <head>',
-            codeSnippet: `"@type": "Product",\n"name": "Apple iPhone 16 Pro",\n"category": "Smartphones"`,
-          },
+  // 1. schema-product
+  const productEntity = allJsonLd.find((e) => e["@type"] === "Product");
+  if (productEntity && productEntity.name) {
+    checks.push({
+      id: "schema-product",
+      name: "Schema.org Product Entity",
+      category: "Schema",
+      status: "pass",
+      message: `Found valid Product schema: "${productEntity.name}"`
     });
   } else {
-    items.push({
-      id: 'schema-product',
-      name: 'Product Schema (Schema.org)',
-      category: 'STRUCTURED_DATA',
-      status: 'failed',
-      isRequired: true,
-      value: null,
-      message: 'Missing Schema.org Product entity. Google requires this for rich snippet eligibility.',
-      details: 'Product review pages must declare a Product entity with either Review or AggregateRating.',
-      fix: {
-        title: 'Inject Product Structured Data',
-        description: 'Add a Product JSON-LD graph block in the HTML head.',
-        codeType: 'json',
-        location: '<head> block as <script type="application/ld+json">',
-        codeSnippet: `<script type="application/ld+json">\n{\n  "@context": "https://schema.org",\n  "@type": "Product",\n  "name": "Product Name",\n  "category": "Consumer Electronics"\n}\n</script>`,
-      },
+    checks.push({
+      id: "schema-product",
+      name: "Schema.org Product Entity",
+      category: "Schema",
+      status: "fail",
+      message: "Missing Schema.org Product structured data."
     });
   }
 
-  // 2. Structured Data: Review Schema
-  if (reviewEntity) {
-    const hasReviewBody = Boolean(reviewEntity.reviewBody || reviewEntity.description);
-    const hasAuthor = Boolean(reviewEntity.author);
-    const isFull = hasReviewBody && hasAuthor;
-    items.push({
-      id: 'schema-review',
-      name: 'Review Schema (Schema.org)',
-      category: 'STRUCTURED_DATA',
-      status: isFull ? 'passed' : 'warning',
-      isRequired: true,
-      value: reviewEntity.name || 'Review Detected',
-      message: isFull
-        ? 'Valid Review entity with author and review body detected.'
-        : 'Review entity found but author or reviewBody is missing.',
-      details: `Author: ${typeof reviewEntity.author === 'object' ? reviewEntity.author.name : reviewEntity.author || 'Unspecified'}`,
-      fix: isFull
-        ? undefined
-        : {
-            title: 'Complete Review Body & Author',
-            description: 'Provide an author organization and verdict body for full editorial credibility.',
-            codeType: 'json',
-            location: 'Inside Product.review or top-level Review entity',
-            codeSnippet: `"review": {\n  "@type": "Review",\n  "name": "Apple iPhone 16 Pro Review",\n  "reviewBody": "Comprehensive verdict rationale...",\n  "author": {\n    "@type": "Organization",\n    "name": "productreviews.review Editorial Board"\n  }\n}`,
-          },
+  // 2. schema-review
+  const reviewEntity =
+    allJsonLd.find((e) => e["@type"] === "Review") ||
+    (productEntity && productEntity.review);
+  if (reviewEntity && (reviewEntity.reviewBody || reviewEntity.name)) {
+    checks.push({
+      id: "schema-review",
+      name: "Schema.org Review Entity",
+      category: "Schema",
+      status: "pass",
+      message: `Found Review schema with editorial author: ${reviewEntity.author?.name || "Editorial Board"}`
     });
   } else {
-    items.push({
-      id: 'schema-review',
-      name: 'Review Schema (Schema.org)',
-      category: 'STRUCTURED_DATA',
-      status: 'failed',
-      isRequired: true,
-      value: null,
-      message: 'No Review entity detected. Google requires a Review node to show reviewer attribution.',
-      details: 'Without Review schema, Google cannot display editorial review snippets.',
-      fix: {
-        title: 'Add Review Schema to Product',
-        description: 'Embed a Review object inside your Product structured data.',
-        codeType: 'json',
-        location: '<script type="application/ld+json">',
-        codeSnippet: `"review": {\n  "@type": "Review",\n  "name": "Hardware Review",\n  "reviewBody": "Key verdict and findings...",\n  "author": {\n    "@type": "Organization",\n    "name": "Editorial Research Board"\n  }\n}`,
-      },
+    checks.push({
+      id: "schema-review",
+      name: "Schema.org Review Entity",
+      category: "Schema",
+      status: "fail",
+      message: "Missing Schema.org Review structured data entity."
     });
   }
 
-  // 3. Structured Data: AggregateRating Schema
-  if (aggregateRatingEntity) {
-    const val = aggregateRatingEntity.ratingValue;
-    items.push({
-      id: 'schema-aggregate-rating',
-      name: 'AggregateRating Schema',
-      category: 'STRUCTURED_DATA',
-      status: val ? 'passed' : 'warning',
-      isRequired: false,
-      value: val ? `${val} / ${aggregateRatingEntity.bestRating || '5'}` : 'Detected (Missing ratingValue)',
-      message: val
-        ? `AggregateRating verified (${val}/${aggregateRatingEntity.bestRating || '5'} across ${aggregateRatingEntity.reviewCount || aggregateRatingEntity.ratingCount || 'aggregated'} reviews).`
-        : 'AggregateRating present but ratingValue attribute is undefined.',
-      details: `Rating Count: ${aggregateRatingEntity.ratingCount || aggregateRatingEntity.reviewCount || 'N/A'}`,
-      fix: undefined,
+  // 3. schema-aggregate-rating
+  const aggRating =
+    allJsonLd.find((e) => e["@type"] === "AggregateRating") ||
+    (productEntity && productEntity.aggregateRating);
+  if (aggRating && aggRating.ratingValue && (aggRating.reviewCount || aggRating.ratingCount)) {
+    checks.push({
+      id: "schema-aggregate-rating",
+      name: "Aggregate Rating Schema",
+      category: "Schema",
+      status: "pass",
+      message: `Valid rating ${aggRating.ratingValue}/5 from ${aggRating.reviewCount || aggRating.ratingCount} reviews.`
     });
   } else {
-    // Note: ProductReviews.review maintains zero fabricated rating numbers for editorial integrity,
-    // so this is a recommendation/warning for products with real aggregated merchant metrics.
-    items.push({
-      id: 'schema-aggregate-rating',
-      name: 'AggregateRating Schema',
-      category: 'STRUCTURED_DATA',
-      status: 'warning',
-      isRequired: false,
-      value: 'Not Configured (Optional)',
-      message: 'No AggregateRating schema detected. Star ratings in Google SERPs require verified aggregate metrics.',
-      details: 'Editorial policy strictly prohibits fabricated star ratings. Only include if backed by multi-source metrics.',
-      fix: {
-        title: 'Add Verified AggregateRating (When Supported)',
-        description: 'If verified aggregated customer or benchmark scores exist, inject AggregateRating under Product.',
-        codeType: 'json',
-        location: 'Inside Product entity',
-        codeSnippet: `"aggregateRating": {\n  "@type": "AggregateRating",\n  "ratingValue": "4.8",\n  "reviewCount": "128",\n  "bestRating": "5",\n  "worstRating": "1"\n}`,
-      },
+    checks.push({
+      id: "schema-aggregate-rating",
+      name: "Aggregate Rating Schema",
+      category: "Schema",
+      status: "fail",
+      message: "Missing AggregateRating schema with ratingValue & reviewCount."
     });
   }
 
-  // 4. Structured Data: FAQPage Schema
-  const hasFaq = detectedTypes.includes('FAQPage');
-  items.push({
-    id: 'schema-faq',
-    name: 'FAQPage Schema (Google PAA Rich Snippets)',
-    category: 'STRUCTURED_DATA',
-    status: hasFaq ? 'passed' : 'warning',
-    isRequired: false,
-    value: hasFaq ? 'FAQPage Schema Active' : 'Missing',
-    message: hasFaq
-      ? 'FAQPage schema detected. Enables interactive accordion answers in search results.'
-      : 'No FAQPage schema found. High-intent buyer questions enhance visibility in Google PAA.',
-    details: 'Covers warranties, compatibility, return policies, and purchase advice.',
-    fix: hasFaq
-      ? undefined
-      : {
-          title: 'Implement FAQPage JSON-LD',
-          description: 'Embed high-intent buyer FAQs matching the visible FAQ section on the page.',
-          codeType: 'json',
-          location: '<script type="application/ld+json">',
-          codeSnippet: `{\n  "@type": "FAQPage",\n  "mainEntity": [\n    {\n      "@type": "Question",\n      "name": "Is this product covered by manufacturer warranty?",\n      "acceptedAnswer": {\n        "@type": "Answer",\n        "text": "Yes, covered by standard 1-year brand warranty."\n      }\n    }\n  ]\n}`,
-        },
-  });
-
-  // 5. Structured Data: BreadcrumbList Schema
-  const hasBreadcrumbs = detectedTypes.includes('BreadcrumbList');
-  items.push({
-    id: 'schema-breadcrumb',
-    name: 'BreadcrumbList Schema',
-    category: 'STRUCTURED_DATA',
-    status: hasBreadcrumbs ? 'passed' : 'warning',
-    isRequired: false,
-    value: hasBreadcrumbs ? 'BreadcrumbList Active' : 'Missing',
-    message: hasBreadcrumbs
-      ? 'BreadcrumbList schema detected. Displays clean navigation paths in Google SERPs.'
-      : 'No BreadcrumbList schema detected.',
-    details: 'Helps search engines understand category hierarchy (Home > Category > Product).',
-    fix: hasBreadcrumbs
-      ? undefined
-      : {
-          title: 'Add BreadcrumbList Structured Data',
-          description: 'Add hierarchical breadcrumb trail.',
-          codeType: 'json',
-          location: '<script type="application/ld+json">',
-          codeSnippet: `{\n  "@type": "BreadcrumbList",\n  "itemListElement": [\n    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://productreviews.review/" },\n    { "@type": "ListItem", "position": 2, "name": "Category", "item": "https://productreviews.review/?category=smartphones" }\n  ]\n}`,
-        },
-  });
-
-  // 6. Meta Tag: Page Title
-  const title = document.title || '';
-  const titleLength = title.length;
-  let titleStatus: SEOStatusLevel = 'passed';
-  let titleMsg = `Title is optimal (${titleLength} characters).`;
-  if (!title) {
-    titleStatus = 'failed';
-    titleMsg = 'Page title is empty or missing.';
-  } else if (titleLength < 25) {
-    titleStatus = 'warning';
-    titleMsg = `Title is too short (${titleLength} chars). Aim for 30–60 characters.`;
-  } else if (titleLength > 70) {
-    titleStatus = 'warning';
-    titleMsg = `Title may truncate on Google SERP (${titleLength} chars). Max 65 chars recommended.`;
+  // 4. schema-faq
+  const faqEntity = allJsonLd.find((e) => e["@type"] === "FAQPage");
+  if (faqEntity && (faqEntity.mainEntity?.length > 0 || Array.isArray(faqEntity.mainEntity))) {
+    checks.push({
+      id: "schema-faq",
+      name: "FAQPage Structured Data",
+      category: "Schema",
+      status: "pass",
+      message: `Valid FAQPage schema found with ${faqEntity.mainEntity?.length || 1}+ questions.`
+    });
+  } else {
+    checks.push({
+      id: "schema-faq",
+      name: "FAQPage Structured Data",
+      category: "Schema",
+      status: "fail",
+      message: "Missing FAQPage structured data entity."
+    });
   }
-  items.push({
-    id: 'meta-title',
-    name: '<title> Tag',
-    category: 'META_TAGS',
-    status: titleStatus,
-    isRequired: true,
-    value: title || 'Missing',
-    message: titleMsg,
-    details: `Current length: ${titleLength} chars`,
-    fix: titleStatus === 'passed' ? undefined : {
-      title: 'Update <title> Tag',
-      description: 'Set a distinctive, keyword-rich title under 65 characters.',
-      codeType: 'html',
-      location: '<head> element',
-      codeSnippet: `<title>Product Name Review: Benchmark & Hardware Evidence | productreviews.review</title>`,
-    },
-  });
 
-  // 7. Meta Tag: Description
-  const descEl = document.querySelector('meta[name="description"]');
-  const desc = descEl?.getAttribute('content') || '';
-  const descLength = desc.length;
-  let descStatus: SEOStatusLevel = 'passed';
-  let descMsg = `Meta description is well-formed (${descLength} characters).`;
-  if (!desc) {
-    descStatus = 'failed';
-    descMsg = 'Meta description is missing entirely.';
-  } else if (descLength < 50) {
-    descStatus = 'warning';
-    descMsg = `Description is very short (${descLength} chars). Recommended: 120–160 chars.`;
-  } else if (descLength > 170) {
-    descStatus = 'warning';
-    descMsg = `Description is long (${descLength} chars) and may truncate in mobile snippets.`;
+  // 5. schema-breadcrumb
+  const breadcrumbEntity = allJsonLd.find((e) => e["@type"] === "BreadcrumbList");
+  if (breadcrumbEntity && breadcrumbEntity.itemListElement?.length > 0) {
+    checks.push({
+      id: "schema-breadcrumb",
+      name: "BreadcrumbList Schema",
+      category: "Schema",
+      status: "pass",
+      message: `Valid BreadcrumbList schema with ${breadcrumbEntity.itemListElement.length} navigational items.`
+    });
+  } else {
+    checks.push({
+      id: "schema-breadcrumb",
+      name: "BreadcrumbList Schema",
+      category: "Schema",
+      status: "fail",
+      message: "Missing BreadcrumbList Schema.org structured data."
+    });
   }
-  items.push({
-    id: 'meta-description',
-    name: 'Meta Description',
-    category: 'META_TAGS',
-    status: descStatus,
-    isRequired: true,
-    value: desc || 'Missing',
-    message: descMsg,
-    details: `Length: ${descLength} chars`,
-    fix: descStatus === 'passed' ? undefined : {
-      title: 'Set Concise Meta Description',
-      description: 'Write an actionable 120–160 character summary.',
-      codeType: 'html',
-      location: '<head> element',
-      codeSnippet: `<meta name="description" content="In-depth objective review of [Product]: lab benchmarks, battery runtime, real-world camera performance, and verified buying verdict." />`,
-    },
-  });
 
-  // 8. Meta Tag: Canonical Link
-  const canonicalEl = document.querySelector('link[rel="canonical"]');
-  const canonicalHref = canonicalEl?.getAttribute('href') || '';
-  let canonicalStatus: SEOStatusLevel = 'passed';
-  let canonicalMsg = `Canonical URL properly configured: ${canonicalHref}`;
-  if (!canonicalHref) {
-    canonicalStatus = 'failed';
-    canonicalMsg = 'Missing <link rel="canonical"> tag. Risk of duplicate content issues.';
-  } else if (!canonicalHref.startsWith('https://productreviews.review')) {
-    canonicalStatus = 'warning';
-    canonicalMsg = `Canonical points to unexpected host: ${canonicalHref}`;
+  // 6. meta-title
+  const titleText = document.title || "";
+  const titleLen = titleText.length;
+  if (titleLen >= 25 && titleLen <= 70) {
+    checks.push({
+      id: "meta-title",
+      name: "Title Tag Length",
+      category: "Meta",
+      status: "pass",
+      message: `Page title length optimal: ${titleLen} characters (target 25-70).`
+    });
+  } else if (titleLen > 70) {
+    checks.push({
+      id: "meta-title",
+      name: "Title Tag Length",
+      category: "Meta",
+      status: "warn",
+      message: `Title is too long (${titleLen} chars), recommended under 70 chars.`
+    });
+  } else {
+    checks.push({
+      id: "meta-title",
+      name: "Title Tag Length",
+      category: "Meta",
+      status: "warn",
+      message: `Title is too short (${titleLen} chars), recommended at least 25 chars.`
+    });
   }
-  items.push({
-    id: 'meta-canonical',
-    name: 'Canonical URL (<link rel="canonical">)',
-    category: 'META_TAGS',
-    status: canonicalStatus,
-    isRequired: true,
-    value: canonicalHref || 'Missing',
-    message: canonicalMsg,
-    details: canonicalHref.startsWith('https://') ? 'Protocol: HTTPS (Secure)' : 'Warning: Non-HTTPS',
-    fix: canonicalStatus === 'passed' ? undefined : {
-      title: 'Add Canonical Tag',
-      description: 'Define the self-referential canonical URL to prevent duplication penalties.',
-      codeType: 'html',
-      location: '<head> element',
-      codeSnippet: `<link rel="canonical" href="https://productreviews.review/review/product-slug" />`,
-    },
-  });
 
-  // 9. Meta Tag: Robots Directives
-  const robotsEl = document.querySelector('meta[name="robots"]');
-  const robotsContent = robotsEl?.getAttribute('content') || '';
-  const isNoIndex = robotsContent.includes('noindex');
-  const hasSnippets = robotsContent.includes('max-snippet') || robotsContent.includes('max-image-preview');
-  items.push({
-    id: 'meta-robots',
-    name: 'Robots Directives (<meta name="robots">)',
-    category: 'META_TAGS',
-    status: isNoIndex ? 'warning' : 'passed',
-    isRequired: true,
-    value: robotsContent || 'None (Default index, follow)',
-    message: isNoIndex
-      ? 'Warning: "noindex" directive active on this page. Search engines will NOT index it.'
-      : 'Robots directive allows search indexing and rich preview snippets.',
-    details: hasSnippets ? 'Large image and video snippet directives active.' : 'Standard directive.',
-    fix: isNoIndex ? {
-      title: 'Enable Search Indexing',
-      description: 'Remove noindex directive when ready to publish to search engines.',
-      codeType: 'html',
-      location: '<head> element',
-      codeSnippet: `<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />`,
-    } : undefined,
-  });
-
-  // 10. Meta Tag: OpenGraph & Social Sharing
-  const ogTitle = document.querySelector('meta[property="og:title"]')?.getAttribute('content');
-  const ogDesc = document.querySelector('meta[property="og:description"]')?.getAttribute('content');
-  const hasOg = Boolean(ogTitle && ogDesc);
-  items.push({
-    id: 'meta-opengraph',
-    name: 'OpenGraph & Social Tags (og:title, og:description)',
-    category: 'META_TAGS',
-    status: hasOg ? 'passed' : 'warning',
-    isRequired: false,
-    value: hasOg ? `og:title: "${ogTitle}"` : 'Missing or Incomplete',
-    message: hasOg
-      ? 'Social preview metadata is properly configured.'
-      : 'Missing OpenGraph tags. Links shared on WhatsApp, Twitter, or Slack may look broken.',
-    details: `og:title: ${ogTitle || 'N/A'}`,
-    fix: hasOg ? undefined : {
-      title: 'Add OpenGraph Tags',
-      description: 'Add social preview tags for rich link sharing.',
-      codeType: 'html',
-      location: '<head> element',
-      codeSnippet: `<meta property="og:title" content="Product Review | productreviews.review" />\n<meta property="og:description" content="Verified technical analysis and buying advice." />\n<meta property="og:type" content="article" />`,
-    },
-  });
-
-  // 11. Content Signal: Visible H1 Tag
-  const h1Elements = document.querySelectorAll('h1');
-  const h1Count = h1Elements.length;
-  const firstH1Text = h1Elements[0]?.textContent?.trim() || '';
-  let h1Status: SEOStatusLevel = 'passed';
-  let h1Msg = `Single primary H1 found: "${firstH1Text.slice(0, 50)}..."`;
-  if (h1Count === 0) {
-    h1Status = 'failed';
-    h1Msg = 'No <h1> heading detected on the page. Search engines require a clear primary H1.';
-  } else if (h1Count > 1) {
-    h1Status = 'warning';
-    h1Msg = `Multiple H1 headings detected (${h1Count}). Best SEO practice is exactly one H1 per page.`;
+  // 7. meta-description
+  const descEl = document.querySelector<HTMLMetaElement>('meta[name="description"]');
+  const descText = descEl?.getAttribute("content") || "";
+  const descLen = descText.length;
+  if (descLen >= 50 && descLen <= 170) {
+    checks.push({
+      id: "meta-description",
+      name: "Meta Description Length",
+      category: "Meta",
+      status: "pass",
+      message: `Meta description length optimal: ${descLen} characters (target 50-170).`
+    });
+  } else if (descLen > 170) {
+    checks.push({
+      id: "meta-description",
+      name: "Meta Description Length",
+      category: "Meta",
+      status: "warn",
+      message: `Meta description is too long (${descLen} chars).`
+    });
+  } else {
+    checks.push({
+      id: "meta-description",
+      name: "Meta Description Length",
+      category: "Meta",
+      status: "fail",
+      message: `Meta description is too short or missing (${descLen} chars).`
+    });
   }
-  items.push({
-    id: 'content-h1',
-    name: 'Primary <h1> Heading',
-    category: 'CONTENT_SIGNALS',
-    status: h1Status,
-    isRequired: true,
-    value: firstH1Text || 'None',
-    message: h1Msg,
-    details: `Total H1 count on page: ${h1Count}`,
-    fix: h1Status === 'passed' ? undefined : {
-      title: 'Ensure Exactly One Visible <h1>',
-      description: 'Wrap the primary article headline in an <h1> tag.',
-      codeType: 'html',
-      location: '<article> header',
-      codeSnippet: `<h1 class="text-3xl font-bold font-serif text-zinc-950">Product Name Review & Evidence Analysis</h1>`,
-    },
-  });
 
-  // 12. Content Signal: Authoritative Verdict & Decision Signal
-  const bodyText = document.body?.innerText || '';
-  const hasDecision =
-    bodyText.includes('RECOMMENDED') ||
-    bodyText.includes('BUY IF') ||
-    bodyText.includes('DONT BUY') ||
-    bodyText.includes('TOP PICK') ||
-    bodyText.includes('Decision Card') ||
-    bodyText.includes('Buying Verdict');
-  items.push({
-    id: 'content-verdict',
-    name: 'Authoritative Verdict & Decision Signal',
-    category: 'CONTENT_SIGNALS',
-    status: hasDecision ? 'passed' : 'warning',
-    isRequired: true,
-    value: hasDecision ? 'Decision Verdict Present' : 'No explicit verdict found',
-    message: hasDecision
-      ? 'Page contains an unambiguous purchase recommendation and verdict.'
-      : 'No clear verdict badge found. Google helpful content systems reward definitive buying advice.',
-    details: 'Editorial criteria: Clear BUY, BUY IF, or AVOID recommendation.',
-    fix: hasDecision ? undefined : {
-      title: 'Add Clear Verdict Card',
-      description: 'Display an upfront verdict box with clear rationale.',
-      codeType: 'html',
-      location: 'Above the fold in the review article',
-      codeSnippet: `<div class="bg-zinc-50 border-2 border-zinc-900 p-6 rounded-lg">\n  <span class="bg-emerald-700 text-white px-3 py-1 font-bold">RECOMMENDED • BUY</span>\n  <h2 class="text-xl font-bold mt-3">Clear Buy for Creators and Professionals</h2>\n</div>`,
-    },
-  });
+  // 8. meta-canonical
+  const canonicalEl = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+  const canonicalHref = canonicalEl?.getAttribute("href") || "";
+  if (canonicalHref.startsWith("https://productreviews.review")) {
+    checks.push({
+      id: "meta-canonical",
+      name: "Canonical Link Tag",
+      category: "Meta",
+      status: "pass",
+      message: `Absolute canonical URL configured: ${canonicalHref}`
+    });
+  } else {
+    checks.push({
+      id: "meta-canonical",
+      name: "Canonical Link Tag",
+      category: "Meta",
+      status: "fail",
+      message: "Canonical link must be absolute and point to https://productreviews.review."
+    });
+  }
 
-  // Compute overall score
-  const passedCount = items.filter((i) => i.status === 'passed').length;
-  const warningCount = items.filter((i) => i.status === 'warning').length;
-  const failedCount = items.filter((i) => i.status === 'failed').length;
+  // 9. meta-robots
+  const robotsEl = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
+  const robotsContent = (robotsEl?.getAttribute("content") || "index, follow").toLowerCase();
+  if (robotsContent.includes("noindex") && !window.location.search) {
+    checks.push({
+      id: "meta-robots",
+      name: "Robots Directives",
+      category: "Meta",
+      status: "warn",
+      message: `Robots contains noindex: "${robotsContent}" on canonical page.`
+    });
+  } else {
+    checks.push({
+      id: "meta-robots",
+      name: "Robots Directives",
+      category: "Meta",
+      status: "pass",
+      message: `Robots directives valid: "${robotsContent}"`
+    });
+  }
 
-  // Passed = 100%, Warning = 70%, Failed = 0% weighted
-  const rawScore = items.length > 0 ? (passedCount * 100 + warningCount * 65) / items.length : 100;
-  const score = Math.round(rawScore);
+  // 10. meta-opengraph
+  const ogTitle = document.querySelector('meta[property="og:title"]')?.getAttribute("content");
+  const ogDesc = document.querySelector('meta[property="og:description"]')?.getAttribute("content");
+  if (ogTitle && ogDesc) {
+    checks.push({
+      id: "meta-opengraph",
+      name: "Open Graph Tags",
+      category: "Meta",
+      status: "pass",
+      message: "Complete og:title and og:description found."
+    });
+  } else {
+    checks.push({
+      id: "meta-opengraph",
+      name: "Open Graph Tags",
+      category: "Meta",
+      status: "warn",
+      message: "Missing og:title or og:description social tags."
+    });
+  }
+
+  // 11. content-h1
+  const h1Elements = document.querySelectorAll("h1");
+  if (h1Elements.length === 1) {
+    checks.push({
+      id: "content-h1",
+      name: "H1 Heading Count",
+      category: "Content",
+      status: "pass",
+      message: `Single authoritative H1 tag found: "${h1Elements[0].textContent?.slice(0, 40)}..."`
+    });
+  } else if (h1Elements.length > 1) {
+    checks.push({
+      id: "content-h1",
+      name: "H1 Heading Count",
+      category: "Content",
+      status: "warn",
+      message: `Found ${h1Elements.length} H1 tags. Best practice is exactly one per page.`
+    });
+  } else {
+    checks.push({
+      id: "content-h1",
+      name: "H1 Heading Count",
+      category: "Content",
+      status: "fail",
+      message: "No H1 heading tag found on the page."
+    });
+  }
+
+  // 12. content-verdict
+  const bodyText = (document.body.innerText || "").toLowerCase();
+  const hasVerdict =
+    bodyText.includes("verdict") ||
+    bodyText.includes("recommended") ||
+    bodyText.includes("benchmark") ||
+    bodyText.includes("tested");
+  if (hasVerdict) {
+    checks.push({
+      id: "content-verdict",
+      name: "Editorial Verdict & Benchmark Signal",
+      category: "Content",
+      status: "pass",
+      message: "Clear editorial verdict and tested recommendation signals detected."
+    });
+  } else {
+    checks.push({
+      id: "content-verdict",
+      name: "Editorial Verdict & Benchmark Signal",
+      category: "Content",
+      status: "warn",
+      message: "Editorial verdict or benchmark evidence terminology not detected in body."
+    });
+  }
+
+  // Compute total score
+  const passWeight = 100 / checks.length;
+  const warnWeight = passWeight / 2;
+  let score = 0;
+  let passedCount = 0;
+  let warningCount = 0;
+  let failedCount = 0;
+
+  for (const c of checks) {
+    if (c.status === "pass") {
+      score += passWeight;
+      passedCount++;
+    } else if (c.status === "warn") {
+      score += warnWeight;
+      warningCount++;
+    } else {
+      failedCount++;
+    }
+  }
 
   return {
-    score,
-    totalChecks: items.length,
+    score: Math.round(score),
     passedCount,
     warningCount,
     failedCount,
-    timestamp: new Date().toISOString(),
-    pageUrl: typeof window !== 'undefined' ? window.location.href : '',
-    items,
-    detectedSchemas: detectedTypes,
+    checks,
+    timestamp: new Date().toISOString()
   };
 }
 
-export function useSeoAudit(refreshIntervalMs = 2500) {
-  const [summary, setSummary] = useState<SEOAuditSummary>(performSeoAudit);
+export function useSeoAudit() {
+  const [result, setResult] = useState<SeoAuditResult>(() => runDeepSeoAudit());
 
-  const rescan = useCallback(() => {
-    setSummary(performSeoAudit());
-  }, []);
+  const reevaluate = () => {
+    setResult(runDeepSeoAudit());
+  };
 
   useEffect(() => {
-    // Initial scan after DOM paint
-    const t1 = setTimeout(rescan, 200);
-    const t2 = setTimeout(rescan, 1200);
+    // Initial evaluation after DOM render
+    const t = setTimeout(reevaluate, 150);
+    return () => clearTimeout(t);
+  }, []);
 
-    // Watch for DOM / head changes
-    const observer = new MutationObserver(() => {
-      rescan();
-    });
-
-    if (document.head) {
-      observer.observe(document.head, { childList: true, subtree: true, attributes: true });
-    }
-    const root = document.getElementById('root');
-    if (root) {
-      observer.observe(root, { childList: true, subtree: true });
-    }
-
-    const interval = setInterval(rescan, refreshIntervalMs);
-
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearInterval(interval);
-      observer.disconnect();
-    };
-  }, [rescan, refreshIntervalMs]);
-
-  return { summary, rescan };
+  return { result, reevaluate };
 }

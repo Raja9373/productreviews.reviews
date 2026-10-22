@@ -1,260 +1,162 @@
-import React, { useState } from 'react';
-import {
-  ShieldCheck,
-  AlertTriangle,
-  XCircle,
-  CheckCircle2,
-  SlidersHorizontal,
-  ChevronRight,
-  Maximize2,
-  Sparkles,
-} from 'lucide-react';
-import { useSeoAudit } from './useSeoAudit';
-import { SEOStatusReport } from './SEOStatusReport';
+import React, { useState } from "react";
+import { useSeoAudit } from "./useSeoAudit";
+import { CheckCircle2, AlertTriangle, XCircle, Search, RefreshCw, ChevronUp, ChevronDown, ShieldCheck } from "lucide-react";
 
-export interface SEOStatusIndicatorProps {
-  /**
-   * Display mode:
-   * - 'floating': Unobtrusive sticky badge in bottom-right corner with live score pulse.
-   * - 'inline': Full-width status banner placed directly at top or bottom of review articles.
-   * - 'compact': Small chip suitable for headers or meta bars.
-   */
-  variant?: 'floating' | 'inline' | 'compact';
-  /**
-   * Optional custom title or page description.
-   */
-  pageTitle?: string;
-}
+export const SEOStatusIndicator: React.FC = () => {
+  const { result, reevaluate } = useSeoAudit();
+  const [isOpen, setIsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"all" | "Schema" | "Meta" | "Content">("all");
 
-export const SEOStatusIndicator: React.FC<SEOStatusIndicatorProps> = ({
-  variant = 'floating',
-  pageTitle,
-}) => {
-  const { summary, rescan } = useSeoAudit(3000);
-  const [showModalReport, setShowModalReport] = useState(false);
-  const [showInlineReport, setShowInlineReport] = useState(false);
+  const filteredChecks = activeTab === "all" ? result.checks : result.checks.filter((c) => c.category === activeTab);
 
-  // Status configuration based on audit results
-  const hasCriticalFailures = summary.failedCount > 0;
-  const hasWarnings = summary.warningCount > 0;
+  const getScoreBadgeColor = (score: number) => {
+    if (score >= 90) return "bg-emerald-600 text-white";
+    if (score >= 70) return "bg-amber-600 text-white";
+    return "bg-rose-600 text-white";
+  };
 
-  const statusConfig = hasCriticalFailures
-    ? {
-        bg: 'bg-rose-50',
-        border: 'border-rose-300',
-        text: 'text-rose-800',
-        badge: 'bg-rose-600 text-white',
-        pulse: 'bg-rose-500',
-        icon: XCircle,
-        label: `${summary.failedCount} SEO Issue${summary.failedCount > 1 ? 's' : ''}`,
-      }
-    : hasWarnings
-    ? {
-        bg: 'bg-amber-50',
-        border: 'border-amber-300',
-        text: 'text-amber-900',
-        badge: 'bg-amber-600 text-white',
-        pulse: 'bg-amber-500',
-        icon: AlertTriangle,
-        label: `${summary.warningCount} Recommendation${summary.warningCount > 1 ? 's' : ''}`,
-      }
-    : {
-        bg: 'bg-emerald-50',
-        border: 'border-emerald-300',
-        text: 'text-emerald-900',
-        badge: 'bg-emerald-700 text-white',
-        pulse: 'bg-emerald-500',
-        icon: CheckCircle2,
-        label: 'SEO 100% Valid',
-      };
-
-  const Icon = statusConfig.icon;
-
-  // Key entities quick status
-  const productItem = summary.items.find((i) => i.id === 'schema-product');
-  const reviewItem = summary.items.find((i) => i.id === 'schema-review');
-  const ratingItem = summary.items.find((i) => i.id === 'schema-aggregate-rating');
-
-  // Compact Variant
-  if (variant === 'compact') {
-    return (
-      <>
-        <button
-          onClick={() => setShowModalReport(true)}
-          className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-md text-xs font-mono font-medium border transition-all cursor-pointer ${statusConfig.bg} ${statusConfig.border} ${statusConfig.text} hover:shadow-xs`}
-          title="Click to view complete SEO & Schema audit report"
-        >
-          <span className="relative flex h-2 w-2">
-            <span
-              className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${statusConfig.pulse}`}
-            />
-            <span className={`relative inline-flex rounded-full h-2 w-2 ${statusConfig.pulse}`} />
-          </span>
-          <span className="font-bold">SEO {summary.score}%</span>
-          <span className="text-[10px] opacity-75">({statusConfig.label})</span>
-        </button>
-
-        {showModalReport && (
-          <SEOStatusReport
-            summary={summary}
-            onRescan={rescan}
-            onClose={() => setShowModalReport(false)}
-            isModal={true}
-          />
-        )}
-      </>
-    );
-  }
-
-  // Inline Variant (for review pages)
-  if (variant === 'inline') {
-    return (
-      <div className="my-6">
-        <div
-          className={`rounded-xl border p-4 sm:p-5 transition-all shadow-xs ${statusConfig.bg} ${statusConfig.border}`}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-white border border-zinc-200/80 shadow-2xs shrink-0">
-                <Icon className={`w-5 h-5 ${statusConfig.text}`} />
-              </div>
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-bold text-sm text-zinc-900 font-sans">
-                    Review Page SEO &amp; Rich Results Monitor
-                  </span>
-                  <span
-                    className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase ${statusConfig.badge}`}
-                  >
-                    Score: {summary.score}/100
-                  </span>
-                  {hasCriticalFailures && (
-                    <span className="text-[10px] font-mono bg-rose-100 text-rose-800 px-2 py-0.5 rounded font-semibold">
-                      Action Required
-                    </span>
-                  )}
-                </div>
-
-                {/* Quick Entities Checklist Chips */}
-                <div className="flex flex-wrap items-center gap-3 mt-2 text-xs font-mono text-zinc-700">
-                  <span className="inline-flex items-center gap-1">
-                    Product Schema:{' '}
-                    {productItem?.status === 'passed' ? (
-                      <span className="text-emerald-700 font-bold">✅ Passed</span>
-                    ) : (
-                      <span className="text-rose-700 font-bold">❌ Missing</span>
-                    )}
-                  </span>
-                  <span>•</span>
-                  <span className="inline-flex items-center gap-1">
-                    Review Schema:{' '}
-                    {reviewItem?.status === 'passed' ? (
-                      <span className="text-emerald-700 font-bold">✅ Passed</span>
-                    ) : (
-                      <span className="text-rose-700 font-bold">❌ Missing</span>
-                    )}
-                  </span>
-                  <span>•</span>
-                  <span className="inline-flex items-center gap-1">
-                    AggregateRating:{' '}
-                    {ratingItem?.status === 'passed' ? (
-                      <span className="text-emerald-700 font-bold">✅ Passed</span>
-                    ) : (
-                      <span className="text-amber-700 font-bold">⚠️ Optional</span>
-                    )}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
-              <button
-                onClick={() => setShowInlineReport(!showInlineReport)}
-                className="px-3 py-1.5 bg-white hover:bg-zinc-100 text-zinc-900 border border-zinc-300 rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer flex items-center gap-1.5"
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-500" />
-                <span>{showInlineReport ? 'Hide Audit Report' : 'Inspect SEO Checklist'}</span>
-              </button>
-
-              <button
-                onClick={() => setShowModalReport(true)}
-                className="p-1.5 bg-white hover:bg-zinc-100 text-zinc-600 rounded-lg border border-zinc-300 transition-colors cursor-pointer"
-                title="Expand to full screen modal"
-              >
-                <Maximize2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Inline Expanded Dashboard */}
-          {showInlineReport && (
-            <div className="mt-4 pt-4 border-t border-zinc-200/80">
-              <SEOStatusReport summary={summary} onRescan={rescan} isModal={false} />
-            </div>
-          )}
-        </div>
-
-        {showModalReport && (
-          <SEOStatusReport
-            summary={summary}
-            onRescan={rescan}
-            onClose={() => setShowModalReport(false)}
-            isModal={true}
-          />
-        )}
-      </div>
-    );
-  }
-
-  // Floating Variant (Default: Bottom-Right Docked Pill)
   return (
-    <>
-      <div className="fixed bottom-5 right-5 z-40 animate-in fade-in slide-in-from-bottom-2 duration-300">
+    <div className="fixed bottom-4 right-4 z-50 font-sans">
+      {/* Minimized Pill */}
+      {!isOpen && (
         <button
-          onClick={() => setShowModalReport(true)}
-          className={`flex items-center gap-3 px-3.5 py-2.5 rounded-full shadow-lg border transition-all hover:scale-105 cursor-pointer backdrop-blur-md bg-white/95 ${statusConfig.border} text-zinc-900 hover:shadow-xl`}
-          title="Open Live SEO & Structured Data Health Report"
-          aria-label="SEO Status Monitor"
+          onClick={() => {
+            reevaluate();
+            setIsOpen(true);
+          }}
+          className="flex items-center gap-2.5 px-4 py-2.5 bg-stone-900 text-white rounded-full shadow-2xl border border-stone-700 hover:bg-stone-800 transition-all cursor-pointer group"
+          title="Click to inspect deep SEO audit status"
         >
-          {/* Status Pulse Dot */}
-          <span className="relative flex h-2.5 w-2.5">
-            <span
-              className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${statusConfig.pulse}`}
-            />
-            <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${statusConfig.pulse}`} />
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+            <span className="text-xs font-semibold tracking-wide uppercase text-stone-300">SEO Health</span>
+          </div>
+          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${getScoreBadgeColor(result.score)}`}>
+            {result.score}/100
           </span>
+          <ChevronUp className="w-3.5 h-3.5 text-stone-400" />
+        </button>
+      )}
 
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-zinc-700" />
-            <div className="flex flex-col text-left">
-              <span className="text-[11px] font-bold font-mono tracking-tight text-zinc-900 leading-tight">
-                SEO {summary.score}%
-              </span>
-              <span className="text-[9px] font-mono text-zinc-500 leading-tight">
-                {statusConfig.label}
-              </span>
+      {/* Expanded Modal / Panel */}
+      {isOpen && (
+        <div className="w-[440px] max-w-[92vw] bg-white rounded-2xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in slide-in-from-bottom-4 duration-200">
+          {/* Header */}
+          <div className="bg-stone-900 text-white p-4 flex items-center justify-between border-b border-stone-800">
+            <div className="flex items-center gap-2.5">
+              <ShieldCheck className="w-5 h-5 text-emerald-400" />
+              <div>
+                <h3 className="text-sm font-bold tracking-tight">Deep SEO Audit Suite</h3>
+                <p className="text-[11px] text-stone-400">12 Verification Signals & Schema Validation</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={reevaluate}
+                className="p-1.5 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-lg text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                title="Re-run audit"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline text-[11px]">Re-audit</span>
+              </button>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-1.5 text-stone-400 hover:text-white rounded-lg transition-colors cursor-pointer"
+              >
+                <ChevronDown className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
-          <div className="pl-1 border-l border-zinc-200">
-            <span
-              className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded-full ${statusConfig.badge}`}
-            >
-              Report
-            </span>
+          {/* Score Summary Banner */}
+          <div className="bg-stone-50 p-4 border-b border-stone-200 flex items-center justify-between">
+            <div>
+              <div className="text-2xl font-black text-stone-900 tracking-tight flex items-baseline gap-1">
+                <span>{result.score}</span>
+                <span className="text-sm font-normal text-stone-500">/100</span>
+              </div>
+              <p className="text-xs text-stone-600 mt-0.5">
+                {result.score === 100
+                  ? "Flawless: Ready for Search Crawlers"
+                  : `${result.passedCount} passed, ${result.warningCount} warnings, ${result.failedCount} failed`}
+              </p>
+            </div>
+            <div className="flex gap-1.5">
+              <span className="flex items-center gap-1 text-[11px] font-semibold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-md">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> {result.passedCount}
+              </span>
+              {result.warningCount > 0 && (
+                <span className="flex items-center gap-1 text-[11px] font-semibold bg-amber-100 text-amber-800 px-2.5 py-1 rounded-md">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600" /> {result.warningCount}
+                </span>
+              )}
+              {result.failedCount > 0 && (
+                <span className="flex items-center gap-1 text-[11px] font-semibold bg-rose-100 text-rose-800 px-2.5 py-1 rounded-md">
+                  <XCircle className="w-3.5 h-3.5 text-rose-600" /> {result.failedCount}
+                </span>
+              )}
+            </div>
           </div>
-        </button>
-      </div>
 
-      {showModalReport && (
-        <SEOStatusReport
-          summary={summary}
-          onRescan={rescan}
-          onClose={() => setShowModalReport(false)}
-          isModal={true}
-        />
+          {/* Filter Tabs */}
+          <div className="flex border-b border-stone-200 bg-stone-100 text-xs px-2 pt-1.5 gap-1">
+            {(["all", "Schema", "Meta", "Content"] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-3 py-1.5 font-medium rounded-t-lg transition-colors cursor-pointer ${
+                  activeTab === tab
+                    ? "bg-white text-stone-900 border-t border-x border-stone-200 shadow-xs"
+                    : "text-stone-500 hover:text-stone-800"
+                }`}
+              >
+                {tab === "all" ? "All Checks (12)" : tab}
+              </button>
+            ))}
+          </div>
+
+          {/* Check List */}
+          <div className="p-3 overflow-y-auto space-y-2 flex-1 divide-y divide-stone-100">
+            {filteredChecks.map((check) => (
+              <div key={check.id} className="pt-2 first:pt-0 flex items-start gap-2.5">
+                <div className="mt-0.5 shrink-0">
+                  {check.status === "pass" && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
+                  {check.status === "warn" && <AlertTriangle className="w-4 h-4 text-amber-500" />}
+                  {check.status === "fail" && <XCircle className="w-4 h-4 text-rose-600" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-stone-900 truncate">{check.name}</span>
+                    <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-stone-100 text-stone-600">
+                      {check.category}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-stone-600 mt-0.5 leading-snug">{check.message}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer with Actions */}
+          <div className="p-3 bg-stone-50 border-t border-stone-200 flex items-center justify-between text-xs">
+            <a
+              href="/sitemap.xml"
+              target="_blank"
+              rel="noreferrer"
+              className="text-indigo-600 hover:underline flex items-center gap-1 font-medium text-[11px]"
+            >
+              <Search className="w-3 h-3" /> View sitemap.xml
+            </a>
+            <button
+              onClick={reevaluate}
+              className="px-3 py-1.5 bg-stone-900 hover:bg-stone-800 text-white rounded-lg font-semibold text-xs transition-colors cursor-pointer"
+            >
+              Do Deep SEO Audit
+            </button>
+          </div>
+        </div>
       )}
-    </>
+    </div>
   );
 };
 

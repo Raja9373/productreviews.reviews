@@ -1,736 +1,225 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Header } from './components/Header';
-import { HeroSearch } from './components/HeroSearch';
-import { Breadcrumbs } from './components/Breadcrumbs';
-import { ResultCard } from './components/ResultCard';
-import { ExactEntityView } from './components/ExactEntityView';
-import { ComparisonView } from './components/ComparisonView';
-import { EmptyState } from './components/EmptyState';
-import { WirecutterView } from './components/WirecutterView';
-import { WirecutterHome } from './components/WirecutterHome';
-import { AffiliateDisclosure } from './components/AffiliateDisclosure';
-import { CookieConsent } from './components/CookieConsent';
-import { AdUnit } from './components/AdUnit';
+import React, { useState, useEffect } from "react";
+import { contentRepository, ReviewRecord } from "./content/store/contentRepository";
+import { WirecutterHome } from "./components/WirecutterHome";
+import { PublishedContentView } from "./components/PublishedContentView";
+import { ComparisonView } from "./components/ComparisonView";
+import { WirecutterView } from "./components/WirecutterView";
+import { SEOStatusIndicator } from "./components/seo/SEOStatusIndicator";
+import { SUPPORTED_MARKETS, resolveTargetMarket } from "./localization/markets";
+import { ShieldCheck, Compass, ExternalLink, Globe } from "lucide-react";
 
-// Legal & Informative Pages
-import { AboutPage } from './components/pages/AboutPage';
-import { ContactPage } from './components/pages/ContactPage';
-import { PrivacyPage } from './components/pages/PrivacyPage';
-import { TermsPage } from './components/pages/TermsPage';
-import { DisclaimerPage } from './components/pages/DisclaimerPage';
-import { PublishedContentView } from './components/PublishedContentView';
-import { contentRepository } from './content/store/contentRepository';
-import { ContentRecord } from './content/store/contentStoreTypes';
-import { PILOT_PAGES, createClientRecordFromPilot } from './ssr/pilotData';
-import { SEOStatusIndicator } from './components/seo/SEOStatusIndicator';
+export function App() {
+  const [currentMarket, setCurrentMarket] = useState<string>("US");
+  const [selectedProduct, setSelectedProduct] = useState<ReviewRecord | null>(null);
+  const [compareProducts, setCompareProducts] = useState<[ReviewRecord, ReviewRecord] | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-import { DecisionResult, EntityItem, LanguageCode, MarketCode } from './types';
-import { getTranslation } from './localization/languages';
-import { resolveTargetMarket, SUPPORTED_MARKETS } from './localization/markets';
-import { executeSearch } from './search/discoveryEngine';
-import { updateDocumentMeta } from './seo/metaManager';
-import { trackEvent } from './analytics/tracker';
-
-type Screen = 'HOME' | 'SEARCH' | 'DETAIL' | 'ABOUT' | 'CONTACT' | 'PRIVACY' | 'TERMS' | 'DISCLAIMER' | 'PUBLISHED_REVIEW';
-
-export default function App() {
-  const [currentLang, setCurrentLang] = useState<LanguageCode>(() => {
-    try {
-      const savedLang = localStorage.getItem('pr_lang') as LanguageCode;
-      if (savedLang && ['en', 'hi', 'es', 'it', 'fr', 'de', 'ja'].includes(savedLang)) {
-        return savedLang;
-      }
-    } catch {
-      // ignore
-    }
-    return 'en';
-  });
-
-  // Default to IN (India) for Exact Wirecutter Clone for India
-  const [currentMarket, setCurrentMarket] = useState<MarketCode>(() => {
-    try {
-      const savedMarket = localStorage.getItem('pr_market') as MarketCode;
-      if (savedMarket && SUPPORTED_MARKETS.some((m) => m.code === savedMarket)) {
-        return savedMarket;
-      }
-    } catch {
-      // ignore
-    }
-    return 'IN';
-  });
-
-  const [screen, setScreen] = useState<Screen>('HOME');
-  const [query, setQuery] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [loadingStage, setLoadingStage] = useState<'searching' | 'finding' | 'comparing'>('searching');
-  const [decisionResult, setDecisionResult] = useState<DecisionResult | null>(null);
-  const [selectedEntity, setSelectedEntity] = useState<EntityItem | null>(null);
-  const [selectedPublishedRecord, setSelectedPublishedRecord] = useState<ContentRecord | null>(null);
-
-  // AUTO-UPDATE PATCH: Live Prices state from /api/live-prices
-  const [data, setData] = useState<any>(null);
-
+  // Initialize market from browser environment / location
   useEffect(() => {
-    // Clear old client cache after deploy to prevent stale phone data across categories
     try {
-      localStorage.clear();
-      sessionStorage.clear();
-    } catch {}
-
-    // Check user's country from /api/geo if no manual preference saved
-    let initialMarket = currentMarket;
-    try {
-      const savedMarket = localStorage.getItem('pr_market');
-      const savedLang = localStorage.getItem('pr_lang');
-      if (!savedMarket) {
-        fetch('/api/geo')
-          .then((r) => r.json())
-          .then((geoData) => {
-            if (geoData?.country && SUPPORTED_MARKETS.some((m) => m.code === geoData.country)) {
-              setCurrentMarket(geoData.country);
-              currentMarketRef.current = geoData.country;
-              initialMarket = geoData.country;
-              // Map country to natural language if user hasn't explicitly set language
-              if (!savedLang) {
-                const countryLangMap: Record<string, LanguageCode> = {
-                  JP: 'ja',
-                  DE: 'de',
-                  FR: 'fr',
-                  ES: 'es',
-                  IT: 'it',
-                  IN: 'en',
-                  US: 'en',
-                  UK: 'en',
-                  CA: 'en',
-                };
-                const mappedLang = countryLangMap[geoData.country] || 'en';
-                setCurrentLang(mappedLang);
-                currentLangRef.current = mappedLang;
-              }
-              // Fetch initial market prices for detected country
-              fetch(`/api/live-prices?q=Best phone&market=${geoData.country}`)
-                .then((r) => r.json())
-                .then(setData)
-                .catch(() => {});
-            }
-          })
-          .catch((err) => console.warn('[Auto geo-detection error]', err));
+      const resolved = resolveTargetMarket("", "");
+      if (resolved && resolved.market) {
+        setCurrentMarket(resolved.market);
       }
     } catch {}
 
-    // Autoupdate price on initial page load
-    fetch(`/api/live-prices?q=Best phone&market=${initialMarket}`)
-      .then((r) => r.json())
-      .then(setData)
-      .catch((err) => console.warn('[Auto-update live-prices fetch]', err));
-
-    // Auto refresh every 6 hours without reload
-    const intervalId = setInterval(() => {
-      fetch(`/api/live-prices?q=Best phone&market=${currentMarketRef.current}`)
-        .then((r) => r.json())
-        .then(setData)
-        .catch(() => {});
-    }, 1000 * 60 * 60 * 6);
-
-    return () => clearInterval(intervalId);
+    // Check if initial URL points to a specific review or compare
+    if (typeof window !== "undefined") {
+      const path = window.location.pathname;
+      if (path.startsWith("/review/")) {
+        const slug = path.replace("/review/", "").replace(/\/+$/, "");
+        const record = contentRepository.getBySlug(slug);
+        if (record) {
+          setSelectedProduct(record);
+        }
+      } else if (path.startsWith("/compare/")) {
+        const all = contentRepository.getAll();
+        if (all.length >= 2) {
+          setCompareProducts([all[0], all[1]]);
+        }
+      }
+    }
   }, []);
 
-  // Format current IST timestamp
-  const defaultIST = (() => {
-    try {
-      const now = new Date();
-      const formatter = new Intl.DateTimeFormat('en-IN', {
-        timeZone: 'Asia/Kolkata',
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-      });
-      return `${formatter.format(now)} IST`;
-    } catch {
-      return 'September 4, 2026, 3:30 PM IST';
-    }
-  })();
+  const allProducts = contentRepository.getAll();
 
-  const lastUpdated = data?.lastUpdated || defaultIST;
-
-  // Active state references to prevent stale closures in event listeners
-  const currentMarketRef = useRef<MarketCode>(currentMarket);
-  currentMarketRef.current = currentMarket;
-  const currentLangRef = useRef<LanguageCode>(currentLang);
-  currentLangRef.current = currentLang;
-  const activeSearchKeyRef = useRef<string>('');
-
-  const handleSearch = useCallback(
-    async (searchQuery: string, marketOverride?: MarketCode) => {
-      // Deterministic market selection:
-      // Priority 1: marketOverride (explicit parameter)
-      // Priority 2: current user-selected UI market (currentMarketRef)
-      const targetMarket = marketOverride || currentMarketRef.current;
-      const searchKey = `${searchQuery}|${targetMarket}`;
-      activeSearchKeyRef.current = searchKey;
-
-      setIsLoading(true);
-      setLoadingStage('searching');
-      setQuery(searchQuery);
-      setScreen('SEARCH');
-      setSelectedEntity(null);
-
-      // Preserve market in clean search URL
-      window.history.pushState({}, '', `/search?q=${encodeURIComponent(searchQuery)}&market=${targetMarket}`);
-
-      // Step-by-step loading progression per Phase 3 Section 16
-      const stageTimer1 = setTimeout(() => {
-        setLoadingStage('finding');
-      }, 700);
-
-      const stageTimer2 = setTimeout(() => {
-        setLoadingStage('comparing');
-      }, 1600);
-
-      updateDocumentMeta({
-        title: searchQuery,
-        description: `Objective decision results, pros and cons for "${searchQuery}" on ProductReviews.review.`,
-        canonicalPath: `/search?q=${encodeURIComponent(searchQuery)}`,
-      });
-
-      trackEvent({ name: 'search_initiated', params: { query: searchQuery, market: targetMarket } });
-
-      // Dynamically fetch live prices and tested picks for this specific query
-      fetch(`/api/live-prices?q=${encodeURIComponent(searchQuery)}&market=${targetMarket}`)
-        .then((r) => r.json())
-        .then((liveRes) => {
-          if (activeSearchKeyRef.current === searchKey) {
-            setData(liveRes);
-          }
-        })
-        .catch((err) => console.warn('[live-prices query fetch failed]', err));
-
-      try {
-        const res = await executeSearch(searchQuery, targetMarket, currentLangRef.current);
-        setDecisionResult(res);
-
-        // Deterministic market rule:
-        // Only update UI market if query itself explicitly specified a different country or currency
-        // e.g. "Sony Alpha 7 IV in USA" overrides UI India -> USA
-        if (
-          res.parsedQuery?.constraints?.explicitCountry ||
-          res.parsedQuery?.constraints?.currency
-        ) {
-          if (res.parsedQuery.market && res.parsedQuery.market !== targetMarket) {
-            setCurrentMarket(res.parsedQuery.market);
-            currentMarketRef.current = res.parsedQuery.market;
-            try {
-              localStorage.setItem('pr_market', res.parsedQuery.market);
-            } catch {
-              // ignore
-            }
-          }
-        }
-
-        // Synchronize language if query had explicit language signals (e.g. hi, ja, es)
-        if (res.parsedQuery?.language && res.parsedQuery.language !== currentLangRef.current) {
-          setCurrentLang(res.parsedQuery.language);
-          currentLangRef.current = res.parsedQuery.language;
-        }
-
-        // SEO Safety: Do not index thin, failed, or insufficient-data search results
-        const isSuccessfulComparison = res.status === 'SUCCESS' && (!!res.comparisonResult || !!res.comparison);
-        updateDocumentMeta({
-          title: res.comparisonResult
-            ? `${res.comparisonResult.productA} vs ${res.comparisonResult.productB} — Comparison & Trade-Offs`
-            : searchQuery,
-          description: res.comparisonResult
-            ? `Head-to-head comparison between ${res.comparisonResult.productA} and ${res.comparisonResult.productB}. Objective evidence, trade-offs, and decision synthesis on ProductReviews.review.`
-            : `Objective decision results, pros and cons for "${searchQuery}" on ProductReviews.review.`,
-          canonicalPath: `/search?q=${encodeURIComponent(searchQuery)}`,
-          noIndex: res.status !== 'SUCCESS' || (!isSuccessfulComparison && res.items.length === 0),
-        });
-
-        trackEvent({
-          name: 'search_completed',
-          params: { query: searchQuery, status: res.status, count: res.items.length },
-        });
-      } catch (err) {
-        updateDocumentMeta({
-          title: searchQuery,
-          noIndex: true,
-        });
-        setDecisionResult({
-          parsedQuery: {
-            rawQuery: searchQuery,
-            cleanQuery: searchQuery,
-            intent: 'GENERAL_LOOKUP',
-            domain: 'GENERAL',
-            market: targetMarket,
-            language: currentLangRef.current,
-            constraints: {},
-          },
-          status: 'ERROR',
-          items: [],
-          message: 'An unexpected issue occurred while processing your search.',
-          retrievedAt: new Date().toISOString(),
-        });
-      } finally {
-        clearTimeout(stageTimer1);
-        clearTimeout(stageTimer2);
-        setIsLoading(false);
-      }
-    },
-    []
-  );
-
-  // Handle History API and clean pathname routing with legacy hash migration
-  useEffect(() => {
-    const handleNavigation = () => {
-      let hash = window.location.hash || '';
-      let pathname = (window.location.pathname || '/').replace(/\/$/, '') || '/';
-      let search = window.location.search || '';
-
-      // Legacy hash migration (e.g. /#/about -> /about, /#/search?q=... -> /search?q=...)
-      if (hash && hash.startsWith('#/')) {
-        const cleanHashRoute = hash.replace(/^#/, '');
-        const [hPath, hQuery] = cleanHashRoute.split('?');
-        const targetCleanUrl = hQuery ? `${hPath}?${hQuery}` : hPath;
-        window.history.replaceState({}, '', targetCleanUrl);
-        pathname = (window.location.pathname || '/').replace(/\/$/, '') || '/';
-        search = window.location.search || '';
-        hash = '';
-      }
-
-      const searchParams = new URLSearchParams(search);
-      let rawQ = (searchParams.get('q') || '').trim();
-      let marketParam = searchParams.get('market') as MarketCode | null;
-
-      const isSearchHash =
-        hash.startsWith('#/search?') ||
-        hash.startsWith('#search?') ||
-        hash.startsWith('/#search?') ||
-        hash.startsWith('#/search=') ||
-        hash.startsWith('#search=');
-
-      if (isSearchHash) {
-        const queryPart = hash
-          .replace(/^#\/?search\??/, '')
-          .replace(/^#search\??/, '')
-          .replace(/^\/#search\??/, '')
-          .replace(/^=/, '');
-        const hashParams = new URLSearchParams(queryPart.startsWith('q=') ? queryPart : `q=${queryPart}`);
-        if (!rawQ) {
-          rawQ = (hashParams.get('q') || '').trim();
-        }
-        if (!marketParam) {
-          marketParam = hashParams.get('market') as MarketCode | null;
-        }
-      }
-
-      if (rawQ || isSearchHash || pathname === '/search') {
-        if (!rawQ) {
-          rawQ = 'Best phone under 30000';
-        }
-        const validMarket =
-          marketParam && SUPPORTED_MARKETS.some((m) => m.code === marketParam)
-            ? marketParam
-            : currentMarketRef.current;
-
-        const searchKey = `${rawQ}|${validMarket}`;
-        if (searchKey !== activeSearchKeyRef.current) {
-          handleSearch(rawQ, validMarket);
-        }
-      } else if (pathname.startsWith('/review/')) {
-        const slug = pathname.replace(/^\/review\//, '').split('?')[0];
-
-        let record = contentRepository.getBySlug(slug);
-        if (!record && PILOT_PAGES[slug]) {
-          record = createClientRecordFromPilot(PILOT_PAGES[slug]);
-          try {
-            contentRepository.createRecord(record.content);
-          } catch {}
-        }
-
-        if (record && record.status === 'PUBLISHED') {
-          setSelectedPublishedRecord(record);
-          setScreen('PUBLISHED_REVIEW');
-          updateDocumentMeta({
-            title: record.title,
-            description: record.metadata.metaDescription,
-            canonicalPath: `/review/${record.slug}`,
-            noIndex: record.indexability === 'NOINDEX'
-          });
-        } else {
-          // Unapproved, draft, or non-existent review -> redirect safely to home
-          setScreen('HOME');
-          updateDocumentMeta({});
-        }
-      } else if (pathname.startsWith('/compare/')) {
-        const slug = pathname.replace(/^\/compare\//, '').split('?')[0];
-
-        let record = contentRepository.getBySlug(slug);
-        if (!record && PILOT_PAGES[slug]) {
-          record = createClientRecordFromPilot(PILOT_PAGES[slug]);
-          try {
-            contentRepository.createRecord(record.content);
-          } catch {}
-        }
-
-        if (record && record.status === 'PUBLISHED') {
-          setSelectedPublishedRecord(record);
-          setScreen('PUBLISHED_REVIEW');
-          updateDocumentMeta({
-            title: record.title,
-            description: record.metadata.metaDescription,
-            canonicalPath: `/compare/${record.slug}`,
-            noIndex: record.indexability === 'NOINDEX'
-          });
-        } else {
-          setScreen('HOME');
-          updateDocumentMeta({});
-        }
-      } else if (pathname === '/about') {
-        setScreen('ABOUT');
-      } else if (pathname === '/contact') {
-        setScreen('CONTACT');
-      } else if (pathname === '/privacy') {
-        setScreen('PRIVACY');
-      } else if (pathname === '/terms') {
-        setScreen('TERMS');
-      } else if (
-        pathname === '/disclaimer' ||
-        pathname === '/affiliate-disclosure'
-      ) {
-        setScreen('DISCLAIMER');
-      } else if (!pathname || pathname === '/' || pathname === '') {
-        // Wirecutter Homepage: On "/" or no query, show Wirecutter homepage
-        setScreen('HOME');
-        setQuery('');
-        setDecisionResult(null);
-        setSelectedEntity(null);
-        activeSearchKeyRef.current = '';
-        updateDocumentMeta({
-          title: 'productreviews.review — The best gear for your everyday life',
-          description: 'Curated product research and consensus analysis with transparent source evaluation.',
-          canonicalPath: '/',
-        });
-      }
-    };
-
-    handleNavigation();
-    window.addEventListener('popstate', handleNavigation);
-    window.addEventListener('hashchange', handleNavigation);
-    return () => {
-      window.removeEventListener('popstate', handleNavigation);
-      window.removeEventListener('hashchange', handleNavigation);
-    };
-  }, [handleSearch]);
-
-  const handleLanguageChange = (lang: LanguageCode) => {
-    setCurrentLang(lang);
-    currentLangRef.current = lang;
-    try {
-      localStorage.setItem('pr_lang', lang);
-    } catch {
-      // ignore
-    }
-    trackEvent({ name: 'change_language', params: { lang } });
-  };
-
-  const handleMarketChange = (market: MarketCode) => {
-    setCurrentMarket(market);
-    currentMarketRef.current = market;
-    try {
-      localStorage.setItem('pr_market', market);
-    } catch {
-      // ignore
-    }
-    trackEvent({ name: 'change_market', params: { market } });
-    if (query) {
-      handleSearch(query, market);
+  const handleSelectProduct = (record: ReviewRecord) => {
+    setSelectedProduct(record);
+    setCompareProducts(null);
+    setSelectedCategory(null);
+    if (typeof window !== "undefined") {
+      window.history.pushState({}, "", `/review/${record.slug}`);
     }
   };
 
-  const handleResetToHome = () => {
-    setScreen('HOME');
-    setQuery('');
-    setDecisionResult(null);
-    setSelectedEntity(null);
-    activeSearchKeyRef.current = '';
-    window.history.pushState({}, '', '/');
-    updateDocumentMeta({});
+  const handleCompare = (prodA: ReviewRecord, prodB: ReviewRecord) => {
+    setCompareProducts([prodA, prodB]);
+    setSelectedProduct(null);
+    setSelectedCategory(null);
+    if (typeof window !== "undefined") {
+      window.history.pushState({}, "", `/compare/${prodA.slug}-vs-${prodB.slug}`);
+    }
   };
 
-  const t = getTranslation(currentLang);
+  const handleBackToHome = () => {
+    setSelectedProduct(null);
+    setCompareProducts(null);
+    setSelectedCategory(null);
+    if (typeof window !== "undefined") {
+      window.history.pushState({}, "", "/");
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-zinc-50/50 flex flex-col justify-between text-zinc-900 selection:bg-zinc-900 selection:text-white font-sans antialiased">
-      {/* Top Header Navigation */}
-      <Header
-        currentLang={currentLang}
-        currentMarket={currentMarket}
-        onSelectLanguage={handleLanguageChange}
-        onSelectMarket={handleMarketChange}
-        onResetToHome={handleResetToHome}
-        onSearch={handleSearch}
-        initialQuery={query}
-      />
-
-      {/* Main App Content Body */}
-      <main className="flex-1 w-full bg-white">
-        {/* VIEW: HOME - Wirecutter Homepage with Dynamic Market Adaptation */}
-        {screen === 'HOME' && (
-          <WirecutterHome
-            lastUpdated={lastUpdated}
-            onNavigateToSearch={handleSearch}
-            liveData={data}
-            market={currentMarket}
-            currentLang={currentLang}
-          />
-        )}
-
-        {/* VIEW: SEARCH RESULTS */}
-        {screen === 'SEARCH' && (
-          <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-8">
-            {/* Search Bar at top of Results */}
-            <div className="max-w-2xl mx-auto mb-8">
-              <Breadcrumbs
-                onHomeClick={handleResetToHome}
-                domain={decisionResult?.parsedQuery.domain || 'PRODUCT'}
-                query={query}
-              />
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (query.trim()) handleSearch(query);
-                }}
-                className="flex items-center shadow-sm rounded-2xl bg-white border border-zinc-300 focus-within:border-zinc-900 p-1.5"
-              >
-                <div className="pl-3.5 pr-2 text-zinc-400">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                </div>
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={t.searchPlaceholder}
-                  aria-label={t.searchPlaceholder}
-                  className="w-full bg-transparent py-2 text-sm text-zinc-900 focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  className="shrink-0 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-colors"
-                >
-                  {t.searchButton}
-                </button>
-              </form>
+    <div className="min-h-screen flex flex-col bg-stone-50 text-stone-900 font-sans selection:bg-amber-200">
+      {/* Top Navbar */}
+      <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 px-4 py-3">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div
+            onClick={handleBackToHome}
+            className="flex items-center gap-2 cursor-pointer group select-none"
+          >
+            <div className="w-8 h-8 rounded-lg bg-stone-900 flex items-center justify-center text-amber-400 font-black text-sm group-hover:scale-105 transition-transform">
+              P
             </div>
-
-            {/* Loading Indicator with Step Progression per Phase 3 Section 16 */}
-            {isLoading && (
-              <div className="py-20 flex flex-col items-center justify-center text-center">
-                <div className="w-8 h-8 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin mb-4" />
-                <span className="text-base font-semibold text-zinc-900 mb-1">
-                  {loadingStage === 'searching' && 'Searching...'}
-                  {loadingStage === 'finding' && 'Finding relevant options...'}
-                  {loadingStage === 'comparing' && 'Comparing available information...'}
-                </span>
-                <span className="text-xs text-zinc-500">
-                  Consulting permitted public sources &amp; directory records
-                </span>
-              </div>
-            )}
-
-            {/* Results Content */}
-            {!isLoading && decisionResult && (
-              <div>
-                {/* 1. Comparison Intent */}
-                {decisionResult.comparisonResult ? (
-                  <ComparisonView
-                    comparisonResult={decisionResult.comparisonResult}
-                    currentLang={currentLang}
-                    onBack={handleResetToHome}
-                    onRetry={() => handleSearch(query)}
-                  />
-                ) : decisionResult.comparison ? (
-                  <ComparisonView
-                    comparison={decisionResult.comparison}
-                    currentLang={currentLang}
-                    onBack={handleResetToHome}
-                  />
-                ) : decisionResult.parsedQuery?.intent === 'COMPARISON' && decisionResult.status === 'ERROR' ? (
-                  <ComparisonView
-                    errorMessage={decisionResult.message || 'Comparison could not be completed.'}
-                    currentLang={currentLang}
-                    onBack={handleResetToHome}
-                    onRetry={() => handleSearch(query)}
-                  />
-                ) : decisionResult.parsedQuery.intent === 'EXACT_ENTITY' &&
-                  decisionResult.items.length > 0 ? (
-                  /* 2. Exact Entity Intent */
-                  <ExactEntityView
-                    entity={decisionResult.items[0]}
-                    alternatives={decisionResult.alternatives}
-                    currentLang={currentLang}
-                    market={decisionResult.parsedQuery.market}
-                    onBack={handleResetToHome}
-                    onSelectEntity={(ent) => {
-                      setSelectedEntity(ent);
-                      setScreen('DETAIL');
-                    }}
-                  />
-                ) : (
-                  /* Wirecutter Clone Direct Product Page View */
-                  <WirecutterView
-                    query={decisionResult.parsedQuery.cleanQuery || query}
-                    market={decisionResult.parsedQuery.market || currentMarket}
-                    parsedQuery={decisionResult.parsedQuery}
-                    liveData={data}
-                    lastUpdated={lastUpdated}
-                    onBackToHome={handleResetToHome}
-                    decision={decisionResult.decision}
-                    nichod={decisionResult.nichod}
-                  />
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* VIEW: DETAIL SCREEN */}
-        {screen === 'DETAIL' && selectedEntity && (
-          <ExactEntityView
-            entity={selectedEntity}
-            currentLang={currentLang}
-            onBack={() => setScreen('SEARCH')}
-          />
-        )}
-
-        {/* VIEW: PUBLISHED CONTENT REVIEW */}
-        {screen === 'PUBLISHED_REVIEW' && selectedPublishedRecord && (
-          <PublishedContentView
-            record={selectedPublishedRecord}
-            onBack={handleResetToHome}
-          />
-        )}
-
-        {/* VIEW: ABOUT */}
-        {screen === 'ABOUT' && <AboutPage onBackToHome={handleResetToHome} />}
-
-        {/* VIEW: CONTACT */}
-        {screen === 'CONTACT' && <ContactPage onBackToHome={handleResetToHome} />}
-
-        {/* VIEW: PRIVACY */}
-        {screen === 'PRIVACY' && <PrivacyPage onBackToHome={handleResetToHome} />}
-
-        {/* VIEW: TERMS */}
-        {screen === 'TERMS' && <TermsPage onBackToHome={handleResetToHome} />}
-
-        {/* VIEW: DISCLAIMER / AFFILIATE */}
-        {screen === 'DISCLAIMER' && <DisclaimerPage onBackToHome={handleResetToHome} />}
-
-        {/* Non-intrusive AdSense Container */}
-        <AdUnit className="max-w-4xl mx-auto px-4" />
-
-        {/* Compliant Affiliate Disclosure Banner */}
-        <AffiliateDisclosure
-          currentLang={currentLang}
-          onOpenDisclosurePage={() => setScreen('DISCLAIMER')}
-        />
-      </main>
-
-      {/* Global Footer - Wirecutter Style */}
-      <footer className="w-full bg-white border-t border-zinc-200 py-10 mt-16 text-xs text-zinc-500">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex flex-col items-center md:items-start gap-1">
-            <div className="flex items-center gap-2">
-              <span className="bg-zinc-900 text-white text-[11px] font-bold px-1.5 py-0.5 rounded-xs font-serif">
-                PR
-              </span>
-              <span className="font-bold text-zinc-950 font-serif-wirecutter tracking-tight text-sm">
+            <div>
+              <span className="font-black text-base tracking-tight text-stone-900 group-hover:text-amber-600 transition-colors">
                 productreviews.review
               </span>
+              <span className="hidden sm:inline-block text-[10px] uppercase font-bold text-stone-400 ml-2 tracking-widest">
+                Lab Tested Gear
+              </span>
             </div>
-            <p className="text-zinc-500 text-center md:text-left mt-1 text-xs">
-              The exact Wirecutter clone for India. Unbiased recommendations, tested by experts.
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Quick Market Pill */}
+            <div className="flex items-center gap-1.5 bg-stone-100 hover:bg-stone-200 border border-stone-200 px-2.5 py-1 rounded-xl text-xs font-semibold cursor-pointer">
+              <Globe className="w-3.5 h-3.5 text-stone-600" />
+              <select
+                value={currentMarket}
+                onChange={(e) => setCurrentMarket(e.target.value)}
+                className="bg-transparent border-none text-xs font-bold text-stone-800 cursor-pointer focus:outline-none"
+              >
+                {SUPPORTED_MARKETS.map((m) => (
+                  <option key={m.code} value={m.code}>
+                    {m.flag} {m.code} ({m.currencySymbol})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <a
+              href="/sitemap.xml"
+              target="_blank"
+              rel="noreferrer"
+              className="hidden md:inline-flex items-center gap-1 text-xs font-semibold text-stone-500 hover:text-stone-900"
+            >
+              <span>Sitemap</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content Area */}
+      <main className="flex-1">
+        {selectedProduct ? (
+          <PublishedContentView
+            record={selectedProduct}
+            currentMarket={currentMarket}
+            onMarketChange={setCurrentMarket}
+            onBack={handleBackToHome}
+          />
+        ) : compareProducts ? (
+          <ComparisonView
+            productA={compareProducts[0]}
+            productB={compareProducts[1]}
+            currentMarket={currentMarket}
+            onBack={handleBackToHome}
+          />
+        ) : selectedCategory ? (
+          <WirecutterView
+            category={selectedCategory}
+            products={allProducts}
+            currentMarket={currentMarket}
+            onSelectProduct={handleSelectProduct}
+            onBack={handleBackToHome}
+          />
+        ) : (
+          <WirecutterHome
+            products={allProducts}
+            currentMarket={currentMarket}
+            onMarketChange={setCurrentMarket}
+            onSelectProduct={handleSelectProduct}
+            onCompare={handleCompare}
+          />
+        )}
+      </main>
+
+      {/* Floating Deep SEO Auditor Widget */}
+      <SEOStatusIndicator />
+
+      {/* Authoritative Editorial Footer */}
+      <footer className="bg-stone-900 text-stone-300 border-t border-stone-800 pt-12 pb-8 px-4 mt-20 text-xs">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 rounded bg-amber-400 text-stone-950 font-black text-xs flex items-center justify-center">
+                P
+              </div>
+              <span className="font-bold text-sm text-white">productreviews.review</span>
+            </div>
+            <p className="text-stone-400 text-xs leading-relaxed">
+              Independent laboratory benchmarks, rigorous hardware longevity testing, and verified Amazon price tracking
+              across 14 international regional storefronts.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 font-medium text-zinc-700">
-            <button
-              onClick={() => {
-                setScreen('ABOUT');
-                window.history.pushState({}, '', '/about');
-              }}
-              className="hover:text-zinc-950 hover:underline transition-colors cursor-pointer"
-            >
-              About
-            </button>
-            <button
-              onClick={() => {
-                setScreen('DISCLAIMER');
-                window.history.pushState({}, '', '/affiliate-disclosure');
-              }}
-              className="hover:text-zinc-950 hover:underline transition-colors cursor-pointer"
-            >
-              Trust &amp; How We Test
-            </button>
-            <button
-              onClick={() => {
-                setScreen('CONTACT');
-                window.history.pushState({}, '', '/contact');
-              }}
-              className="hover:text-zinc-950 hover:underline transition-colors cursor-pointer"
-            >
-              Contact
-            </button>
-            <button
-              onClick={() => {
-                setScreen('PRIVACY');
-                window.history.pushState({}, '', '/privacy');
-              }}
-              className="hover:text-zinc-950 hover:underline transition-colors cursor-pointer"
-            >
-              Privacy Policy
-            </button>
-            <button
-              onClick={() => {
-                setScreen('TERMS');
-                window.history.pushState({}, '', '/terms');
-              }}
-              className="hover:text-zinc-950 hover:underline transition-colors cursor-pointer"
-            >
-              Terms
-            </button>
-            <button
-              onClick={() => {
-                setScreen('DISCLAIMER');
-                window.history.pushState({}, '', '/affiliate-disclosure');
-              }}
-              className="hover:text-zinc-950 hover:underline transition-colors cursor-pointer"
-            >
-              Affiliate Disclosure
-            </button>
+          <div>
+            <h4 className="font-bold uppercase tracking-wider text-white text-[11px] mb-3">Top Tested Categories</h4>
+            <ul className="space-y-2 text-stone-400">
+              <li><button onClick={() => { setSelectedCategory("Smartphones"); setSelectedProduct(null); }} className="hover:text-white cursor-pointer">Smartphones & Flagships</button></li>
+              <li><button onClick={() => { setSelectedCategory("Audio"); setSelectedProduct(null); }} className="hover:text-white cursor-pointer">Headphones & ANC Earbuds</button></li>
+              <li><button onClick={() => { setSelectedCategory("Laptops"); setSelectedProduct(null); }} className="hover:text-white cursor-pointer">Workstations & Laptops</button></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-bold uppercase tracking-wider text-white text-[11px] mb-3">Search & Crawlers</h4>
+            <ul className="space-y-2 text-stone-400">
+              <li><a href="/sitemap.xml" className="hover:text-white">XML Sitemap Index</a></li>
+              <li><a href="/sitemap-main.xml" className="hover:text-white">Canonical URL Set</a></li>
+              <li><a href="/robots.txt" className="hover:text-white">Robots Directives</a></li>
+              <li><a href="/faq-manifest.json" className="hover:text-white">FAQ Schema Manifest</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-bold uppercase tracking-wider text-white text-[11px] mb-3">Compliance & Ethics</h4>
+            <p className="text-stone-400 text-[11px] leading-relaxed mb-3">
+              We participate in the Amazon Services LLC Associates Program and international affiliate advertising programs.
+              Editorial verdicts and benchmark scores remain entirely independent.
+            </p>
+            <div className="flex items-center gap-1.5 text-emerald-400 font-semibold text-[11px]">
+              <ShieldCheck className="w-4 h-4" /> Editorial Integrity Policy
+            </div>
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-6 pt-6 border-t border-zinc-100 flex flex-col sm:flex-row items-center justify-between gap-2 text-zinc-400 text-[11px]">
-          <span>&copy; {new Date().getFullYear()} productreviews.review. All rights reserved.</span>
-          <span>Amazon IN Tag: jaiguruji00-21 • Google AdSense Publisher: ca-pub-9048615701580913</span>
+        <div className="max-w-6xl mx-auto pt-6 border-t border-stone-800 flex flex-col sm:flex-row items-center justify-between text-stone-500 gap-4">
+          <p>© 2026 productreviews.review. All rights reserved.</p>
+          <div className="flex gap-4">
+            <span className="hover:text-stone-300">Privacy Policy</span>
+            <span>•</span>
+            <span className="hover:text-stone-300">Terms of Use</span>
+            <span>•</span>
+            <span className="hover:text-stone-300">Affiliate Disclosure</span>
+          </div>
         </div>
       </footer>
-
-      {/* Real-Time Live SEO & Schema Structured Data Health Monitor */}
-      <SEOStatusIndicator variant="floating" />
-
-      {/* Lightweight Cookie / Local Storage Consent */}
-      <CookieConsent />
     </div>
   );
 }
+
+export default App;
