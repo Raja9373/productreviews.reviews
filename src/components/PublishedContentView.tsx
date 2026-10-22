@@ -47,6 +47,7 @@ export const PublishedContentView: React.FC<PublishedContentViewProps> = ({
   // Strictly controlled length for SEO audit (target 120-160 chars)
   const seoDesc = `Independent hardware review, benchmark evidence, battery runtime, and verified Amazon price tracking for the ${record.name}.`;
   const canonicalUrl = `https://productreviews.review/review/${record.slug}`;
+  const ogImageUrl = `https://productreviews.review/og/${record.slug}.png`;
 
   useDocumentMeta({
     title: seoTitle,
@@ -54,7 +55,8 @@ export const PublishedContentView: React.FC<PublishedContentViewProps> = ({
     canonical: canonicalUrl,
     robots: "index, follow",
     ogTitle: seoTitle,
-    ogDescription: seoDesc
+    ogDescription: seoDesc,
+    ogImage: ogImageUrl
   });
 
   const handleAskQuestion = (e: React.FormEvent) => {

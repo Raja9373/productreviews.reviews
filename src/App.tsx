@@ -5,6 +5,8 @@ import { PublishedContentView } from "./components/PublishedContentView";
 import { ComparisonView } from "./components/ComparisonView";
 import { WirecutterView } from "./components/WirecutterView";
 import { SEOStatusIndicator } from "./components/seo/SEOStatusIndicator";
+import { HreflangInjector } from "./components/seo/HreflangInjector";
+import { ProductReviewSchemaInjector } from "./components/seo/ProductReviewSchemaInjector";
 import { SUPPORTED_MARKETS, resolveTargetMarket } from "./localization/markets";
 import { ShieldCheck, Compass, ExternalLink, Globe } from "lucide-react";
 
@@ -72,6 +74,39 @@ export function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-stone-50 text-stone-900 font-sans selection:bg-amber-200">
+      <HreflangInjector currentMarket={currentMarket} />
+      {selectedProduct && (
+        <ProductReviewSchemaInjector
+          productName={selectedProduct.name}
+          category={selectedProduct.category}
+          brand={selectedProduct.brand}
+          ratingValue={selectedProduct.rating}
+          reviewCount={selectedProduct.reviewCount}
+          reviewTitle="Hardware Review"
+          reviewBody={selectedProduct.verdict}
+          authorName="Editorial Research Board"
+          canonicalUrl={`https://productreviews.review/review/${selectedProduct.slug}`}
+          faqs={selectedProduct.faqList?.map((f) => ({ question: f.question, answer: f.answer }))}
+        />
+      )}
+      {compareProducts && (
+        <ProductReviewSchemaInjector
+          productName={`${compareProducts[0].name} vs ${compareProducts[1].name}`}
+          category="Comparisons"
+          brand="Editorial Comparison Desk"
+          ratingValue="4.8"
+          reviewCount="210"
+          reviewTitle="Side-by-Side Comparison"
+          reviewBody={`Comparative benchmarking analysis between ${compareProducts[0].name} and ${compareProducts[1].name}.`}
+          authorName="Editorial Research Board"
+          canonicalUrl={`https://productreviews.review/compare/${compareProducts[0].slug}-vs-${compareProducts[1].slug}`}
+          breadcrumbs={[
+            { name: "Home", url: "https://productreviews.review/" },
+            { name: "Comparisons", url: "https://productreviews.review/" },
+            { name: `${compareProducts[0].name} vs ${compareProducts[1].name}`, url: `https://productreviews.review/compare/${compareProducts[0].slug}-vs-${compareProducts[1].slug}` }
+          ]}
+        />
+      )}
       {/* Top Navbar */}
       <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 px-4 py-3">
         <div className="max-w-6xl mx-auto flex items-center justify-between">

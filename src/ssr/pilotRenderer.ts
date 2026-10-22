@@ -36,7 +36,31 @@ export const PILOT_PAGES: PilotPage[] = [
 
 export function getPilotPage(requestPath: string): PilotPage | undefined {
   const cleanPath = requestPath.split("?")[0].replace(/\/+$/, "");
-  return PILOT_PAGES.find((p) => p.path === cleanPath);
+  const staticFound = PILOT_PAGES.find((p) => p.path === cleanPath);
+  if (staticFound) {
+    const slug = staticFound.slug;
+    const record = contentRepository.getBySlug(slug);
+    if (record) staticFound.record = record;
+    return staticFound;
+  }
+
+  // Dynamic review lookup from contentRepository for any published review slug
+  if (cleanPath.startsWith("/review/")) {
+    const slug = cleanPath.replace("/review/", "");
+    const record = contentRepository.getBySlug(slug);
+    if (record && record.status === "PUBLISHED") {
+      return {
+        path: cleanPath,
+        slug: record.slug,
+        type: "review",
+        title: `${record.name} Review & Tested Verdict (2026)`,
+        description: `${record.summary} Read our lab-tested verdict, specs, pros/cons, and regional Amazon price tracker.`,
+        record
+      };
+    }
+  }
+
+  return undefined;
 }
 
 export function renderPilotHtml(pilotPage: PilotPage, baseHtml: string): string {
@@ -49,6 +73,48 @@ export function renderPilotHtml(pilotPage: PilotPage, baseHtml: string): string 
     .replace(/<meta property="og:title" content=".*?"\s*\/?>/i, `<meta property="og:title" content="${pilotPage.title}" />`)
     .replace(/<meta property="og:description" content=".*?"\s*\/?>/i, `<meta property="og:description" content="${pilotPage.description}" />`)
     .replace(/<meta property="og:url" content=".*?"\s*\/?>/i, `<meta property="og:url" content="${canonicalUrl}" />`);
+
+  if (pilotPage.record) {
+    const r = pilotPage.record;
+    const jsonLdScript = `
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": "${r.name}",
+      "category": "${r.category}",
+      "brand": {
+        "@type": "Brand",
+        "name": "${r.brand}"
+      },
+      "review": {
+        "@type": "Review",
+        "reviewRating": {
+          "@type": "Rating",
+          "ratingValue": "${r.rating}",
+          "bestRating": "5"
+        },
+        "author": {
+          "@type": "Organization",
+          "name": "Editorial Research Board"
+        },
+        "reviewBody": "${r.verdict}"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "${r.rating}",
+        "reviewCount": "${r.reviewCount}"
+      },
+      "offers": {
+        "@type": "AggregateOffer",
+        "priceCurrency": "USD",
+        "lowPrice": "${r.priceUSD}"
+      }
+    }
+    </script>
+    `;
+    html = html.replace(/<\/head>/i, `${jsonLdScript}\n</head>`);
+  }
 
   return html;
 }

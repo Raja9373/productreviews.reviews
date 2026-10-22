@@ -82,7 +82,73 @@ export function getCanonicalSitemapEntries(baseUrl: string = BASE_SITE_URL): Sit
   return entries;
 }
 
+export interface SitemapValidationReport {
+  isValid: boolean;
+  totalUrls: number;
+  fullyQualified: boolean;
+  errors: string[];
+  verifiedUrls: string[];
+}
+
+export function verifySitemapRouteSync(baseUrl: string = BASE_SITE_URL): SitemapValidationReport {
+  const entries = getCanonicalSitemapEntries(baseUrl);
+  const errors: string[] = [];
+  const verifiedUrls: string[] = [];
+  let fullyQualified = true;
+
+  // Strict regex pattern for expected path structures
+  const expectedPattern = /^https:\/\/productreviews\.review(\/|\/about|\/contact|\/privacy|\/terms|\/affiliate-disclosure|\/review\/[a-z0-9-]+|\/compare\/[a-z0-9-]+)?$/;
+
+  for (const entry of entries) {
+    if (!entry.loc.startsWith("https://")) {
+      fullyQualified = false;
+      errors.push(`URL is not fully qualified with https://: ${entry.loc}`);
+    }
+
+    if (!expectedPattern.test(entry.loc)) {
+      fullyQualified = false;
+      errors.push(`URL failed strict regex path structure validation: ${entry.loc}`);
+    } else {
+      verifiedUrls.push(entry.loc);
+    }
+
+    // Verify route pattern corresponds to active App.tsx routes
+    try {
+      const urlObj = new URL(entry.loc);
+      const pathname = urlObj.pathname;
+      const isValidPath =
+        pathname === "/" ||
+        pathname === "/about" ||
+        pathname === "/contact" ||
+        pathname === "/privacy" ||
+        pathname === "/terms" ||
+        pathname === "/affiliate-disclosure" ||
+        pathname.startsWith("/review/") ||
+        pathname.startsWith("/compare/");
+
+      if (!isValidPath) {
+        errors.push(`Route path does not correspond to an active app route in App.tsx: ${pathname}`);
+      }
+    } catch (e: any) {
+      errors.push(`Invalid URL format generated: ${entry.loc} (${e?.message})`);
+    }
+  }
+
+  return {
+    isValid: errors.length === 0 && fullyQualified,
+    totalUrls: entries.length,
+    fullyQualified,
+    errors,
+    verifiedUrls
+  };
+}
+
 export function generateSitemapXml(baseUrl: string = BASE_SITE_URL): string {
+  const validation = verifySitemapRouteSync(baseUrl);
+  if (!validation.isValid) {
+    console.warn("[sitemapGenerator] Sitemap validation warnings:", validation.errors);
+  }
+
   const entries = getCanonicalSitemapEntries(baseUrl);
 
   const urlElements = entries
@@ -108,6 +174,7 @@ export function sitemapRouteHandler(req: Request, res: Response): void {
 
     res.type("application/xml; charset=utf-8");
     res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Robots-Tag", "noindex, nofollow");
     res.setHeader("Cache-Control", "public, max-age=3600, s-maxage=86400");
     res.status(200).send(xml);
   } catch (err: any) {

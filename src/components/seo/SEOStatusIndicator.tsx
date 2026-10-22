@@ -1,12 +1,18 @@
 import React, { useState } from "react";
 import { useSeoAudit } from "./useSeoAudit";
+import { SEOAuditPanel } from "./SEOAuditPanel";
+import { CrawlStatusPanel } from "./CrawlStatusPanel";
+import { CrawlHealthPanel } from "./CrawlHealthPanel";
+import { DiagnosticLogsPanel } from "./DiagnosticLogsPanel";
+import { RobotsVariantInspector } from "./RobotsVariantInspector";
 import { CheckCircle2, AlertTriangle, XCircle, Search, RefreshCw, ChevronUp, ChevronDown, ShieldCheck, Globe, FileCode, Check } from "lucide-react";
 
 export const SEOStatusIndicator: React.FC = () => {
   const { result, reevaluate } = useSeoAudit();
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"all" | "Schema" | "Meta" | "Content" | "GSC">("all");
+  const [activeTab, setActiveTab] = useState<"all" | "GSC" | "SchemaAudit" | "CrawlHealth" | "Variants" | "CrawlStatus" | "Logs" | "Schema" | "Meta" | "Content">("all");
   const [copiedToken, setCopiedToken] = useState(false);
+  const [copiedSchema, setCopiedSchema] = useState(false);
 
   const filteredChecks = activeTab === "all" ? result.checks : result.checks.filter((c) => c.category === activeTab);
 
@@ -14,6 +20,15 @@ export const SEOStatusIndicator: React.FC = () => {
     if (score >= 90) return "bg-emerald-600 text-white";
     if (score >= 70) return "bg-amber-600 text-white";
     return "bg-rose-600 text-white";
+  };
+
+  const handleCopySchema = () => {
+    if (typeof document === "undefined") return;
+    const scripts = Array.from(document.querySelectorAll('script[type="application/ld+json"]'));
+    const combined = scripts.map((s) => s.textContent || "").join("\n\n");
+    navigator.clipboard.writeText(combined);
+    setCopiedSchema(true);
+    setTimeout(() => setCopiedSchema(false), 2500);
   };
 
   const gscChecks = [
@@ -129,7 +144,7 @@ export const SEOStatusIndicator: React.FC = () => {
 
           {/* Filter Tabs */}
           <div className="flex border-b border-stone-200 bg-stone-100 text-xs px-2 pt-1.5 gap-1 overflow-x-auto">
-            {(["all", "GSC", "Schema", "Meta", "Content"] as const).map((tab) => (
+            {(["all", "GSC", "SchemaAudit", "CrawlHealth", "Variants", "CrawlStatus", "Logs", "Schema", "Meta", "Content"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -139,13 +154,13 @@ export const SEOStatusIndicator: React.FC = () => {
                     : "text-stone-500 hover:text-stone-800"
                 }`}
               >
-                {tab === "all" ? "All Checks (12)" : tab === "GSC" ? "Google Search Console" : tab}
+                {tab === "all" ? "All" : tab === "GSC" ? "GSC" : tab === "SchemaAudit" ? "Schema" : tab === "CrawlHealth" ? "Crawl" : tab === "Variants" ? "Variants" : tab === "CrawlStatus" ? "Status" : tab === "Logs" ? "Logs" : tab}
               </button>
             ))}
           </div>
 
-          {/* Check List */}
-          <div className="p-3 overflow-y-auto space-y-2.5 flex-1 divide-y divide-stone-100 max-h-[320px]">
+          {/* Check List / Panels */}
+          <div className="p-3 overflow-y-auto space-y-2.5 flex-1 divide-y divide-stone-100 max-h-[340px]">
             {activeTab === "GSC" ? (
               <div className="space-y-3 pt-1">
                 <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
@@ -165,7 +180,7 @@ export const SEOStatusIndicator: React.FC = () => {
                     </div>
                   </div>
                 ))}
-                <div className="pt-2">
+                <div className="pt-2 space-y-2">
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText('<meta name="google-site-verification" content="productreviews-review-gsc-verified-token" />');
@@ -177,8 +192,26 @@ export const SEOStatusIndicator: React.FC = () => {
                     {copiedToken ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <FileCode className="w-3.5 h-3.5" />}
                     {copiedToken ? "Copied GSC HTML Tag!" : "Copy Google Verification Tag"}
                   </button>
+
+                  <button
+                    onClick={handleCopySchema}
+                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                  >
+                    {copiedSchema ? <Check className="w-3.5 h-3.5 text-white" /> : <FileCode className="w-3.5 h-3.5" />}
+                    {copiedSchema ? "Copied JSON-LD Schema!" : "Copy JSON-LD for Rich Results Test"}
+                  </button>
                 </div>
               </div>
+            ) : activeTab === "SchemaAudit" ? (
+              <SEOAuditPanel />
+            ) : activeTab === "CrawlHealth" ? (
+              <CrawlHealthPanel />
+            ) : activeTab === "Variants" ? (
+              <RobotsVariantInspector />
+            ) : activeTab === "CrawlStatus" ? (
+              <CrawlStatusPanel />
+            ) : activeTab === "Logs" ? (
+              <DiagnosticLogsPanel />
             ) : (
               filteredChecks.map((check) => (
                 <div key={check.id} className="pt-2 first:pt-0 flex items-start gap-2.5">
