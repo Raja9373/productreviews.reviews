@@ -1,23 +1,27 @@
-import type { Request, Response } from "express";
-import { sitemapRouteHandler, generateSitemapXml, getCanonicalSitemapEntries } from "../src/seo/sitemapGenerator";
+import { sitemapRouteHandler } from "../src/seo/sitemapGenerator";
 
-export async function serveSitemapXml(req: Request, res: Response) {
-  return sitemapRouteHandler(req, res);
-}
-
-export async function handleGenerateSitemapApi(req: Request, res: Response) {
+/**
+ * Vercel Serverless Function to serve dynamic XML sitemap.
+ * Includes comprehensive logging for crawl diagnostics.
+ */
+export default function handler(req: any, res: any) {
+  console.log(`[Sitemap API] START: Received request for ${req.url}`);
   try {
-    const entries = getCanonicalSitemapEntries();
-    const xml = generateSitemapXml();
-    res.json({
-      success: true,
-      totalUrls: entries.length,
-      sampleUrls: entries.slice(0, 5).map((e) => e.loc),
-      xmlPreview: xml.slice(0, 300) + "..."
-    });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message || String(err) });
+    console.log("[Sitemap API] Invoking sitemapRouteHandler...");
+    
+    // Intercept status to log it explicitly
+    const originalStatus = res.status;
+    res.status = (code: number) => {
+        console.log(`[Sitemap API] Explicitly setting response status: ${code}`);
+        return originalStatus.call(res, code);
+    };
+
+    sitemapRouteHandler(req, res);
+    
+    // Explicitly logging completion
+    console.log("[Sitemap API] END: sitemapRouteHandler successfully invoked.");
+  } catch (err) {
+    console.error("[Sitemap API] Error generating XML:", err);
+    res.status(500).send("XML generation failed");
   }
 }
-
-export default serveSitemapXml;
