@@ -172,14 +172,13 @@ export function sitemapRouteHandler(req: Request, res: Response): void {
   try {
     const xml = generateSitemapXml(BASE_SITE_URL);
 
-    res.type("application/xml; charset=utf-8");
+    res.setHeader("Content-Type", "application/xml; charset=utf-8");
     res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Robots-Tag", "noindex, nofollow");
     res.setHeader("Cache-Control", "public, max-age=3600, s-maxage=86400");
     res.status(200).send(xml);
   } catch (err: any) {
     console.error("[sitemapRouteHandler] Generation error:", err);
-    res.type("application/xml; charset=utf-8");
+    res.setHeader("Content-Type", "application/xml; charset=utf-8");
     res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
