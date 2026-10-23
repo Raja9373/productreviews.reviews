@@ -31,13 +31,18 @@ export const HreflangInjector: React.FC<HreflangInjectorProps> = ({ currentMarke
 
     const head = document.head;
     const baseUrl = "https://productreviews.review";
+    const currentPath = window.location.pathname;
 
     // Add hreflang for each supported market
     Object.entries(MARKET_HREFLANG_MAP).forEach(([marketCode, hreflangVal]) => {
       const link = document.createElement("link");
       link.setAttribute("rel", "alternate");
       link.setAttribute("hreflang", hreflangVal);
-      link.setAttribute("href", `${baseUrl}/?market=${marketCode}`);
+      // Construct URL: if home, use query param; if internal, keep path
+      const href = currentPath === "/" 
+        ? `${baseUrl}/?market=${marketCode}` 
+        : `${baseUrl}${currentPath}?market=${marketCode}`;
+      link.setAttribute("href", href);
       head.appendChild(link);
     });
 
@@ -45,7 +50,7 @@ export const HreflangInjector: React.FC<HreflangInjectorProps> = ({ currentMarke
     const defaultLink = document.createElement("link");
     defaultLink.setAttribute("rel", "alternate");
     defaultLink.setAttribute("hreflang", "x-default");
-    defaultLink.setAttribute("href", `${baseUrl}/`);
+    defaultLink.setAttribute("href", `${baseUrl}${currentPath === "/" ? "" : currentPath}`);
     head.appendChild(defaultLink);
 
     return () => {

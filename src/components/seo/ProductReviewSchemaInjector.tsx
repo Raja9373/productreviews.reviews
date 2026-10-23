@@ -57,7 +57,7 @@ export const ProductReviewSchemaInjector: React.FC<ProductReviewSchemaProps> = (
       }))
     };
 
-    const productSchema = {
+    const productSchema: any = {
       "@context": "https://schema.org",
       "@type": "Product",
       "name": productName,
@@ -73,6 +73,10 @@ export const ProductReviewSchemaInjector: React.FC<ProductReviewSchemaProps> = (
         "author": {
           "@type": "Organization",
           "name": authorName
+        },
+        "positiveNotes": {
+          "@type": "ItemList",
+          "itemListElement": ["Lab-tested benchmarks", "Hardware evidence-based verdict"]
         }
       },
       "aggregateRating": {
@@ -84,7 +88,22 @@ export const ProductReviewSchemaInjector: React.FC<ProductReviewSchemaProps> = (
       }
     };
 
-    const schemaGraph: any[] = [breadcrumbListSchema, productSchema];
+    // AEO / Voice Search Enhancement: Speakable
+    const speakableSchema = {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": productName,
+      "speakable": {
+        "@type": "SpeakableSpecification",
+        "xpath": [
+          "/html/head/title",
+          "/html/head/meta[@name='description']/@content"
+        ]
+      },
+      "url": canonicalUrl
+    };
+
+    const schemaGraph: any[] = [breadcrumbListSchema, productSchema, speakableSchema];
 
     if (faqs && faqs.length > 0) {
       schemaGraph.push({

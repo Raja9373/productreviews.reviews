@@ -63,9 +63,36 @@ export function getPilotPage(requestPath: string): PilotPage | undefined {
   return undefined;
 }
 
+const MARKET_HREFLANG_MAP: Record<string, string> = {
+  US: "en-us",
+  IN: "en-in",
+  UK: "en-gb",
+  DE: "de-de",
+  FR: "fr-fr",
+  ES: "es-es",
+  IT: "it-it",
+  CA: "en-ca",
+  AU: "en-au",
+  JP: "ja-jp",
+  BR: "pt-br",
+  MX: "es-mx",
+  NL: "nl-nl",
+  SG: "en-sg"
+};
+
 export function renderPilotHtml(pilotPage: PilotPage, baseHtml: string): string {
   const canonicalUrl = `https://productreviews.review${pilotPage.path}`;
   
+  // Construct Hreflang Tags
+  const hreflangTags = Object.entries(MARKET_HREFLANG_MAP).map(([market, lang]) => {
+    const href = pilotPage.path === "/" 
+      ? `https://productreviews.review/?market=${market}` 
+      : `https://productreviews.review${pilotPage.path}?market=${market}`;
+    return `<link rel="alternate" hreflang="${lang}" href="${href}" />`;
+  }).join("\n    ");
+  
+  const xDefaultTag = `<link rel="alternate" hreflang="x-default" href="https://productreviews.review${pilotPage.path}" />`;
+
   let html = baseHtml
     .replace(/<title>.*?<\/title>/i, `<title>${pilotPage.title}</title>`)
     .replace(/<meta name="description" content=".*?"\s*\/?>/i, `<meta name="description" content="${pilotPage.description}" />`)
@@ -74,42 +101,72 @@ export function renderPilotHtml(pilotPage: PilotPage, baseHtml: string): string 
     .replace(/<meta property="og:description" content=".*?"\s*\/?>/i, `<meta property="og:description" content="${pilotPage.description}" />`)
     .replace(/<meta property="og:url" content=".*?"\s*\/?>/i, `<meta property="og:url" content="${canonicalUrl}" />`);
 
+  // Inject Hreflang
+  html = html.replace(/<\/head>/i, `    ${hreflangTags}\n    ${xDefaultTag}\n</head>`);
+
   if (pilotPage.record) {
     const r = pilotPage.record;
+    const categorySlug = r.category.toLowerCase().replace(/\s+/g, "-");
     const jsonLdScript = `
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "Product",
-      "name": "${r.name}",
-      "category": "${r.category}",
-      "brand": {
-        "@type": "Brand",
-        "name": "${r.brand}"
-      },
-      "review": {
-        "@type": "Review",
-        "reviewRating": {
-          "@type": "Rating",
-          "ratingValue": "${r.rating}",
-          "bestRating": "5"
+      "@graph": [
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://productreviews.review/" },
+            { "@type": "ListItem", "position": 2, "name": "${r.category}", "item": "https://productreviews.review/?category=${categorySlug}" },
+            { "@type": "ListItem", "position": 3, "name": "${r.name}", "item": "${canonicalUrl}" }
+          ]
         },
-        "author": {
-          "@type": "Organization",
-          "name": "Editorial Research Board"
+        {
+          "@type": "Product",
+          "name": "${r.name}",
+          "category": "${r.category}",
+          "brand": { "@type": "Brand", "name": "${r.brand}" },
+          "review": {
+            "@type": "Review",
+            "reviewRating": { "@type": "Rating", "ratingValue": "${r.rating}", "bestRating": "5" },
+            "author": { "@type": "Organization", "name": "Editorial Research Board" },
+            "reviewBody": "${r.verdict}",
+            "positiveNotes": {
+              "@type": "ItemList",
+              "itemListElement": ["Lab-tested benchmarks", "Hardware evidence-based verdict", "Authentic user sentiment analysis"]
+            }
+          },
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "${r.rating}",
+            "reviewCount": "${r.reviewCount}"
+          },
+          "offers": {
+            "@type": "AggregateOffer",
+            "priceCurrency": "USD",
+            "lowPrice": "${r.priceUSD}"
+          }
         },
-        "reviewBody": "${r.verdict}"
-      },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "${r.rating}",
-        "reviewCount": "${r.reviewCount}"
-      },
-      "offers": {
-        "@type": "AggregateOffer",
-        "priceCurrency": "USD",
-        "lowPrice": "${r.priceUSD}"
-      }
+        {
+          "@type": "WebPage",
+          "name": "${pilotPage.title}",
+          "speakable": {
+            "@type": "SpeakableSpecification",
+            "xpath": [
+              "/html/head/title",
+              "/html/head/meta[@name='description']/@content"
+            ]
+          },
+          "url": "${canonicalUrl}"
+        }
+        ${r.faqList ? `, {
+          "@type": "FAQPage",
+          "mainEntity": ${JSON.stringify(r.faqList.map(f => ({ 
+            "@type": "Question", 
+            "name": f.question, 
+            "acceptedAnswer": { "@type": "Answer", "text": f.answer } 
+          })))}
+        }` : ""}
+      ]
     }
     </script>
     `;

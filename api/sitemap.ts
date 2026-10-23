@@ -19,6 +19,7 @@ export default function (req: any, res: any) {
     "/review/macbook-pro-16-m3-max",
     "/review/dell-xps-15-oled",
     "/review/samsung-galaxy-s24-ultra",
+    "/review/best-oneplus-nord-ce4-review-2026",
     "/compare/iphone-16-pro-max-vs-galaxy-s24-ultra"
   ];
 
@@ -38,6 +39,7 @@ export default function (req: any, res: any) {
 
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=43200');
   res.end(xml);
 }
