@@ -234,12 +234,14 @@ async function startServer() {
 
   const serveDynamicSitemap = __name(async (req, res) => {
     try {
-      const sitemapHandler = (await import("./api/sitemap").then((s) => {
+      const { generateSitemapXml } = await import("./src/seo/sitemapGenerator").then((s) => {
         const e = "default";
         return s[e] && typeof s[e] == "object" && "__esModule" in s[e] ? s[e] : s;
-      })).default;
-      await sitemapHandler(req, res);
-    } catch (err) {
+      });
+      const xml = generateSitemapXml("https://productreviews.review");
+      res.setHeader("Content-Type", "application/xml; charset=utf-8");
+      res.status(200).send(xml);
+    } catch (err: any) {
       console.warn("[server.ts sitemap generation error]:", err?.message || err);
       res.setHeader("Content-Type", "application/xml; charset=utf-8");
       res.status(200).send('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>https://productreviews.review/</loc><lastmod>' + new Date().toISOString().split("T")[0] + "</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>\n</urlset>");

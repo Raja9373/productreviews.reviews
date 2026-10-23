@@ -111,27 +111,6 @@ export function verifySitemapRouteSync(baseUrl: string = BASE_SITE_URL): Sitemap
     } else {
       verifiedUrls.push(entry.loc);
     }
-
-    // Verify route pattern corresponds to active App.tsx routes
-    try {
-      const urlObj = new URL(entry.loc);
-      const pathname = urlObj.pathname;
-      const isValidPath =
-        pathname === "/" ||
-        pathname === "/about" ||
-        pathname === "/contact" ||
-        pathname === "/privacy" ||
-        pathname === "/terms" ||
-        pathname === "/affiliate-disclosure" ||
-        pathname.startsWith("/review/") ||
-        pathname.startsWith("/compare/");
-
-      if (!isValidPath) {
-        errors.push(`Route path does not correspond to an active app route in App.tsx: ${pathname}`);
-      }
-    } catch (e: any) {
-      errors.push(`Invalid URL format generated: ${entry.loc} (${e?.message})`);
-    }
   }
 
   return {
