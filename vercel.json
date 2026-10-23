@@ -3,22 +3,6 @@
     {
       "source": "/sitemap.xml",
       "destination": "/api/sitemap"
-    },
-    {
-      "source": "/sitemap-test",
-      "destination": "/api/sitemap-test"
-    },
-    {
-      "source": "/api/diagnostic-sitemap-fetch",
-      "destination": "/api/diagnostic-sitemap-fetch"
-    },
-    {
-      "source": "/api/sitemap-diagnostic",
-      "destination": "/api/sitemap-diagnostic"
-    },
-    {
-      "source": "/api/sitemap-debug",
-      "destination": "/api/sitemap-debug"
     }
   ]
 }
