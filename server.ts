@@ -143,7 +143,7 @@ async function startServer() {
     } else {
       destinationPattern = `https://www.${domain}/s?k=${encodeURIComponent(query)}${hasConfiguredTag ? "&tag=[CONFIGURED_SERVER_TAG]" : ""}`;
     }
-    res.json({ status: "ok", market, domain, hasConfiguredTag, destinationType: asin && /^[A-Z0-9]{10}$ / i.test(asin) ? "PRODUCT_DETAIL" : "MARKETPLACE_SEARCH", destinationPattern, affiliateCompliance: { tagExposedClientSide: false, commercialPricingVerified: false, disclosureRequired: true }, timestamp: new Date().toISOString() });
+    res.json({ status: "ok", market, domain, hasConfiguredTag, destinationType: asin && /^[A-Z0-9]{10}$/i.test(asin) ? "PRODUCT_DETAIL" : "MARKETPLACE_SEARCH", destinationPattern, affiliateCompliance: { tagExposedClientSide: false, commercialPricingVerified: false, disclosureRequired: true }, timestamp: new Date().toISOString() });
   });
 
   const handleGroundedSearch = __name(async (req, res) => {
