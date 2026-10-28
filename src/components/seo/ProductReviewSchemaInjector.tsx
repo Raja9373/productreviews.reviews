@@ -88,7 +88,6 @@ export const ProductReviewSchemaInjector: React.FC<ProductReviewSchemaProps> = (
       }
     };
 
-    // AEO / Voice Search Enhancement: Speakable
     const speakableSchema = {
       "@context": "https://schema.org",
       "@type": "WebPage",
@@ -125,13 +124,6 @@ export const ProductReviewSchemaInjector: React.FC<ProductReviewSchemaProps> = (
       null,
       2
     );
-
-    return () => {
-      const el = document.getElementById(scriptId);
-      if (el) {
-        // Keep or clean up
-      }
-    };
   }, [
     productName,
     category,
@@ -148,5 +140,3 @@ export const ProductReviewSchemaInjector: React.FC<ProductReviewSchemaProps> = (
 
   return null;
 };
-
-export default ProductReviewSchemaInjector;

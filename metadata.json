@@ -1,6 +1,6 @@
 {
   "name": "productreviews.review",
-  "description": "The best gear for your everyday life. Tested by experts. Independent product reviews and recommendations with global Amazon regional stores, multi-currency pricing, and verified affiliate guides.",
+  "description": "Prepend productreviews.review/ to any link to cut fake reviews, track real lowest Amazon prices, and view independent lab-tested hardware scores.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

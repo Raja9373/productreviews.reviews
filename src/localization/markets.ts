@@ -1,1 +1,45 @@
-var __defProp=Object.defineProperty;var __name=(target,value)=>__defProp(target,"name",{value,configurable:true});const SUPPORTED_MARKETS=[{code:"US",name:"United States",currency:"USD",currencySymbol:"$",amazonDomain:"amazon.com",flag:"\u{1F1FA}\u{1F1F8}"},{code:"IN",name:"India",currency:"INR",currencySymbol:"\u20B9",amazonDomain:"amazon.in",flag:"\u{1F1EE}\u{1F1F3}"},{code:"UK",name:"United Kingdom",currency:"GBP",currencySymbol:"\xA3",amazonDomain:"amazon.co.uk",flag:"\u{1F1EC}\u{1F1E7}"},{code:"DE",name:"Germany",currency:"EUR",currencySymbol:"\u20AC",amazonDomain:"amazon.de",flag:"\u{1F1E9}\u{1F1EA}"},{code:"FR",name:"France",currency:"EUR",currencySymbol:"\u20AC",amazonDomain:"amazon.fr",flag:"\u{1F1EB}\u{1F1F7}"},{code:"ES",name:"Spain",currency:"EUR",currencySymbol:"\u20AC",amazonDomain:"amazon.es",flag:"\u{1F1EA}\u{1F1F8}"},{code:"IT",name:"Italy",currency:"EUR",currencySymbol:"\u20AC",amazonDomain:"amazon.it",flag:"\u{1F1EE}\u{1F1F9}"},{code:"CA",name:"Canada",currency:"CAD",currencySymbol:"C$",amazonDomain:"amazon.ca",flag:"\u{1F1E8}\u{1F1E6}"},{code:"AU",name:"Australia",currency:"AUD",currencySymbol:"A$",amazonDomain:"amazon.com.au",flag:"\u{1F1E6}\u{1F1FA}"},{code:"JP",name:"Japan",currency:"JPY",currencySymbol:"\xA5",amazonDomain:"amazon.co.jp",flag:"\u{1F1EF}\u{1F1F5}"},{code:"BR",name:"Brazil",currency:"BRL",currencySymbol:"R$",amazonDomain:"amazon.com.br",flag:"\u{1F1E7}\u{1F1F7}"},{code:"MX",name:"Mexico",currency:"MXN",currencySymbol:"$",amazonDomain:"amazon.com.mx",flag:"\u{1F1F2}\u{1F1FD}"},{code:"NL",name:"Netherlands",currency:"EUR",currencySymbol:"\u20AC",amazonDomain:"amazon.nl",flag:"\u{1F1F3}\u{1F1F1}"},{code:"SG",name:"Singapore",currency:"SGD",currencySymbol:"S$",amazonDomain:"amazon.sg",flag:"\u{1F1F8}\u{1F1EC}"}];function getMarketInfo(code){return SUPPORTED_MARKETS.find(m=>m.code===code)||SUPPORTED_MARKETS[0]}__name(getMarketInfo,"getMarketInfo");const COUNTRY_KEYWORD_MAP={japan:"JP",japanese:"JP",tokyo:"JP",osaka:"JP",kyoto:"JP",india:"IN",indian:"IN",bharat:"IN",delhi:"IN",mumbai:"IN",bangalore:"IN",bengaluru:"IN",goa:"IN",hyderabad:"IN",chennai:"IN",kolkata:"IN",uk:"UK",britain:"UK",british:"UK",england:"UK",english:"UK",scotland:"UK",wales:"UK",london:"UK",manchester:"UK",germany:"DE",deutschland:"DE",german:"DE",berlin:"DE",munich:"DE",frankfurt:"DE",france:"FR",french:"FR",paris:"FR",lyon:"FR",spain:"ES",spanish:"ES",madrid:"ES",barcelona:"ES",italy:"IT",italian:"IT",rome:"IT",milan:"IT",canada:"CA",canadian:"CA",toronto:"CA",vancouver:"CA",montreal:"CA",australia:"AU",australian:"AU",sydney:"AU",melbourne:"AU",brisbane:"AU",brazil:"BR",brazilian:"BR",brasil:"BR","sao paulo":"BR","rio de janeiro":"BR",mexico:"MX",mexican:"MX",cdmx:"MX",netherlands:"NL",holland:"NL",dutch:"NL",amsterdam:"NL",singapore:"SG",singaporean:"SG",us:"US",usa:"US",america:"US",american:"US","united states":"US"};function resolveTargetMarket(query,userSelectedMarket){const normalizedQuery=` ${query.toLowerCase()} `;for(const[kw,code]of Object.entries(COUNTRY_KEYWORD_MAP)){if(kw==="us"){if(/\b(?:in\s+the\s+us|in\s+us|for\s+us\s+market)\b/i.test(normalizedQuery)){return{market:"US",explicitCountry:kw,resolvedBy:"country"}}continue}const pattern=new RegExp(`(?:\\bin|for|near|around|from)\\s+${kw}\\b|\\b${kw}\\b`,"i");if(pattern.test(normalizedQuery)){return{market:code,explicitCountry:kw,resolvedBy:"country"}}}if(/[₹]|\b(?:inr|rs\.?|rupees?|30000|30,000)\b/i.test(query)){return{market:"IN",explicitCurrency:"\u20B9",resolvedBy:"currency"}}if(/[£]|\b(?:gbp|pounds?)\b/i.test(query)){return{market:"UK",explicitCurrency:"\xA3",resolvedBy:"currency"}}if(/[€]|\b(?:eur|euros?)\b/i.test(query)){const euroMarkets=["DE","FR","ES","IT","NL"];const chosenEuro=userSelectedMarket&&euroMarkets.includes(userSelectedMarket)?userSelectedMarket:"DE";return{market:chosenEuro,explicitCurrency:"\u20AC",resolvedBy:"currency"}}if(/[¥]|\b(?:jpy|yen)\b/i.test(query)){return{market:"JP",explicitCurrency:"\xA5",resolvedBy:"currency"}}if(/c\$|\b(?:cad|canadian\s+dollars?)\b/i.test(query)){return{market:"CA",explicitCurrency:"C$",resolvedBy:"currency"}}if(/a\$|\b(?:aud|australian\s+dollars?)\b/i.test(query)){return{market:"AU",explicitCurrency:"A$",resolvedBy:"currency"}}if(/s\$|\b(?:sgd|singapore\s+dollars?)\b/i.test(query)){return{market:"SG",explicitCurrency:"S$",resolvedBy:"currency"}}if(/r\$|\b(?:brl|reais|real)\b/i.test(query)){return{market:"BR",explicitCurrency:"R$",resolvedBy:"currency"}}if(/mex\$|\b(?:mxn|mexican\s+pesos?)\b/i.test(query)){return{market:"MX",explicitCurrency:"$",resolvedBy:"currency"}}if(/us\$|\b(?:usd|us\s+dollars?)\b/i.test(query)){return{market:"US",explicitCurrency:"$",resolvedBy:"currency"}}if(/[\$]|\b(?:dollars?|bucks?)\b/i.test(query)){const dollarMarkets=["US","CA","AU","SG","MX"];if(userSelectedMarket&&dollarMarkets.includes(userSelectedMarket)){return{market:userSelectedMarket,explicitCurrency:"$",resolvedBy:"currency"}}return{market:"US",explicitCurrency:"$",resolvedBy:"currency"}}if(userSelectedMarket&&SUPPORTED_MARKETS.some(m=>m.code===userSelectedMarket)){return{market:userSelectedMarket,resolvedBy:"user"}}if(typeof navigator!=="undefined"&&navigator.languages){for(const lang of navigator.languages){const parts=lang.split("-");if(parts.length>1){const countryCode=parts[1].toUpperCase();if(SUPPORTED_MARKETS.some(m=>m.code===countryCode)){return{market:countryCode,resolvedBy:"locale"}}}}}return{market:"US",resolvedBy:"default"}}__name(resolveTargetMarket,"resolveTargetMarket");export{SUPPORTED_MARKETS,getMarketInfo,resolveTargetMarket};
+export interface MarketInfo {
+  code: string;
+  name: string;
+  currency: string;
+  symbol: string;
+  flag: string;
+  domain: string;
+  defaultTag: string;
+}
+
+export const SUPPORTED_MARKETS: MarketInfo[] = [
+  { code: "US", name: "United States", currency: "USD", symbol: "$", flag: "🇺🇸", domain: "amazon.com", defaultTag: "jaiguruji00-20" },
+  { code: "IN", name: "India", currency: "INR", symbol: "₹", flag: "🇮🇳", domain: "amazon.in", defaultTag: "jaiguruji00-21" },
+  { code: "UK", name: "United Kingdom", currency: "GBP", symbol: "£", flag: "🇬🇧", domain: "amazon.co.uk", defaultTag: "jaiguruji0002-21" },
+  { code: "DE", name: "Germany", currency: "EUR", symbol: "€", flag: "🇩🇪", domain: "amazon.de", defaultTag: "jaiguruji0004-21" },
+  { code: "FR", name: "France", currency: "EUR", symbol: "€", flag: "🇫🇷", domain: "amazon.fr", defaultTag: "jaiguruji0005-21" },
+  { code: "ES", name: "Spain", currency: "EUR", symbol: "€", flag: "🇪🇸", domain: "amazon.es", defaultTag: "jaiguruji0008-21" },
+  { code: "IT", name: "Italy", currency: "EUR", symbol: "€", flag: "🇮🇹", domain: "amazon.it", defaultTag: "jaiguruji0007-21" },
+  { code: "CA", name: "Canada", currency: "CAD", symbol: "C$", flag: "🇨🇦", domain: "amazon.ca", defaultTag: "jaiguruji000b-20" },
+  { code: "AU", name: "Australia", currency: "AUD", symbol: "A$", flag: "🇦🇺", domain: "amazon.com.au", defaultTag: "jaiguruji00-20" },
+  { code: "JP", name: "Japan", currency: "JPY", symbol: "¥", flag: "🇯🇵", domain: "amazon.co.jp", defaultTag: "jaiguruji00-22" },
+  { code: "BR", name: "Brazil", currency: "BRL", symbol: "R$", flag: "🇧🇷", domain: "amazon.com.br", defaultTag: "jaiguruji00-20" },
+  { code: "MX", name: "Mexico", currency: "MXN", symbol: "Mex$", flag: "🇲🇽", domain: "amazon.com.mx", defaultTag: "jaiguruji00-20" },
+  { code: "NL", name: "Netherlands", currency: "EUR", symbol: "€", flag: "🇳🇱", domain: "amazon.nl", defaultTag: "jaiguruji0004-21" },
+  { code: "SG", name: "Singapore", currency: "SGD", symbol: "S$", flag: "🇸🇬", domain: "amazon.sg", defaultTag: "jaiguruji00-20" }
+];
+
+export function resolveTargetMarket(geoCode?: string, acceptLang?: string): MarketInfo {
+  if (geoCode) {
+    const found = SUPPORTED_MARKETS.find((m) => m.code === geoCode.toUpperCase());
+    if (found) return found;
+  }
+  if (acceptLang) {
+    const l = acceptLang.toLowerCase();
+    if (l.includes("hi") || l.includes("en-in")) return SUPPORTED_MARKETS.find((m) => m.code === "IN")!;
+    if (l.includes("en-gb")) return SUPPORTED_MARKETS.find((m) => m.code === "UK")!;
+    if (l.includes("ja")) return SUPPORTED_MARKETS.find((m) => m.code === "JP")!;
+    if (l.includes("de")) return SUPPORTED_MARKETS.find((m) => m.code === "DE")!;
+    if (l.includes("fr")) return SUPPORTED_MARKETS.find((m) => m.code === "FR")!;
+    if (l.includes("es")) return SUPPORTED_MARKETS.find((m) => m.code === "ES")!;
+    if (l.includes("it")) return SUPPORTED_MARKETS.find((m) => m.code === "IT")!;
+    if (l.includes("ca")) return SUPPORTED_MARKETS.find((m) => m.code === "CA")!;
+  }
+  return SUPPORTED_MARKETS[0]; // Default US
+}

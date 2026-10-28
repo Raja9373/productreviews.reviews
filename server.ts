@@ -1,15 +1,18 @@
-var __defProp = Object.defineProperty;
-var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { createServer as createViteServer } from "vite";
-import { adaptGeminiResponse } from "./src/search/researchAdapter";
+import { generateSitemapXml } from "./src/seo/sitemapGenerator";
+import { exportFaqManifestJson } from "./src/seo/faqData";
+import { getPilotPage, renderPilotHtml, render404Html } from "./src/ssr/pilotRenderer";
+import { contentRepository } from "./src/content/store/contentRepository";
 
 async function startServer() {
   const app = express();
-  const PORT = 3e3;
+  const PORT = 3000;
   app.use(express.json());
 
+  // Canonical domain redirect
   app.use((req, res, next) => {
     const host = (req.headers["host"] || req.hostname || "").toString().toLowerCase();
     const proto = (req.headers["x-forwarded-proto"] || req.protocol || "http").toString().toLowerCase();
@@ -20,25 +23,76 @@ async function startServer() {
     next();
   });
 
+  // Health check
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", service: "productreviews.review-universal-decision-engine", timestamp: new Date().toISOString() });
+    res.json({
+      status: "ok",
+      service: "productreviews.review-universal-decision-engine",
+      timestamp: new Date().toISOString()
+    });
   });
 
-  const getEnvTag = __name((code) => {
-    try {
-      if (typeof import.meta !== "undefined" && import.meta.env) {
-        const viteVal = import.meta.env[`VITE_AMAZON_TAG_${code}`] || import.meta.env[`VITE_AMAZON_${code}_ID`];
-        if (viteVal && viteVal.trim()) return viteVal.trim();
-      }
-    } catch {}
-    if (typeof process !== "undefined" && process.env) {
-      const procVal = process.env[`AMAZON_TAG_${code}`] || process.env[`AMAZON_${code}_ID`];
-      if (procVal && procVal.trim()) return procVal.trim();
-    }
-    return void 0;
-  }, "getEnvTag");
+  // 1. Google AdSense Publisher verification ads.txt
+  app.get("/ads.txt", (req, res) => {
+    res.type("text/plain; charset=utf-8");
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.send("google.com, pub-9048615701580913, DIRECT, f08c47fec0942fa0\n");
+  });
 
-  const GLOBAL_MARKET_STORES = {
+  // 2. Search Engine & AdSense Robots.txt
+  app.get("/robots.txt", (req, res) => {
+    res.type("text/plain; charset=utf-8");
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.send(`User-agent: *
+Allow: /
+
+User-agent: Mediapartners-Google
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+Sitemap: https://productreviews.review/sitemap.xml
+Sitemap: https://productreviews.review/sitemap-main.xml
+`);
+  });
+
+  // 3. Dynamic XML Sitemaps
+  const serveDynamicSitemap = (req: express.Request, res: express.Response) => {
+    try {
+      const xml = generateSitemapXml("https://productreviews.review");
+      res.setHeader("Content-Type", "application/xml; charset=utf-8");
+      res.setHeader("Cache-Control", "public, max-age=3600");
+      res.status(200).send(xml);
+    } catch (err: any) {
+      console.warn("[sitemap generation error]:", err);
+      res.setHeader("Content-Type", "application/xml; charset=utf-8");
+      res.status(200).send('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>https://productreviews.review/</loc></url>\n</urlset>');
+    }
+  };
+
+  app.get("/sitemap.xml", serveDynamicSitemap);
+  app.get("/sitemap-main.xml", serveDynamicSitemap);
+  app.get("/api/sitemap", serveDynamicSitemap);
+
+  // 4. Schema FAQ Manifest
+  app.get("/faq-manifest.json", (req, res) => {
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.send(exportFaqManifestJson("https://productreviews.review"));
+  });
+  app.get("/api/seo/faq-manifest", (req, res) => {
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.send(exportFaqManifestJson("https://productreviews.review"));
+  });
+
+  // 5. Global Market & Geo Detection
+  const GLOBAL_MARKET_STORES: Record<string, { domain: string; defaultTag: string }> = {
     IN: { domain: "amazon.in", defaultTag: "jaiguruji00-21" },
     US: { domain: "amazon.com", defaultTag: "jaiguruji00-20" },
     UK: { domain: "amazon.co.uk", defaultTag: "jaiguruji0002-21" },
@@ -56,278 +110,75 @@ async function startServer() {
   };
 
   app.get("/api/geo", (req, res) => {
-    const geoHeader = (req.headers["x-client-geo-country"] || req.headers["cf-ipcountry"] || req.headers["x-country-code"] || req.headers["x-appengine-country"] || "").toString().toUpperCase();
+    const geoHeader = (
+      req.headers["x-client-geo-country"] ||
+      req.headers["cf-ipcountry"] ||
+      req.headers["x-country-code"] ||
+      req.headers["x-appengine-country"] ||
+      ""
+    ).toString().toUpperCase();
+
     const acceptLang = (req.headers["accept-language"] || "").toString().toLowerCase();
     let detectedMarket = "US";
     if (GLOBAL_MARKET_STORES[geoHeader]) {
       detectedMarket = geoHeader;
-    } else if (acceptLang.includes("ja")) {
-      detectedMarket = "JP";
-    } else if (acceptLang.includes("de")) {
-      detectedMarket = "DE";
-    } else if (acceptLang.includes("fr")) {
-      detectedMarket = "FR";
-    } else if (acceptLang.includes("es")) {
-      detectedMarket = "ES";
-    } else if (acceptLang.includes("it")) {
-      detectedMarket = "IT";
     } else if (acceptLang.includes("hi") || acceptLang.includes("en-in")) {
       detectedMarket = "IN";
     } else if (acceptLang.includes("en-gb")) {
       detectedMarket = "UK";
-    } else if (acceptLang.includes("en-ca") || acceptLang.includes("fr-ca")) {
+    } else if (acceptLang.includes("de")) {
+      detectedMarket = "DE";
+    } else if (acceptLang.includes("fr")) {
+      detectedMarket = "FR";
+    } else if (acceptLang.includes("ja")) {
+      detectedMarket = "JP";
+    } else if (acceptLang.includes("ca")) {
       detectedMarket = "CA";
     }
-    res.json({ country: detectedMarket, domain: GLOBAL_MARKET_STORES[detectedMarket]?.domain || "amazon.com", tag: GLOBAL_MARKET_STORES[detectedMarket]?.defaultTag || "jaiguruji00-20" });
+    res.json({
+      country: detectedMarket,
+      domain: GLOBAL_MARKET_STORES[detectedMarket]?.domain || "amazon.com",
+      tag: GLOBAL_MARKET_STORES[detectedMarket]?.defaultTag || "jaiguruji00-20"
+    });
   });
 
+  // 6. Amazon Affiliate Redirection
   app.get("/api/affiliate/redirect", (req, res) => {
     const market = String(req.query.market || "US").toUpperCase();
     const query = String(req.query.q || req.query.query || "").trim();
     const asin = String(req.query.asin || "").trim();
-    const passedTag = String(req.query.tag || "").trim();
     const storeConfig = GLOBAL_MARKET_STORES[market] || GLOBAL_MARKET_STORES.US;
     const domain = storeConfig.domain;
-    let tag = passedTag || storeConfig.defaultTag;
-    const envTag = getEnvTag(market);
-    if (envTag) {
-      tag = envTag;
-    }
-    let targetUrl;
+    const tag = storeConfig.defaultTag;
+
+    let targetUrl: string;
     if (asin && /^[A-Z0-9]{10}$/i.test(asin)) {
       targetUrl = `https://www.${domain}/dp/${encodeURIComponent(asin)}?tag=${encodeURIComponent(tag)}`;
     } else {
       const searchParam = encodeURIComponent(query || "best products");
       targetUrl = `https://www.${domain}/s?k=${searchParam}&tag=${encodeURIComponent(tag)}`;
     }
-    return res.redirect(302, targetUrl);
+
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.redirect(302, targetUrl);
   });
 
-  app.get("/api/live-prices", async (req, res) => {
+  // 7. SSR Server-Side Pilot Renderer for Crawlers
+  let viteDevServer: any = null;
+
+  const handleReviewOrCompareRoute = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {
-      const livePricesHandler = (await import("./api/live-prices").then((s) => {
-        const e = "default";
-        return s[e] && typeof s[e] == "object" && "__esModule" in s[e] ? s[e] : s;
-      })).default;
-      await livePricesHandler(req, res);
-    } catch (err) {
-      console.warn("[server.ts live-prices error]:", err?.message || err);
-      try {
-        const { generateFallback, formatISTDate } = await import("./api/live-prices").then((s) => {
-          const e = "default";
-          return s[e] && typeof s[e] == "object" && "__esModule" in s[e] ? s[e] : s;
-        });
-        const q = String(req.query.q || "Best phone under 30000");
-        const fallback = generateFallback(q);
-        const now = new Date();
-        return res.json({ query: q, market: "IN", title: fallback.title, topPick: fallback.topPick, runnerUp: fallback.runnerUp, budgetPick: fallback.budgetPick, livePrice: fallback.livePrice, whyTrustUs: fallback.trust, methodologyHeading: fallback.methodologyHeading, methodologyPara1: fallback.methodologyPara1, methodologyPara2: fallback.methodologyPara2, isBrowseOnly: fallback.isBrowseOnly, browseMessage: fallback.browseMessage, lastUpdated: formatISTDate(now), lastUpdatedISO: now.toISOString(), affiliateTag: "jaiguruji00-21" });
-      } catch {
-        const now = new Date();
-        return res.json({ query: String(req.query.q || "Best electronics in India"), market: "IN", title: "The Best Electronics in India (2026)", livePrice: "Check live price", lastUpdated: `${now.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", month: "long", day: "numeric", year: "numeric" })} IST`, affiliateTag: "jaiguruji00-21" });
-      }
-    }
-  });
-
-  app.get("/api/affiliate/verify-route", (req, res) => {
-    const market = String(req.query.market || "US").toUpperCase();
-    const query = String(req.query.q || req.query.query || "camera").trim();
-    const asin = String(req.query.asin || "").trim();
-    const envTagMap = { IN: getEnvTag("IN"), US: getEnvTag("US"), UK: getEnvTag("UK"), JP: getEnvTag("JP"), DE: getEnvTag("DE"), FR: getEnvTag("FR"), ES: getEnvTag("ES"), IT: getEnvTag("IT"), CA: getEnvTag("CA"), AU: getEnvTag("AU"), BR: getEnvTag("BR"), MX: getEnvTag("MX"), NL: getEnvTag("NL"), SG: getEnvTag("SG") };
-    const domainMap = { IN: "amazon.in", US: "amazon.com", UK: "amazon.co.uk", JP: "amazon.co.jp", DE: "amazon.de", FR: "amazon.fr", ES: "amazon.es", IT: "amazon.it", CA: "amazon.ca", AU: "amazon.com.au", BR: "amazon.com.br", MX: "amazon.com.mx", NL: "amazon.nl", SG: "amazon.sg" };
-    const domain = domainMap[market] || "amazon.com";
-    const rawTag = envTagMap[market];
-    const hasConfiguredTag = Boolean(rawTag && rawTag.trim().length > 0);
-    let destinationPattern;
-    if (asin && /^[A-Z0-9]{10}$/i.test(asin)) {
-      destinationPattern = `https://www.${domain}/dp/${encodeURIComponent(asin)}${hasConfiguredTag ? "?tag=[CONFIGURED_SERVER_TAG]" : ""}`;
-    } else {
-      destinationPattern = `https://www.${domain}/s?k=${encodeURIComponent(query)}${hasConfiguredTag ? "&tag=[CONFIGURED_SERVER_TAG]" : ""}`;
-    }
-    res.json({ status: "ok", market, domain, hasConfiguredTag, destinationType: asin && /^[A-Z0-9]{10}$/i.test(asin) ? "PRODUCT_DETAIL" : "MARKETPLACE_SEARCH", destinationPattern, affiliateCompliance: { tagExposedClientSide: false, commercialPricingVerified: false, disclosureRequired: true }, timestamp: new Date().toISOString() });
-  });
-
-  const handleGroundedSearch = __name(async (req, res) => {
-    const query = req.body?.query || req.query?.q || "";
-    const apiKey = process.env.GEMINI_API_KEY || (typeof import.meta !== "undefined" && import.meta.env?.VITE_GEMINI_API_KEY);
-    if (!apiKey) {
-      return res.status(200).json({ success: false, status: "ERROR", products: [], errorMessage: "GEMINI_API_KEY environment variable is not configured." });
-    }
-    try {
-      const { GoogleGenAI } = await import("@google/genai").then((s) => {
-        const e = "default";
-        return s[e] && typeof s[e] == "object" && "__esModule" in s[e] ? s[e] : s;
-      });
-      const ai = new GoogleGenAI({ apiKey, httpOptions: { headers: { "User-Agent": "aistudio-build" }, timeout: 3e4 } });
-      const promptText = `Use Google Search to evaluate this decision query: "${query}". Provide a concise factual verdict, citing sources. Do not hallucinate prices or fake review counts.`;
-      let response;
-      try {
-        response = await ai.models.generateContent({ model: "gemini-3.8-flash", contents: promptText, tools: [{ googleSearch: {} }] });
-      } catch (primaryErr) {
-        console.warn("[Gemini API Grounded Route] Notice: Primary model returned status:", primaryErr?.status || primaryErr?.message || "transient error");
-        const isTransient = primaryErr?.status === 503 || primaryErr?.status === 504 || primaryErr?.status === 429 || primaryErr?.message?.includes("503") || primaryErr?.message?.includes("504") || primaryErr?.message?.includes("429") || primaryErr?.message?.includes("high demand") || primaryErr?.message?.includes("DEADLINE_EXCEEDED") || primaryErr?.message?.includes("Deadline expired") || primaryErr?.message?.includes("UNAVAILABLE") || primaryErr?.message?.includes("RESOURCE_EXHAUSTED");
-        if (isTransient) {
-          response = await ai.models.generateContent({ model: "gemini-3.1-flash-lite", contents: promptText, tools: [{ googleSearch: {} }] });
-        } else {
-          throw primaryErr;
-        }
-      }
-      const responseText = response.text || response.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      if (!responseText) {
-        console.error("[Gemini API Grounded Route] Response object:", JSON.stringify(response, null, 2));
-      }
-      const adaptedResponse = adaptGeminiResponse(responseText, false, query);
-      return res.status(200).json({ success: true, status: "RESULTS_FOUND", verdict: responseText, groundingMetadataExists: !!response.candidates?.[0]?.groundingMetadata, groundingMetadata: response.candidates?.[0]?.groundingMetadata, evidencePoints: adaptedResponse.evidencePoints, nichod: adaptedResponse.nichod, decision: adaptedResponse.decision, sourceStatus: adaptedResponse.sourceStatus, products: [], retrievedAt: new Date().toISOString() });
-    } catch (err) {
-      const isQuotaOrRateLimit = err?.status === 429 || err?.message?.includes("429") || err?.message?.includes("RESOURCE_EXHAUSTED") || err?.message?.includes("quota");
-      if (isQuotaOrRateLimit) {
-        console.log("[Gemini API Grounded Route] Notice: Rate limit / quota cooldown active, serving deterministic result.");
-      } else {
-        console.log("[Gemini API Grounded Route] Handled provider status:", err?.status || "notice");
-      }
-      return res.status(200).json({ success: false, status: "ERROR", products: [], errorMessage: "Search service is currently processing queries deterministically." });
-    }
-  }, "handleGroundedSearch");
-
-  app.post("/api/gemini/grounded-search", handleGroundedSearch);
-  app.get("/api/gemini/grounded-search", handleGroundedSearch);
-  app.get("/api/comparison-search", async (req, res) => {
-    const { handleComparisonSearch } = await import("./api/comparison-search").then((s) => {
-      const e = "default";
-      return s[e] && typeof s[e] == "object" && "__esModule" in s[e] ? s[e] : s;
-    });
-    await handleComparisonSearch(req, res);
-  });
-  app.post("/api/comparison-search", async (req, res) => {
-    const { handleComparisonSearch } = await import("./api/comparison-search").then((s) => {
-      const e = "default";
-      return s[e] && typeof s[e] == "object" && "__esModule" in s[e] ? s[e] : s;
-    });
-    await handleComparisonSearch(req, res);
-  });
-  app.post("/api/contact", async (req, res) => {
-    try {
-      const contactHandler = (await import("./api/contact").then((s) => {
-        const e = "default";
-        return s[e] && typeof s[e] == "object" && "__esModule" in s[e] ? s[e] : s;
-      })).default;
-      await contactHandler(req, res);
-    } catch (err) {
-      console.warn("[server.ts contact error]:", err?.message || err);
-      res.status(500).json({ error: "Failed to process contact submission." });
-    }
-  });
-
-  app.get("/ads.txt", (req, res) => {
-    res.type("text/plain");
-    res.send("google.com, pub-9048615701580913, DIRECT, f08c47fec0942fa0\n");
-  });
-
-  app.get("/robots.txt", (req, res) => {
-    res.type("text/plain; charset=utf-8");
-    res.setHeader("Cache-Control", "public, max-age=86400");
-    res.send("User-agent: *\nAllow: /\n\nSitemap: https://productreviews.review/sitemap.xml\n");
-  });
-
-  app.get("/sitemap_index.xml", (req, res) => {
-    res.status(404).send("Not Found");
-  });
-
-  const serveDynamicSitemap = __name(async (req, res) => {
-    try {
-      const { generateSitemapXml } = await import("./src/seo/sitemapGenerator").then((s) => {
-        const e = "default";
-        return s[e] && typeof s[e] == "object" && "__esModule" in s[e] ? s[e] : s;
-      });
-      const xml = generateSitemapXml("https://productreviews.review");
-      res.setHeader("Content-Type", "application/xml; charset=utf-8");
-      res.status(200).send(xml);
-    } catch (err: any) {
-      console.warn("[server.ts sitemap generation error]:", err?.message || err);
-      res.setHeader("Content-Type", "application/xml; charset=utf-8");
-      res.status(200).send('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>https://productreviews.review/</loc><lastmod>' + new Date().toISOString().split("T")[0] + "</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>\n</urlset>");
-    }
-  }, "serveDynamicSitemap");
-
-  const handleSitemapGenerateRoute = __name(async (req, res) => {
-    try {
-      const { handleGenerateSitemapApi } = await import("./api/sitemap").then((s) => {
-        const e = "default";
-        return s[e] && typeof s[e] == "object" && "__esModule" in s[e] ? s[e] : s;
-      });
-      await handleGenerateSitemapApi(req, res);
-    } catch (err) {
-      console.warn("[server.ts sitemap generate error]:", err?.message || err);
-      res.status(500).json({ error: "Failed to generate sitemap", message: err?.message || String(err) });
-    }
-  }, "handleSitemapGenerateRoute");
-
-  const handleGenerateSitemapDirect = __name(async (req, res) => {
-    try {
-      const { generateSitemapHandler } = await import("./api/generate-sitemap").then((s) => {
-        const e = "default";
-        return s[e] && typeof s[e] == "object" && "__esModule" in s[e] ? s[e] : s;
-      });
-      await generateSitemapHandler(req, res);
-    } catch (err) {
-      console.warn("[server.ts /api/generate-sitemap error]:", err?.message || err);
-      res.status(500).json({ error: "Failed to generate sitemap", message: err?.message || String(err) });
-    }
-  }, "handleGenerateSitemapDirect");
-
-  app.get("/api/generate-sitemap", handleGenerateSitemapDirect);
-  app.post("/api/generate-sitemap", handleGenerateSitemapDirect);
-
-  const serveFaqManifest = __name(async (req, res) => {
-    try {
-      const { exportFaqManifestJson } = await import("./src/seo/faqData").then((s) => {
-        const e = "default";
-        return s[e] && typeof s[e] == "object" && "__esModule" in s[e] ? s[e] : s;
-      });
-      const manifestJson = exportFaqManifestJson("https://productreviews.review", true);
-      res.setHeader("Content-Type", "application/json; charset=utf-8");
-      res.setHeader("Cache-Control", "public, max-age=3600, s-maxage=86400");
-      res.setHeader("X-Content-Type-Options", "nosniff");
-      res.status(200).send(manifestJson);
-    } catch (err) {
-      console.warn("[server.ts serveFaqManifest error]:", err?.message || err);
-      res.status(500).json({ error: "Failed to generate FAQ manifest", message: err?.message || String(err) });
-    }
-  }, "serveFaqManifest");
-
-  app.get("/faq-manifest.json", serveFaqManifest);
-  app.get("/api/faq-manifest.json", serveFaqManifest);
-  app.get("/sitemap.xml", serveDynamicSitemap);
-  app.get("/sitemap-main.xml", serveDynamicSitemap);
-  app.get("/api/sitemap", serveDynamicSitemap);
-  app.post("/api/sitemap/generate", handleSitemapGenerateRoute);
-  app.post("/api/sitemap/rebuild", handleSitemapGenerateRoute);
-  app.post("/api/sitemap", handleSitemapGenerateRoute);
-  app.get("/api/sitemap/generate", handleSitemapGenerateRoute);
-
-  let viteDevServer = null;
-  const handleReviewOrCompareRoute = __name(async (req, res, next) => {
-    try {
-      const { getPilotPage, renderPilotHtml, render404Html } = await import("./src/ssr/pilotRenderer").then((s) => {
-        const e = "default";
-        return s[e] && typeof s[e] == "object" && "__esModule" in s[e] ? s[e] : s;
-      });
-      const { contentRepository } = await import("./src/content/store/contentRepository").then((s) => {
-        const e = "default";
-        return s[e] && typeof s[e] == "object" && "__esModule" in s[e] ? s[e] : s;
-      });
-      const fs = await import("node:fs").then((s) => {
-        const e = "default";
-        return s[e] && typeof s[e] == "object" && "__esModule" in s[e] ? s[e] : s;
-      });
       const distIndex = path.join(process.cwd(), "dist", "index.html");
       const devIndex = path.join(process.cwd(), "index.html");
       const templatePath = fs.existsSync(distIndex) ? distIndex : devIndex;
       let baseHtml = fs.readFileSync(templatePath, "utf-8");
+
       if (process.env.NODE_ENV !== "production" && viteDevServer) {
         try {
           baseHtml = await viteDevServer.transformIndexHtml(req.originalUrl || req.path, baseHtml);
         } catch {}
       }
+
       const pilotPage = getPilotPage(req.path);
       if (pilotPage) {
         const rendered = renderPilotHtml(pilotPage, baseHtml);
@@ -336,44 +187,46 @@ async function startServer() {
         res.setHeader("X-Content-Type-Options", "nosniff");
         return res.status(200).send(rendered);
       }
-      const rawParam = req.params.slug;
-      const slug = (Array.isArray(rawParam) ? rawParam[0] : rawParam) || req.path.split("/").pop() || "";
+
+      const rawSlug = req.params.slug || req.path.split("/").pop() || "";
+      const slug = Array.isArray(rawSlug) ? rawSlug[0] : String(rawSlug);
       const record = contentRepository.getBySlug(slug);
       if (record && record.status === "PUBLISHED") {
         res.setHeader("Content-Type", "text/html; charset=utf-8");
-        res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
         return res.status(200).send(baseHtml);
       }
+
       const notFoundHtml = render404Html(baseHtml, req.path);
       res.setHeader("Content-Type", "text/html; charset=utf-8");
-      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
       return res.status(404).send(notFoundHtml);
     } catch (err) {
       console.error("[SSR handler error]:", err);
       next();
     }
-  }, "handleReviewOrCompareRoute");
+  };
 
   app.get("/review/:slug", handleReviewOrCompareRoute);
   app.get("/compare/:slug", handleReviewOrCompareRoute);
 
+  // 8. Mount Vite in Development or Static in Production
   if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({ server: { middlewareMode: true }, appType: "spa" });
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa"
+    });
     viteDevServer = vite;
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath, { maxAge: "1y", immutable: true, index: false }));
     app.all("*", (req, res) => {
-      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-      res.setHeader("Pragma", "no-cache");
-      res.setHeader("Expires", "0");
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
+
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Universal Decision Engine Server running at http://0.0.0.0:${PORT}`);
   });
 }
-__name(startServer, "startServer");
+
 startServer();

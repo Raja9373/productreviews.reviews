@@ -152,7 +152,7 @@ export function runDeepSeoAudit(): SeoAuditResult {
     });
   }
 
-  // 6. meta-title
+  // 6. meta-title (25 to 70 chars)
   const titleText = document.title || "";
   const titleLen = titleText.length;
   if (titleLen >= 25 && titleLen <= 70) {
@@ -181,7 +181,7 @@ export function runDeepSeoAudit(): SeoAuditResult {
     });
   }
 
-  // 7. meta-description
+  // 7. meta-description (50 to 170 chars)
   const descEl = document.querySelector<HTMLMetaElement>('meta[name="description"]');
   const descText = descEl?.getAttribute("content") || "";
   const descLen = descText.length;
@@ -365,8 +365,7 @@ export function useSeoAudit() {
   };
 
   useEffect(() => {
-    // Initial evaluation after DOM render
-    const t = setTimeout(reevaluate, 150);
+    const t = setTimeout(reevaluate, 200);
     return () => clearTimeout(t);
   }, []);
 

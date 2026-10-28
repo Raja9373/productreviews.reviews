@@ -12,9 +12,9 @@ export interface DocumentMetaOptions {
   keywords?: string[];
 }
 
-export const DEFAULT_SITE_TITLE = "productreviews.review: Tested Tech & Everyday Gear";
+export const DEFAULT_SITE_TITLE = "productreviews.review — Tested Tech & AI Shopping Verdicts";
 export const DEFAULT_SITE_DESCRIPTION =
-  "Independent hardware testing, benchmark evidence, and verified gear recommendations across global Amazon stores with real-time regional pricing.";
+  "Prepend productreviews.review/ to any link to cut fake reviews, track real lowest Amazon prices, and view independent lab-tested hardware scores.";
 export const DEFAULT_CANONICAL = "https://productreviews.review/";
 
 function setMetaTag(name: string, content: string, isProperty: boolean = false): void {
@@ -44,12 +44,9 @@ export function updateDocumentMeta(options: DocumentMetaOptions): void {
   const title = options.title.trim();
   const description = options.description.trim();
   const canonical = options.canonical || DEFAULT_CANONICAL;
-  const robots = options.robots || "index, follow";
+  const robots = options.robots || "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1";
 
-  // 1. Update document title
   document.title = title;
-
-  // 2. Standard SEO meta tags
   setMetaTag("description", description);
   setMetaTag("robots", robots);
 
@@ -57,10 +54,8 @@ export function updateDocumentMeta(options: DocumentMetaOptions): void {
     setMetaTag("keywords", options.keywords.join(", "));
   }
 
-  // 3. Canonical link tag (prevents duplicate content penalty during SEO crawls)
   setCanonicalLink(canonical);
 
-  // 4. OpenGraph tags
   setMetaTag("og:title", options.ogTitle || title, true);
   setMetaTag("og:description", options.ogDescription || description, true);
   setMetaTag("og:url", canonical, true);
@@ -70,7 +65,6 @@ export function updateDocumentMeta(options: DocumentMetaOptions): void {
     setMetaTag("og:image", options.ogImage, true);
   }
 
-  // 5. Twitter Card tags
   setMetaTag("twitter:card", "summary_large_image");
   setMetaTag("twitter:title", options.ogTitle || title);
   setMetaTag("twitter:description", options.ogDescription || description);

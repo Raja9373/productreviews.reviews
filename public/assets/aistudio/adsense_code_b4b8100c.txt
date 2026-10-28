@@ -1,0 +1,12 @@
+Add Google AdSense Publisher ID to index for verification
+
+Publisher ID: pub-9048615701580913
+Customer ID: 9127677806
+Timezone: UTC+05:30 Kolkata
+Product: Content
+
+Tasks:
+1. In index.html <head> add: <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9048615701580913" crossorigin="anonymous"></script>
+2. In public/ads.txt ensure line exists: google.com, pub-9048615701580913, DIRECT, f08c47fec0942fa0
+3. In src/App.tsx or layout ensure no adblock overlay blocks verification
+4. Rebuild - keep all other features same, do not change grounding logic
