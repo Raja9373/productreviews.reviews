@@ -79,6 +79,7 @@ Sitemap: https://productreviews.review/sitemap-main.xml
 
   app.get("/sitemap.xml", serveDynamicSitemap);
   app.get("/sitemap-main.xml", serveDynamicSitemap);
+  app.get("/sitemap_index.xml", serveDynamicSitemap);
   app.get("/api/sitemap", serveDynamicSitemap);
 
   // 4. Schema FAQ Manifest

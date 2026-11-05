@@ -6,7 +6,13 @@ export interface MarketInfo {
   flag: string;
   domain: string;
   defaultTag: string;
+  market?: string;
+  amazonDomain?: string;
+  explicitCountry?: string;
+  explicitCurrency?: string;
 }
+
+export const getMarketInfo = resolveTargetMarket;
 
 export const SUPPORTED_MARKETS: MarketInfo[] = [
   { code: "US", name: "United States", currency: "USD", symbol: "$", flag: "🇺🇸", domain: "amazon.com", defaultTag: "jaiguruji00-20" },

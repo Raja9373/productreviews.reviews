@@ -17,5 +17,6 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "server.ts", "vite.config.ts"]
+  "include": ["src", "server.ts", "vite.config.ts"],
+  "exclude": ["node_modules", "dist", "src/questions", "src/search", "src/components/Wirecutter*", "src/components/PublishedContentView.tsx", "src/components/ComparisonView.tsx"]
 }
