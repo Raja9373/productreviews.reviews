@@ -25,7 +25,7 @@ export const STATIC_CANONICAL_ROUTES: Array<{
 
 export function getCanonicalSitemapEntries(baseUrl: string = BASE_SITE_URL): SitemapEntry[] {
   const cleanBase = baseUrl.replace(/\/+$/, "");
-  const today = new Date().toISOString().split("T")[0];
+  const defaultLastmod = "2025-03-01";
   const entries: SitemapEntry[] = [];
   const seenLocs = new Set<string>();
 
@@ -35,7 +35,7 @@ export function getCanonicalSitemapEntries(baseUrl: string = BASE_SITE_URL): Sit
       seenLocs.add(loc);
       entries.push({
         loc,
-        lastmod: today,
+        lastmod: defaultLastmod,
         changefreq: route.changefreq,
         priority: route.priority
       });
@@ -50,7 +50,7 @@ export function getCanonicalSitemapEntries(baseUrl: string = BASE_SITE_URL): Sit
         seenLocs.add(loc);
         entries.push({
           loc,
-          lastmod: prod.lastUpdated || prod.publishedDate || today,
+          lastmod: defaultLastmod,
           changefreq: "weekly",
           priority: "0.9"
         });
@@ -67,7 +67,7 @@ export function getCanonicalSitemapEntries(baseUrl: string = BASE_SITE_URL): Sit
         seenLocs.add(loc);
         entries.push({
           loc,
-          lastmod: today,
+          lastmod: defaultLastmod,
           changefreq: "weekly",
           priority: "0.8"
         });

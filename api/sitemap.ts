@@ -4,7 +4,7 @@
  * Guaranteed to run in any Node.js serverless context.
  */
 export default function (req: any, res: any) {
-  const today = new Date().toISOString().split("T")[0];
+  const lastmod = "2025-03-01";
   const baseUrl = "https://productreviews.review";
 
   const paths = [
@@ -35,8 +35,8 @@ export default function (req: any, res: any) {
 
   paths.forEach(item => {
     xml += '  <url>\n';
-    xml += `    <loc>${baseUrl}${item.path === '/' ? '' : item.path}</loc>\n`;
-    xml += `    <lastmod>${today}</lastmod>\n`;
+    xml += `    <loc>${baseUrl}${item.path}</loc>\n`;
+    xml += `    <lastmod>${lastmod}</lastmod>\n`;
     xml += `    <changefreq>${item.changefreq}</changefreq>\n`;
     xml += `    <priority>${item.priority}</priority>\n`;
     xml += '  </url>\n';
@@ -47,6 +47,6 @@ export default function (req: any, res: any) {
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/xml; charset=utf-8');
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=43200');
+  res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
   res.end(xml);
 }
