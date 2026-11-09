@@ -1,11 +1,17 @@
 User-agent: *
 Allow: /
+Disallow: /sitemap-main.xml
+Disallow: /sitemap_index.xml
+Disallow: /faq-manifest.json
 
 User-agent: Mediapartners-Google
 Allow: /
 
 User-agent: Googlebot
 Allow: /
+Disallow: /sitemap-main.xml
+Disallow: /sitemap_index.xml
+Disallow: /faq-manifest.json
 
 User-agent: Google-Extended
 Allow: /
@@ -14,4 +20,3 @@ User-agent: Bingbot
 Allow: /
 
 Sitemap: https://productreviews.review/sitemap.xml
-Sitemap: https://productreviews.review/sitemap-main.xml
