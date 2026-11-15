@@ -170,14 +170,18 @@ export const FlashBuyerResearchHub: React.FC<FlashBuyerResearchHubProps> = ({
                         <div className="pt-2 flex flex-wrap items-center gap-2">
                           <span className="text-xs text-zinc-400">Related Full Review:</span>
                           {item.relatedProductSlugs.map((slug) => (
-                            <button
+                            <a
                               key={slug}
-                              onClick={() => onSelectProductBySlug(slug)}
+                              href={`/review/${slug}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                onSelectProductBySlug(slug);
+                              }}
                               className="inline-flex items-center gap-1 text-xs font-bold text-[#FFE600] hover:underline cursor-pointer bg-zinc-800 px-2.5 py-1 rounded-md"
                             >
                               <span>View Lab Review</span>
                               <ArrowRight className="w-3 h-3" />
-                            </button>
+                            </a>
                           ))}
                         </div>
                       )}

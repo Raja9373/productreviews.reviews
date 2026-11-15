@@ -1,7 +1,7 @@
 import React from "react";
-import { X, ShieldCheck, Lock, FileText, ShoppingBag, Info, Mail, CheckCircle2, ExternalLink } from "lucide-react";
+import { X, ShieldCheck, Lock, FileText, ShoppingBag, Info, Mail, CheckCircle2, ExternalLink, Award } from "lucide-react";
 
-export type PolicyType = "privacy" | "terms" | "affiliate" | "about" | "contact";
+export type PolicyType = "privacy" | "terms" | "affiliate" | "about" | "contact" | "editorial";
 
 interface PolicyModalProps {
   type: PolicyType | null;
@@ -25,6 +25,7 @@ export const PolicyModal: React.FC<PolicyModalProps> = ({ type, onClose }) => {
             {type === "affiliate" && <ShoppingBag className="w-5 h-5 text-[#FFE600]" />}
             {type === "about" && <Info className="w-5 h-5 text-[#FFE600]" />}
             {type === "contact" && <Mail className="w-5 h-5 text-[#FFE600]" />}
+            {type === "editorial" && <Award className="w-5 h-5 text-[#FFE600]" />}
 
             <div>
               <h2 className="text-lg font-black text-white capitalize">
@@ -33,9 +34,10 @@ export const PolicyModal: React.FC<PolicyModalProps> = ({ type, onClose }) => {
                 {type === "affiliate" && "Amazon Affiliate & Commission Disclosure"}
                 {type === "about" && "About productreviews.review"}
                 {type === "contact" && "Contact Us & Editorial Support"}
+                {type === "editorial" && "Editorial Policy, Testing Methodology & Fact-Checking"}
               </h2>
               <span className="text-[11px] font-mono text-zinc-500">
-                Official Compliance Documentation · Updated October 2026
+                Official Compliance Documentation · Verified March 2025
               </span>
             </div>
           </div>
@@ -251,6 +253,46 @@ export const PolicyModal: React.FC<PolicyModalProps> = ({ type, onClose }) => {
                 <span className="font-bold text-zinc-300 block mb-1">Response Time Guarantee:</span>
                 <span>We review all editorial corrections, DMCA notices, and privacy requests within 24 to 48 business hours.</span>
               </div>
+            </div>
+          )}
+
+          {/* 6. EDITORIAL POLICY & TESTING METHODOLOGY */}
+          {type === "editorial" && (
+            <div className="space-y-4">
+              <div className="bg-emerald-950/40 border border-emerald-800/60 p-4 rounded-xl">
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 block mb-1">
+                  100% Editorial Independence Guarantee:
+                </span>
+                <p className="text-zinc-200 text-xs sm:text-sm leading-relaxed">
+                  Manufacturers, brands, and PR agencies never get a preview of our reviews before publication, cannot pay to alter a Flash Score™, and have zero say in which products win our head-to-head shootouts.
+                </p>
+              </div>
+
+              <section className="space-y-2">
+                <h3 className="text-sm font-bold text-white">1. How We Acquire & Test Hardware</h3>
+                <p>
+                  To ensure our test results match what everyday consumers experience out of the retail box, our team acquires evaluation units directly from retail channels (primarily Amazon US and Amazon India). Every smartphone, laptop, headphone, and appliance is subjected to:
+                </p>
+                <ul className="list-disc pl-5 space-y-1 text-zinc-300">
+                  <li><strong>Standardized Battery Loops:</strong> Calibrated to 200 nits screen brightness over continuous 5G/Wi-Fi mixed workloads until 0% shutdown.</li>
+                  <li><strong>Charger & Thermal Verification:</strong> Wall-wattage meters and FLIR thermal imaging record peak surface temperatures during 30-minute stress tests.</li>
+                  <li><strong>Acoustic & Display Calibration:</strong> Colorimeter delta-E checks and multi-frequency pink-noise cabin isolation measurements.</li>
+                </ul>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="text-sm font-bold text-white">2. Fact-Checking & Corrections Policy</h3>
+                <p>
+                  Hardware firmware updates, regional price cuts, and silent component revisions happen frequently. Our editorial team audits published reviews quarterly. When a factual error or specification change is identified, we update the article immediately and timestamp the verification date. Readers can report discrepancies directly to <strong>alokmohansharma.delhi@gmail.com</strong>.
+                </p>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="text-sm font-bold text-white">3. AI-Assisted Synthesis vs Human Testing</h3>
+                <p>
+                  While our platform provides an interactive search assistant to help shoppers query verified owner experiences and specification tables quickly, all core product verdicts, pros/cons, and benchmark scores are verified by human hardware editors led by <strong>Alok Mohan Sharma</strong>.
+                </p>
+              </section>
             </div>
           )}
 

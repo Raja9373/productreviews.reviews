@@ -10,6 +10,7 @@ export default function (req: any, res: any) {
   const paths = [
     { path: "/", changefreq: "daily", priority: "1.0" },
     { path: "/about", changefreq: "monthly", priority: "0.6" },
+    { path: "/editorial-policy", changefreq: "monthly", priority: "0.6" },
     { path: "/contact", changefreq: "monthly", priority: "0.5" },
     { path: "/privacy", changefreq: "yearly", priority: "0.5" },
     { path: "/terms", changefreq: "yearly", priority: "0.4" },
@@ -26,6 +27,7 @@ export default function (req: any, res: any) {
     { path: "/review/apple-watch-ultra-2", changefreq: "weekly", priority: "0.9" },
     { path: "/review/dyson-v15-detect", changefreq: "weekly", priority: "0.9" },
     { path: "/compare/iphone-16-pro-max-vs-galaxy-s24-ultra", changefreq: "weekly", priority: "0.8" },
+    { path: "/compare/oneplus-nord-ce4-vs-nothing-phone-2a", changefreq: "weekly", priority: "0.8" },
     { path: "/compare/sony-wh-1000xm5-vs-bose-qc-ultra", changefreq: "weekly", priority: "0.8" },
     { path: "/compare/macbook-pro-m3-vs-dell-xps-15", changefreq: "weekly", priority: "0.8" }
   ];

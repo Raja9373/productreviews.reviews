@@ -13,6 +13,12 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://productreviews.review/editorial-policy</loc>
+    <lastmod>2025-03-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://productreviews.review/contact</loc>
     <lastmod>2025-03-01</lastmod>
     <changefreq>monthly</changefreq>
@@ -104,6 +110,12 @@
   </url>
   <url>
     <loc>https://productreviews.review/compare/iphone-16-pro-max-vs-galaxy-s24-ultra</loc>
+    <lastmod>2025-03-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://productreviews.review/compare/oneplus-nord-ce4-vs-nothing-phone-2a</loc>
     <lastmod>2025-03-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

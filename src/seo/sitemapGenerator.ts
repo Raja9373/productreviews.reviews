@@ -20,7 +20,8 @@ export const STATIC_CANONICAL_ROUTES: Array<{
   { path: "/contact", changefreq: "monthly", priority: "0.5" },
   { path: "/privacy", changefreq: "yearly", priority: "0.5" },
   { path: "/terms", changefreq: "yearly", priority: "0.4" },
-  { path: "/affiliate-disclosure", changefreq: "monthly", priority: "0.5" }
+  { path: "/affiliate-disclosure", changefreq: "monthly", priority: "0.5" },
+  { path: "/editorial-policy", changefreq: "monthly", priority: "0.6" }
 ];
 
 export function getCanonicalSitemapEntries(baseUrl: string = BASE_SITE_URL): SitemapEntry[] {

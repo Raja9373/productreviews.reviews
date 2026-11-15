@@ -109,6 +109,13 @@ export const PILOT_PAGES: PilotPage[] = [
     type: "compare",
     title: "Sony WH-1000XM5 vs Bose QC Ultra: Noise Cancelling Shootout",
     description: "Flight cabin silence test, 30h vs 24h battery, mic speech clarity, and Amazon pricing analysis."
+  },
+  {
+    path: "/compare/macbook-pro-m3-vs-dell-xps-15",
+    slug: "macbook-pro-m3-vs-dell-xps-15",
+    type: "compare",
+    title: "MacBook Pro 16 M3 Max vs Dell XPS 15 OLED: Creator Workstation Battle",
+    description: "Unplugged battery rendering benchmarks, 3.5K OLED vs Liquid Retina XDR display accuracy, and thermal throttling analysis."
   }
 ];
 
@@ -131,6 +138,10 @@ export function getPilotPage(requestPath: string): PilotPage | undefined {
       } else if (staticFound.slug === "sony-wh-1000xm5-vs-bose-qc-ultra") {
         const r1 = contentRepository.getBySlug("sony-wh-1000xm5");
         const r2 = contentRepository.getBySlug("bose-quietcomfort-ultra");
+        if (r1 && r2) staticFound.compareRecords = [r1, r2];
+      } else if (staticFound.slug === "macbook-pro-m3-vs-dell-xps-15") {
+        const r1 = contentRepository.getBySlug("macbook-pro-16-m3-max");
+        const r2 = contentRepository.getBySlug("dell-xps-15-oled");
         if (r1 && r2) staticFound.compareRecords = [r1, r2];
       }
     }
@@ -411,6 +422,64 @@ export function renderPilotHtml(pilotPage: PilotPage, baseHtml: string): string 
     `;
 
     html = html.replace(/<div id="root"><\/div>/i, ssrContent);
+  } else if (pilotPage.compareRecords) {
+    const [r1, r2] = pilotPage.compareRecords;
+    const jsonLdScript = `
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://productreviews.review/" },
+            { "@type": "ListItem", "position": 2, "name": "Comparisons", "item": "https://productreviews.review/#comparison-shootouts" },
+            { "@type": "ListItem", "position": 3, "name": "${pilotPage.title}", "item": "${canonicalUrl}" }
+          ]
+        },
+        {
+          "@type": "ItemList",
+          "name": "${pilotPage.title}",
+          "description": "${pilotPage.description}",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "${r1.name}", "url": "https://productreviews.review/review/${r1.slug}" },
+            { "@type": "ListItem", "position": 2, "name": "${r2.name}", "url": "https://productreviews.review/review/${r2.slug}" }
+          ]
+        }
+      ]
+    }
+    </script>
+    `;
+    html = html.replace(/<\/head>/i, `${jsonLdScript}\n</head>`);
+
+    const ssrCompareContent = `
+    <div id="root">
+      <main style="max-width: 900px; margin: 0 auto; padding: 24px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #e4e4e7; background-color: #09090b; line-height: 1.6;">
+        <nav aria-label="Breadcrumb" style="font-size: 13px; color: #a1a1aa; margin-bottom: 16px;">
+          <a href="/" style="color: #FFE600; text-decoration: none;">Home</a> &gt; 
+          <span>Comparisons</span> &gt; 
+          <span>${r1.name} vs ${r2.name}</span>
+        </nav>
+        <article>
+          <h1 style="font-size: 32px; font-weight: 800; color: #ffffff; margin: 0 0 16px 0;">${pilotPage.title}</h1>
+          <p style="font-size: 16px; color: #d4d4d8; margin-bottom: 24px;">${pilotPage.description}</p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+            <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 16px;">
+              <h2 style="font-size: 20px; color: #ffffff; margin-top: 0;"><a href="/review/${r1.slug}" style="color: #FFE600;">${r1.name}</a></h2>
+              <p style="font-size: 13px; color: #d4d4d8;">${r1.verdict}</p>
+              <p style="font-weight: bold; color: #FFE600;">Score: ${Math.round(r1.rating * 20)}/100 · $${r1.priceUSD}</p>
+            </div>
+            <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 16px;">
+              <h2 style="font-size: 20px; color: #ffffff; margin-top: 0;"><a href="/review/${r2.slug}" style="color: #FFE600;">${r2.name}</a></h2>
+              <p style="font-size: 13px; color: #d4d4d8;">${r2.verdict}</p>
+              <p style="font-weight: bold; color: #FFE600;">Score: ${Math.round(r2.rating * 20)}/100 · $${r2.priceUSD}</p>
+            </div>
+          </div>
+        </article>
+      </main>
+    </div>
+    `;
+    html = html.replace(/<div id="root"><\/div>/i, ssrCompareContent);
   }
 
   return html;

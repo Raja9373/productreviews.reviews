@@ -41,7 +41,7 @@ export const INITIAL_PRODUCTS: ReviewRecord[] = [
     amazonAsin: "B0DGJ9M8L4",
     priceUSD: 1199,
     publishedDate: "2024-09-20",
-    lastUpdated: "2026-03-15",
+    lastUpdated: "2025-03-01",
     faqList: [
       {
         question: "Is the iPhone 16 Pro Max worth upgrading from the iPhone 14 Pro?",
@@ -75,7 +75,7 @@ export const INITIAL_PRODUCTS: ReviewRecord[] = [
     amazonAsin: "B09XS7JWHH",
     priceUSD: 398,
     publishedDate: "2024-06-10",
-    lastUpdated: "2026-02-28",
+    lastUpdated: "2025-02-28",
     faqList: [
       {
         question: "How does the WH-1000XM5 compare to the Bose QuietComfort Ultra?",
@@ -104,7 +104,7 @@ export const INITIAL_PRODUCTS: ReviewRecord[] = [
     amazonAsin: "B0CM5B1W62",
     priceUSD: 3499,
     publishedDate: "2024-01-15",
-    lastUpdated: "2026-03-01"
+    lastUpdated: "2025-03-01"
   },
   {
     slug: "dell-xps-15-oled",
@@ -127,7 +127,7 @@ export const INITIAL_PRODUCTS: ReviewRecord[] = [
     amazonAsin: "B0C9X2PQ81",
     priceUSD: 1899,
     publishedDate: "2024-04-18",
-    lastUpdated: "2026-01-20"
+    lastUpdated: "2025-01-20"
   },
   {
     slug: "samsung-galaxy-s24-ultra",
@@ -150,7 +150,7 @@ export const INITIAL_PRODUCTS: ReviewRecord[] = [
     amazonAsin: "B0CS57LPM7",
     priceUSD: 1299,
     publishedDate: "2024-02-01",
-    lastUpdated: "2026-03-10"
+    lastUpdated: "2025-03-01"
   },
   {
     slug: "best-oneplus-nord-ce4-review-2026",
@@ -176,7 +176,7 @@ export const INITIAL_PRODUCTS: ReviewRecord[] = [
     amazonAsin: "B0CX22P27G",
     priceUSD: 299,
     publishedDate: "2024-04-01",
-    lastUpdated: "2026-04-10",
+    lastUpdated: "2025-03-01",
     faqList: [
       {
         question: "Does OnePlus Nord CE4 come with the 100W charger in the box?",
@@ -215,7 +215,7 @@ export const INITIAL_PRODUCTS: ReviewRecord[] = [
     amazonAsin: "B0CZ2Y5CFL",
     priceUSD: 499,
     publishedDate: "2024-05-14",
-    lastUpdated: "2026-03-25",
+    lastUpdated: "2025-02-25",
     faqList: [
       {
         question: "Does Google Pixel 8a have 7 years of OS updates?",
@@ -249,7 +249,7 @@ export const INITIAL_PRODUCTS: ReviewRecord[] = [
     amazonAsin: "B0CWLK5L48",
     priceUSD: 349,
     publishedDate: "2024-03-12",
-    lastUpdated: "2026-03-20",
+    lastUpdated: "2025-02-20",
     faqList: [
       {
         question: "Is the Nothing Phone 2a back made of glass or plastic?",
@@ -279,7 +279,7 @@ export const INITIAL_PRODUCTS: ReviewRecord[] = [
     amazonAsin: "B0CCZ26B5V",
     priceUSD: 429,
     publishedDate: "2024-02-15",
-    lastUpdated: "2026-03-12",
+    lastUpdated: "2025-02-12",
     faqList: [
       {
         question: "Bose QC Ultra vs Sony WH-1000XM5: Which has better noise cancellation?",
@@ -309,7 +309,7 @@ export const INITIAL_PRODUCTS: ReviewRecord[] = [
     amazonAsin: "B0CHX373Z5",
     priceUSD: 799,
     publishedDate: "2023-09-22",
-    lastUpdated: "2026-04-01",
+    lastUpdated: "2025-03-01",
     faqList: [
       {
         question: "Can I use Apple Watch Ultra 2 with an Android phone?",
@@ -339,7 +339,7 @@ export const INITIAL_PRODUCTS: ReviewRecord[] = [
     amazonAsin: "B09257CST7",
     priceUSD: 749,
     publishedDate: "2023-08-10",
-    lastUpdated: "2026-03-18",
+    lastUpdated: "2025-02-18",
     faqList: [
       {
         question: "How long does the battery last on the Dyson V15 Detect in Boost mode?",

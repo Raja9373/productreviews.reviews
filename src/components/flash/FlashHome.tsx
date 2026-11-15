@@ -1,19 +1,21 @@
 import React from "react";
-import { ReviewRecord } from "../../content/store/contentRepository";
+import { ReviewRecord, contentRepository } from "../../content/store/contentRepository";
 import { FlashHero } from "./FlashHero";
 import { FlashPrependDemo } from "./FlashPrependDemo";
 import { FlashFeaturedGrid } from "./FlashFeaturedGrid";
 import { FlashBuyerResearchHub } from "./FlashBuyerResearchHub";
+import { FlashDecisionTools } from "./FlashDecisionTools";
+import { COMPARISON_PAIRS, ComparisonPair } from "./FlashComparisonView";
 import { FlashEmailSection } from "./FlashEmailSection";
 import { FlashOrderTracker } from "./FlashOrderTracker";
 import { FlashRewardsSection } from "./FlashRewardsSection";
-import { contentRepository } from "../../content/store/contentRepository";
-import { Zap } from "lucide-react";
+import { Zap, Scale, ArrowRight } from "lucide-react";
 
 interface FlashHomeProps {
   products: ReviewRecord[];
   currentMarket: string;
   onSelectProduct: (record: ReviewRecord) => void;
+  onSelectComparison?: (comp: ComparisonPair) => void;
   onOpenEmailModal: () => void;
 }
 
@@ -21,6 +23,7 @@ export const FlashHome: React.FC<FlashHomeProps> = ({
   products,
   currentMarket,
   onSelectProduct,
+  onSelectComparison,
   onOpenEmailModal
 }) => {
   const scrollToSection = (id: string) => {
@@ -43,14 +46,13 @@ export const FlashHome: React.FC<FlashHomeProps> = ({
       <div className="border-t border-b border-zinc-900 bg-zinc-950/60 py-6 px-4">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-zinc-500 text-xs">
           <span className="font-bold uppercase tracking-wider text-[11px] text-zinc-400">
-            Backed by Top VCs & Featured In:
+            Independent Testing Standards & Editorial Principles:
           </span>
-          <div className="flex flex-wrap items-center justify-center gap-8 font-bold text-zinc-400 text-sm tracking-tight opacity-80">
-            <span className="hover:text-white transition-colors">TechCrunch</span>
-            <span className="hover:text-white transition-colors">The Economic Times</span>
-            <span className="hover:text-white transition-colors">Entrackr</span>
-            <span className="hover:text-white transition-colors">YourStory</span>
-            <span className="hover:text-white transition-colors">Forbes India</span>
+          <div className="flex flex-wrap items-center justify-center gap-8 font-bold text-zinc-400 text-xs tracking-tight opacity-85">
+            <span className="hover:text-white transition-colors">100% Retail-Purchased Units</span>
+            <span className="hover:text-white transition-colors">Zero Sponsored Ratings</span>
+            <span className="hover:text-white transition-colors">14-Country Amazon ASIN Tracking</span>
+            <span className="hover:text-white transition-colors">FLIR Thermal & Battery Loops</span>
           </div>
         </div>
       </div>
@@ -62,10 +64,83 @@ export const FlashHome: React.FC<FlashHomeProps> = ({
         onSelectProduct={onSelectProduct}
       />
 
-      {/* 3. Prepend signature Browser Demo */}
+      {/* 3. Head-to-Head Hardware Shootout Hub (Crawlable Internal Links) */}
+      <section id="comparison-shootouts" className="py-16 px-4 sm:px-8 max-w-6xl mx-auto border-t border-zinc-900">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-bold text-[#FFE600] uppercase tracking-wider mb-2 font-mono">
+              <Scale className="w-4 h-4" />
+              <span>Head-to-Head Hardware Shootouts</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              Direct Flagship & Mid-Range Comparisons
+            </h2>
+          </div>
+          <span className="text-xs text-zinc-400 font-mono">
+            Side-by-side lab specs, battery loops & real winner verdicts
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {COMPARISON_PAIRS.map((comp) => (
+            <article
+              key={comp.slug}
+              className="bg-zinc-950/90 border border-zinc-800/90 hover:border-[#FFE600]/60 rounded-3xl p-6 transition-all group flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <span className="text-[10px] font-mono uppercase font-bold text-[#FFE600] bg-[#FFE600]/10 border border-[#FFE600]/20 px-2.5 py-1 rounded-md">
+                    VS Shootout
+                  </span>
+                  <span className="text-[11px] font-mono text-zinc-500">
+                    {comp.keyDifferences.length} Tested Dimensions
+                  </span>
+                </div>
+                <h3 className="text-lg font-extrabold text-white group-hover:text-[#FFE600] transition-colors mb-2 leading-snug">
+                  <a
+                    href={`/compare/${comp.slug}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onSelectComparison?.(comp);
+                    }}
+                    className="block"
+                  >
+                    {comp.title}
+                  </a>
+                </h3>
+                <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed mb-4">
+                  {comp.metaDescription}
+                </p>
+              </div>
+
+              <div className="pt-3 border-t border-zinc-900 flex items-center justify-between">
+                <span className="text-[11px] font-mono text-emerald-400 font-semibold">
+                  ✓ Lab Winner Declared
+                </span>
+                <a
+                  href={`/compare/${comp.slug}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onSelectComparison?.(comp);
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#FFE600] group-hover:translate-x-0.5 transition-transform"
+                >
+                  <span>Compare Specs & Verdict</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      {/* 4. Interactive Deal Authenticity & 3-Year Cost Calculators */}
+      <FlashDecisionTools currentMarket={currentMarket} />
+
+      {/* 5. Prepend signature Browser Demo */}
       <FlashPrependDemo onSelectProduct={onSelectProduct} />
 
-      {/* 4. High-Intent Buyer Research & People Also Ask Knowledge Hub */}
+      {/* 6. High-Intent Buyer Research & People Also Ask Knowledge Hub */}
       <FlashBuyerResearchHub
         currentMarket={currentMarket}
         onSelectProductBySlug={(slug) => {
@@ -74,13 +149,13 @@ export const FlashHome: React.FC<FlashHomeProps> = ({
         }}
       />
 
-      {/* 5. The Free @productreviews.review Shopping Identity & Live Inbox */}
+      {/* 7. The Free @productreviews.review Shopping Identity & Live Inbox */}
       <FlashEmailSection />
 
-      {/* 6. Universal Cross-Store Order Tracker */}
+      {/* 8. Universal Cross-Store Order Tracker */}
       <FlashOrderTracker />
 
-      {/* 7. Flash Coins & Shopping Rewards */}
+      {/* 9. Flash Coins & Shopping Rewards */}
       <FlashRewardsSection />
 
       {/* Final Call to Action */}
@@ -95,7 +170,7 @@ export const FlashHome: React.FC<FlashHomeProps> = ({
           </h2>
 
           <p className="text-sm sm:text-base text-zinc-400 max-w-xl mx-auto mb-8 leading-relaxed">
-            Join over 250,000+ shoppers who never overpay, avoid biased influencer hype, and keep their personal inbox 100% spam-free.
+            Cut through fake marketplace reviews, verify real 90-day Amazon deal history, and keep your personal inbox 100% spam-free.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

@@ -172,14 +172,18 @@ export const FlashHero: React.FC<FlashHeroProps> = ({
             { label: "Sony WH-1000XM5", slug: "sony-wh-1000xm5" },
             { label: "MacBook Pro M3 Max", slug: "macbook-pro-16-m3-max" }
           ].map((item) => (
-            <button
+            <a
               key={item.slug}
-              onClick={() => handleQuickPick(item.slug)}
+              href={`/review/${item.slug}`}
+              onClick={(e) => {
+                e.preventDefault();
+                handleQuickPick(item.slug);
+              }}
               className="bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-[#FFE600] border border-zinc-800 px-3 py-1 rounded-full transition-colors cursor-pointer flex items-center gap-1 font-mono text-[11px]"
             >
               <span>{item.label}</span>
               <ArrowRight className="w-3 h-3 opacity-60" />
-            </button>
+            </a>
           ))}
         </div>
 

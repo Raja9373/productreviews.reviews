@@ -45,12 +45,18 @@ async function startServer() {
     res.setHeader("Cache-Control", "public, max-age=86400");
     res.send(`User-agent: *
 Allow: /
+Disallow: /sitemap-main.xml
+Disallow: /sitemap_index.xml
+Disallow: /faq-manifest.json
 
 User-agent: Mediapartners-Google
 Allow: /
 
 User-agent: Googlebot
 Allow: /
+Disallow: /sitemap-main.xml
+Disallow: /sitemap_index.xml
+Disallow: /faq-manifest.json
 
 User-agent: Google-Extended
 Allow: /
@@ -59,7 +65,6 @@ User-agent: Bingbot
 Allow: /
 
 Sitemap: https://productreviews.review/sitemap.xml
-Sitemap: https://productreviews.review/sitemap-main.xml
 `);
   });
 
@@ -68,11 +73,13 @@ Sitemap: https://productreviews.review/sitemap-main.xml
     try {
       const xml = generateSitemapXml("https://productreviews.review");
       res.setHeader("Content-Type", "application/xml; charset=utf-8");
+      res.setHeader("X-Robots-Tag", "noindex");
       res.setHeader("Cache-Control", "public, max-age=3600");
       res.status(200).send(xml);
     } catch (err: any) {
       console.warn("[sitemap generation error]:", err);
       res.setHeader("Content-Type", "application/xml; charset=utf-8");
+      res.setHeader("X-Robots-Tag", "noindex");
       res.status(200).send('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>https://productreviews.review/</loc></url>\n</urlset>');
     }
   };
@@ -85,10 +92,12 @@ Sitemap: https://productreviews.review/sitemap-main.xml
   // 4. Schema FAQ Manifest
   app.get("/faq-manifest.json", (req, res) => {
     res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("X-Robots-Tag", "noindex, nofollow");
     res.send(exportFaqManifestJson("https://productreviews.review"));
   });
   app.get("/api/seo/faq-manifest", (req, res) => {
     res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("X-Robots-Tag", "noindex, nofollow");
     res.send(exportFaqManifestJson("https://productreviews.review"));
   });
 

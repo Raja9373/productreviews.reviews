@@ -3,6 +3,7 @@ import { contentRepository, ReviewRecord } from "./content/store/contentReposito
 import { FlashNavbar } from "./components/flash/FlashNavbar";
 import { FlashHome } from "./components/flash/FlashHome";
 import { FlashProductAnalysis } from "./components/flash/FlashProductAnalysis";
+import { FlashComparisonView, COMPARISON_PAIRS, ComparisonPair } from "./components/flash/FlashComparisonView";
 import { FlashEmailModal } from "./components/flash/FlashEmailModal";
 import { FlashFooter } from "./components/flash/FlashFooter";
 import { PolicyModal, PolicyType } from "./components/common/PolicyModal";
@@ -16,8 +17,56 @@ import { resolveTargetMarket } from "./localization/markets";
 export function App() {
   const [currentMarket, setCurrentMarket] = useState<string>("US");
   const [selectedProduct, setSelectedProduct] = useState<ReviewRecord | null>(null);
+  const [selectedComparison, setSelectedComparison] = useState<ComparisonPair | null>(null);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [activePolicy, setActivePolicy] = useState<PolicyType | null>(null);
+
+  const syncStateFromLocation = () => {
+    if (typeof window === "undefined") return;
+    const path = window.location.pathname.replace(/\/+$/, "") || "/";
+
+    if (path.startsWith("/review/")) {
+      const slug = path.replace("/review/", "");
+      const record = contentRepository.getBySlug(slug);
+      if (record) {
+        setSelectedProduct(record);
+        setSelectedComparison(null);
+        setActivePolicy(null);
+        return;
+      }
+    } else if (path.startsWith("/compare/")) {
+      const slug = path.replace("/compare/", "");
+      const comp = COMPARISON_PAIRS.find((c) => c.slug === slug);
+      if (comp) {
+        setSelectedComparison(comp);
+        setSelectedProduct(null);
+        setActivePolicy(null);
+        return;
+      }
+    } else if (path === "/privacy") {
+      setActivePolicy("privacy");
+      return;
+    } else if (path === "/terms") {
+      setActivePolicy("terms");
+      return;
+    } else if (path === "/affiliate-disclosure") {
+      setActivePolicy("affiliate");
+      return;
+    } else if (path === "/about") {
+      setActivePolicy("about");
+      return;
+    } else if (path === "/contact") {
+      setActivePolicy("contact");
+      return;
+    } else if (path === "/editorial-policy") {
+      setActivePolicy("editorial");
+      return;
+    }
+
+    setSelectedProduct(null);
+    setSelectedComparison(null);
+    setActivePolicy(null);
+  };
 
   useEffect(() => {
     try {
@@ -27,37 +76,60 @@ export function App() {
       }
     } catch {}
 
-    if (typeof window !== "undefined") {
-      const path = window.location.pathname.replace(/\/+$/, "") || "/";
-      if (path.startsWith("/review/")) {
-        const slug = path.replace("/review/", "");
-        const record = contentRepository.getBySlug(slug);
-        if (record) {
-          setSelectedProduct(record);
-        }
-      } else if (path === "/privacy") {
-        setActivePolicy("privacy");
-      } else if (path === "/terms") {
-        setActivePolicy("terms");
-      } else if (path === "/affiliate-disclosure") {
-        setActivePolicy("affiliate");
-      } else if (path === "/about") {
-        setActivePolicy("about");
-      } else if (path === "/contact") {
-        setActivePolicy("contact");
-      }
-    }
+    syncStateFromLocation();
+
+    const handlePopState = () => {
+      syncStateFromLocation();
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
   // Synchronize document metadata within ideal character boundaries for 100/100 SEO & SERP compliance
   useEffect(() => {
     if (selectedProduct) {
-      const title = `${selectedProduct.name} Review: Tested Verdict (2026)`.slice(0, 68);
+      const title = `${selectedProduct.name} Review: Tested Verdict (2025)`.slice(0, 68);
       const description = `Lab-tested verdict, benchmarks, pros & cons, and verified lowest Amazon price tracker for ${selectedProduct.name}.`.slice(0, 160);
       updateDocumentMeta({
         title,
         description,
         canonical: `https://productreviews.review/review/${selectedProduct.slug}`,
+        ogTitle: title,
+        ogDescription: description
+      });
+    } else if (selectedComparison) {
+      const title = selectedComparison.title.slice(0, 68);
+      const description = selectedComparison.metaDescription.slice(0, 160);
+      updateDocumentMeta({
+        title,
+        description,
+        canonical: `https://productreviews.review/compare/${selectedComparison.slug}`,
+        ogTitle: title,
+        ogDescription: description
+      });
+    } else if (activePolicy) {
+      const policyTitles: Record<PolicyType, string> = {
+        privacy: "Privacy Policy & Cookie Disclosure | productreviews.review",
+        terms: "Terms of Service | productreviews.review",
+        affiliate: "Amazon Affiliate Disclosure | productreviews.review",
+        about: "About Our Hardware Testing Lab | productreviews.review",
+        contact: "Contact Us & Editorial Support | productreviews.review",
+        editorial: "Editorial Policy & Testing Methodology | productreviews.review"
+      };
+      const policyPaths: Record<PolicyType, string> = {
+        privacy: "/privacy",
+        terms: "/terms",
+        affiliate: "/affiliate-disclosure",
+        about: "/about",
+        contact: "/contact",
+        editorial: "/editorial-policy"
+      };
+      const title = policyTitles[activePolicy];
+      const description = "Official editorial governance, lab testing methodology, privacy commitments, and Amazon Associate disclosures for productreviews.review.";
+      updateDocumentMeta({
+        title,
+        description,
+        canonical: `https://productreviews.review${policyPaths[activePolicy]}`,
         ogTitle: title,
         ogDescription: description
       });
@@ -70,20 +142,34 @@ export function App() {
         ogDescription: "Prepend productreviews.review/ to any link to cut fake reviews, track real lowest Amazon prices, and view independent lab-tested hardware scores."
       });
     }
-  }, [selectedProduct]);
+  }, [selectedProduct, selectedComparison, activePolicy]);
 
   const allProducts = contentRepository.getAll();
 
   const handleSelectProduct = (record: ReviewRecord) => {
     setSelectedProduct(record);
+    setSelectedComparison(null);
+    setActivePolicy(null);
     if (typeof window !== "undefined") {
       window.history.pushState({}, "", `/review/${record.slug}`);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
+  const handleSelectComparison = (comp: ComparisonPair) => {
+    setSelectedComparison(comp);
+    setSelectedProduct(null);
+    setActivePolicy(null);
+    if (typeof window !== "undefined") {
+      window.history.pushState({}, "", `/compare/${comp.slug}`);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   const handleBackToHome = () => {
     setSelectedProduct(null);
+    setSelectedComparison(null);
+    setActivePolicy(null);
     if (typeof window !== "undefined") {
       window.history.pushState({}, "", "/");
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -91,8 +177,9 @@ export function App() {
   };
 
   const handleNavigateSection = (sectionId: string) => {
-    if (selectedProduct) {
+    if (selectedProduct || selectedComparison) {
       setSelectedProduct(null);
+      setSelectedComparison(null);
       if (typeof window !== "undefined") {
         window.history.pushState({}, "", "/");
       }
@@ -109,7 +196,12 @@ export function App() {
   const handleOpenPolicy = (type: PolicyType) => {
     setActivePolicy(type);
     if (typeof window !== "undefined") {
-      const urlPath = type === "affiliate" ? "/affiliate-disclosure" : `/${type}`;
+      const urlPath =
+        type === "affiliate"
+          ? "/affiliate-disclosure"
+          : type === "editorial"
+          ? "/editorial-policy"
+          : `/${type}`;
       window.history.pushState({}, "", urlPath);
     }
   };
@@ -117,7 +209,11 @@ export function App() {
   const handleClosePolicy = () => {
     setActivePolicy(null);
     if (typeof window !== "undefined") {
-      const fallbackUrl = selectedProduct ? `/review/${selectedProduct.slug}` : "/";
+      const fallbackUrl = selectedProduct
+        ? `/review/${selectedProduct.slug}`
+        : selectedComparison
+        ? `/compare/${selectedComparison.slug}`
+        : "/";
       window.history.pushState({}, "", fallbackUrl);
     }
   };
@@ -159,12 +255,23 @@ export function App() {
             record={selectedProduct}
             currentMarket={currentMarket}
             onBack={handleBackToHome}
+            onSelectOtherProduct={handleSelectProduct}
+            onSelectComparison={handleSelectComparison}
+          />
+        ) : selectedComparison ? (
+          <FlashComparisonView
+            comparison={selectedComparison}
+            currentMarket={currentMarket}
+            onBack={handleBackToHome}
+            onSelectProduct={handleSelectProduct}
+            onSelectComparison={handleSelectComparison}
           />
         ) : (
           <FlashHome
             products={allProducts}
             currentMarket={currentMarket}
             onSelectProduct={handleSelectProduct}
+            onSelectComparison={handleSelectComparison}
             onOpenEmailModal={() => setIsEmailModalOpen(true)}
           />
         )}
@@ -187,8 +294,12 @@ export function App() {
         onOpenPrivacyPolicy={() => handleOpenPolicy("privacy")}
       />
 
-      {/* Authoritative Flash Footer with Policy links */}
-      <FlashFooter onOpenPolicy={handleOpenPolicy} />
+      {/* Authoritative Flash Footer with Crawlable Internal Directory */}
+      <FlashFooter
+        onOpenPolicy={handleOpenPolicy}
+        onSelectProduct={handleSelectProduct}
+        onSelectComparison={handleSelectComparison}
+      />
 
       {/* Internal SEO Status Indicator */}
       <SEOStatusIndicator />
