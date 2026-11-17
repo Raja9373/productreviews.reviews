@@ -1,5 +1,5 @@
 import React from "react";
-import { Zap, ShieldCheck, ExternalLink, Mail, Lock, FileText, ShoppingBag, Info, Award } from "lucide-react";
+import { Zap, ShieldCheck, Mail, Lock, FileText, ShoppingBag, Info, Award } from "lucide-react";
 import { PolicyType } from "../common/PolicyModal";
 import { contentRepository, ReviewRecord } from "../../content/store/contentRepository";
 import { COMPARISON_PAIRS, ComparisonPair } from "./FlashComparisonView";
@@ -107,19 +107,29 @@ export const FlashFooter: React.FC<FlashFooterProps> = ({
           </ul>
         </div>
 
-        {/* Col 4: Platform Tools & Crawlers */}
+        {/* Col 4: Platform Tools & Guides */}
         <div>
           <h4 className="font-bold uppercase tracking-wider text-white text-[11px] mb-3">
-            Tools & Search Feeds
+            Decision Tools & Guides
           </h4>
           <ul className="space-y-2 text-zinc-400">
-            <li><a href="#featured-products" className="hover:text-[#FFE600] transition-colors">Top Flash Scores</a></li>
-            <li><a href="#comparison-shootouts" className="hover:text-[#FFE600] transition-colors">VS Comparison Hub</a></li>
-            <li><a href="#decision-tools" className="hover:text-[#FFE600] transition-colors">Amazon Deal Auditor</a></li>
-            <li><a href="#research-hub" className="hover:text-[#FFE600] transition-colors">Buyer Research & FAQs</a></li>
-            <li><a href="/sitemap.xml" target="_blank" rel="noreferrer" className="hover:text-white flex items-center gap-1 font-mono text-[11px]"><span>XML Sitemap</span><ExternalLink className="w-3 h-3" /></a></li>
-            <li><a href="/robots.txt" target="_blank" rel="noreferrer" className="hover:text-white flex items-center gap-1 font-mono text-[11px]"><span>Robots.txt</span><ExternalLink className="w-3 h-3" /></a></li>
-            <li><a href="/ads.txt" target="_blank" rel="noreferrer" className="hover:text-white flex items-center gap-1 font-mono text-[11px]"><span>AdSense ads.txt</span><ExternalLink className="w-3 h-3" /></a></li>
+            <li><a href="/#featured-products" className="hover:text-[#FFE600] transition-colors">Top Flash Scores</a></li>
+            <li><a href="/#comparison-shootouts" className="hover:text-[#FFE600] transition-colors">VS Comparison Hub</a></li>
+            <li><a href="/#decision-tools" className="hover:text-[#FFE600] transition-colors">Fake Discount Auditor</a></li>
+            <li><a href="/#decision-tools" className="hover:text-[#FFE600] transition-colors">3-Year Battery TCO Simulator</a></li>
+            <li><a href="/#research-hub" className="hover:text-[#FFE600] transition-colors">Buyer Research & FAQs</a></li>
+            <li>
+              <a
+                href="/editorial-policy"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onOpenPolicy?.("editorial");
+                }}
+                className="hover:text-[#FFE600] transition-colors"
+              >
+                Lab Testing Methodology
+              </a>
+            </li>
           </ul>
         </div>
 
