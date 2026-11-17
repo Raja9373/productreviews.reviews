@@ -45,6 +45,7 @@ async function startServer() {
     res.setHeader("Cache-Control", "public, max-age=86400");
     res.send(`User-agent: *
 Allow: /
+Disallow: /api/
 Disallow: /sitemap-main.xml
 Disallow: /sitemap_index.xml
 Disallow: /faq-manifest.json
@@ -54,6 +55,7 @@ Allow: /
 
 User-agent: Googlebot
 Allow: /
+Disallow: /api/
 Disallow: /sitemap-main.xml
 Disallow: /sitemap_index.xml
 Disallow: /faq-manifest.json
@@ -169,6 +171,7 @@ Sitemap: https://productreviews.review/sitemap.xml
       targetUrl = `https://www.${domain}/s?k=${searchParam}&tag=${encodeURIComponent(tag)}`;
     }
 
+    res.setHeader("X-Robots-Tag", "noindex, nofollow");
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.redirect(302, targetUrl);
   });
@@ -208,6 +211,7 @@ Sitemap: https://productreviews.review/sitemap.xml
 
       const notFoundHtml = render404Html(baseHtml, req.path);
       res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.setHeader("X-Robots-Tag", "noindex, follow");
       return res.status(404).send(notFoundHtml);
     } catch (err) {
       console.error("[SSR handler error]:", err);
@@ -217,6 +221,13 @@ Sitemap: https://productreviews.review/sitemap.xml
 
   app.get("/review/:slug", handleReviewOrCompareRoute);
   app.get("/compare/:slug", handleReviewOrCompareRoute);
+  app.get("/about", handleReviewOrCompareRoute);
+  app.get("/editorial-policy", handleReviewOrCompareRoute);
+  app.get("/contact", handleReviewOrCompareRoute);
+  app.get("/privacy", handleReviewOrCompareRoute);
+  app.get("/terms", handleReviewOrCompareRoute);
+  app.get("/affiliate-disclosure", handleReviewOrCompareRoute);
+  app.get("/html/*", handleReviewOrCompareRoute);
 
   // 8. Mount Vite in Development or Static in Production
   if (process.env.NODE_ENV !== "production") {
@@ -229,9 +240,10 @@ Sitemap: https://productreviews.review/sitemap.xml
   } else {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath, { maxAge: "1y", immutable: true, index: false }));
-    app.all("*", (req, res) => {
+    app.get("/", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
+    app.all("*", handleReviewOrCompareRoute);
   }
 
   app.listen(PORT, "0.0.0.0", () => {

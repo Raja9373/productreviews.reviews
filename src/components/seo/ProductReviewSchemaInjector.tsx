@@ -94,9 +94,9 @@ export const ProductReviewSchemaInjector: React.FC<ProductReviewSchemaProps> = (
       "name": productName,
       "speakable": {
         "@type": "SpeakableSpecification",
-        "xpath": [
-          "/html/head/title",
-          "/html/head/meta[@name='description']/@content"
+        "cssSelector": [
+          "h1",
+          "article p"
         ]
       },
       "url": canonicalUrl

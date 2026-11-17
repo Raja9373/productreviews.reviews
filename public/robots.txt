@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /api/
 Disallow: /sitemap-main.xml
 Disallow: /sitemap_index.xml
 Disallow: /faq-manifest.json
@@ -9,6 +10,7 @@ Allow: /
 
 User-agent: Googlebot
 Allow: /
+Disallow: /api/
 Disallow: /sitemap-main.xml
 Disallow: /sitemap_index.xml
 Disallow: /faq-manifest.json

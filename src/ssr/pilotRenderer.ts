@@ -1,14 +1,22 @@
 import { contentRepository, ReviewRecord } from "../content/store/contentRepository";
 import { HIGH_INTENT_SEO_QUERIES, CATEGORY_SEARCH_TAGS } from "../content/seoKnowledgeBase";
 
+export interface PolicySsrContent {
+  heading: string;
+  subtitle: string;
+  schemaType: "WebPage" | "AboutPage" | "ContactPage";
+  sections: Array<{ title: string; body: string }>;
+}
+
 export interface PilotPage {
   path: string;
   slug: string;
-  type: "review" | "compare";
+  type: "review" | "compare" | "policy";
   title: string;
   description: string;
   record?: ReviewRecord;
   compareRecords?: [ReviewRecord, ReviewRecord];
+  policy?: PolicySsrContent;
 }
 
 export const PILOT_PAGES: PilotPage[] = [
@@ -119,8 +127,166 @@ export const PILOT_PAGES: PilotPage[] = [
   }
 ];
 
+const POLICY_SSR_PAGES: Record<string, PilotPage> = {
+  "/about": {
+    path: "/about",
+    slug: "about",
+    type: "policy",
+    title: "About Our Hardware Testing Lab | productreviews.review",
+    description: "Learn how productreviews.review independently tests consumer hardware, audits Amazon price histories, and maintains 100% editorial independence.",
+    policy: {
+      heading: "About productreviews.review — Independent Hardware Testing Lab",
+      subtitle: "Founded by technology researcher Alok Mohan Sharma (Delhi, India) with testing contributors in Bengaluru and San Francisco.",
+      schemaType: "AboutPage",
+      sections: [
+        {
+          title: "Our Mission: Truth in Consumer Technology",
+          body: "The internet is saturated with sponsored influencer hype, fake marketplace ratings, and AI-generated review spam. productreviews.review provides consumers with data-backed hardware evaluations, 200-nit battery depletion tests, thermal imaging under load, and verified lowest-price discovery across 14 Amazon marketplaces."
+        },
+        {
+          title: "Rigorous Lab Benchmarks & Retail Units",
+          body: "Every smartphone, laptop, audio device, and home appliance evaluated by our team undergoes standardized battery cycles, FLIR thermal scans, acoustic decibel sweeps, and display calibration checks using retail units."
+        },
+        {
+          title: "Contact & Publisher Ownership",
+          body: "Published by Alok Mohan Sharma. For editorial inquiries, review corrections, or press verification, email alokmohansharma.delhi@gmail.com."
+        }
+      ]
+    }
+  },
+  "/editorial-policy": {
+    path: "/editorial-policy",
+    slug: "editorial-policy",
+    type: "policy",
+    title: "Editorial Policy & Testing Methodology | productreviews.review",
+    description: "Read our editorial independence guarantee, hardware acquisition standards, 200-nit battery loop protocol, and quarterly fact-checking policy.",
+    policy: {
+      heading: "Editorial Policy, Testing Methodology & Fact-Checking",
+      subtitle: "Official Editorial Governance · Verified March 2025",
+      schemaType: "WebPage",
+      sections: [
+        {
+          title: "100% Editorial Independence Guarantee",
+          body: "Manufacturers, brands, and PR agencies never receive a preview of our reviews before publication, cannot pay to alter a Flash Score, and have zero influence over head-to-head comparison verdicts."
+        },
+        {
+          title: "How We Acquire & Test Hardware",
+          body: "To ensure our test results match everyday retail ownership, our team acquires evaluation units directly from retail channels (primarily Amazon US and Amazon India). Devices are tested via standardized 200-nit Wi-Fi/5G battery loops, wall-wattage charging telemetry, FLIR surface thermals, and multi-frequency acoustic sweeps."
+        },
+        {
+          title: "Fact-Checking & Corrections Policy",
+          body: "Our editorial team audits published reviews quarterly for firmware updates, regional price changes, and silent hardware revisions. Readers can report factual discrepancies directly to alokmohansharma.delhi@gmail.com for review within 24–48 business hours."
+        }
+      ]
+    }
+  },
+  "/contact": {
+    path: "/contact",
+    slug: "contact",
+    type: "policy",
+    title: "Contact Us & Editorial Support | productreviews.review",
+    description: "Contact the productreviews.review editorial board for hardware review questions, factual corrections, privacy requests, or DMCA inquiries.",
+    policy: {
+      heading: "Contact productreviews.review Editorial Support",
+      subtitle: "Direct Publisher Contact · Response within 24–48 business hours",
+      schemaType: "ContactPage",
+      sections: [
+        {
+          title: "Primary Editorial & Publisher Email",
+          body: "Reach Publisher Alok Mohan Sharma and the editorial review team directly at alokmohansharma.delhi@gmail.com (Timezone: UTC+05:30 IST)."
+        },
+        {
+          title: "What You Can Contact Us About",
+          body: "We welcome reader feedback, regional Amazon price discrepancy reports, hardware testing methodology questions, GDPR/CCPA privacy requests, and formal correction notices."
+        }
+      ]
+    }
+  },
+  "/privacy": {
+    path: "/privacy",
+    slug: "privacy",
+    type: "policy",
+    title: "Privacy Policy & Cookie Disclosure | productreviews.review",
+    description: "Official Privacy Policy detailing Google AdSense cookies, Amazon Associates affiliate tracking, log files, and GDPR/CCPA user privacy rights.",
+    policy: {
+      heading: "Privacy Policy & Cookie Disclosure",
+      subtitle: "Applicable to https://productreviews.review · GDPR, CCPA & Google AdSense Compliant",
+      schemaType: "WebPage",
+      sections: [
+        {
+          title: "Overview & Privacy Commitment",
+          body: "At productreviews.review, visitor privacy is paramount. This policy explains what minimal technical data is processed, how Google AdSense advertising cookies operate, and how visitors can manage consent or request deletion."
+        },
+        {
+          title: "Google AdSense & Third-Party Advertising Cookies",
+          body: "Google serves ads on productreviews.review using advertising cookies to display relevant promotions based on prior site visits. Visitors can opt out of personalized advertising anytime via Google Ads Settings (https://www.google.com/settings/ads) or aboutads.info."
+        },
+        {
+          title: "Amazon Associates & Affiliate Cookies",
+          body: "When you click an outbound product link to Amazon (US, IN, UK, DE, FR, ES, IT, CA, JP, AU, BR, MX, NL, SG), Amazon places temporary referral cookies in accordance with Amazon's Operating Agreement without sharing personal identity with productreviews.review."
+        },
+        {
+          title: "GDPR & CCPA Privacy Rights",
+          body: "Visitors have the right to request access, correction, or erasure of personal data under GDPR and CCPA. Submit privacy requests to alokmohansharma.delhi@gmail.com."
+        }
+      ]
+    }
+  },
+  "/terms": {
+    path: "/terms",
+    slug: "terms",
+    type: "policy",
+    title: "Terms of Service | productreviews.review",
+    description: "Terms of Service governing access to hardware reviews, benchmark scores, interactive calculators, and affiliate disclosures on productreviews.review.",
+    policy: {
+      heading: "Terms of Service",
+      subtitle: "Governing use of https://productreviews.review",
+      schemaType: "WebPage",
+      sections: [
+        {
+          title: "1. Agreement to Terms",
+          body: "By accessing or using productreviews.review, you agree to comply with these Terms of Service and applicable laws."
+        },
+        {
+          title: "2. Informational Purpose & Live Retailer Pricing",
+          body: "All hardware benchmarks, Flash Scores, interactive TCO calculators, and editorial verdicts are provided for informational purchasing guidance. Retail prices, stock availability, and seller warranties fluctuate on Amazon and must be verified at checkout."
+        },
+        {
+          title: "3. Intellectual Property & Limitation of Liability",
+          body: "Original review text, score methodologies, and interactive tools are protected by copyright. productreviews.review is not liable for indirect damages arising from external retailer transactions."
+        }
+      ]
+    }
+  },
+  "/affiliate-disclosure": {
+    path: "/affiliate-disclosure",
+    slug: "affiliate-disclosure",
+    type: "policy",
+    title: "Amazon Affiliate Disclosure | productreviews.review",
+    description: "FTC & Amazon Associates Operating Agreement disclosure explaining how productreviews.review earns qualifying commissions with zero editorial bias.",
+    policy: {
+      heading: "Amazon Affiliate & Commission Disclosure",
+      subtitle: "As an Amazon Associate, productreviews.review earns from qualifying purchases.",
+      schemaType: "WebPage",
+      sections: [
+        {
+          title: "Amazon Associates Operating Agreement Disclosure",
+          body: "productreviews.review participates in the Amazon Services LLC Associates Program across Amazon.com, Amazon.in, Amazon.co.uk, Amazon.de, Amazon.ca, Amazon.fr, Amazon.es, Amazon.it, Amazon.co.jp, Amazon.com.au, Amazon.com.br, Amazon.com.mx, Amazon.nl, and Amazon.sg."
+        },
+        {
+          title: "Zero Influence on Editorial Scores",
+          body: "Our editorial board maintains strict separation between testing outcomes and affiliate commissions. We never accept payment to inflate scores, and clicking an Amazon link costs shoppers zero extra money."
+        }
+      ]
+    }
+  }
+};
+
 export function getPilotPage(requestPath: string): PilotPage | undefined {
-  const cleanPath = requestPath.split("?")[0].replace(/\/+$/, "");
+  const cleanPath = (requestPath.split("?")[0].replace(/\/+$/, "")) || "/";
+  if (POLICY_SSR_PAGES[cleanPath]) {
+    return POLICY_SSR_PAGES[cleanPath];
+  }
   const staticFound = PILOT_PAGES.find((p) => p.path === cleanPath);
   if (staticFound) {
     if (staticFound.type === "review") {
@@ -157,7 +323,7 @@ export function getPilotPage(requestPath: string): PilotPage | undefined {
         path: cleanPath,
         slug: record.slug,
         type: "review",
-        title: `${record.name} Review & Tested Verdict (2026)`,
+        title: `${record.name} Review & Tested Verdict (2025)`,
         description: `${record.summary} Read our lab-tested verdict, specs, pros/cons, and regional Amazon price tracker.`,
         record
       };
@@ -186,15 +352,6 @@ const MARKET_HREFLANG_MAP: Record<string, string> = {
 
 export function renderPilotHtml(pilotPage: PilotPage, baseHtml: string): string {
   const canonicalUrl = `https://productreviews.review${pilotPage.path}`;
-  
-  const hreflangTags = Object.entries(MARKET_HREFLANG_MAP).map(([market, lang]) => {
-    const href = pilotPage.path === "/" 
-      ? `https://productreviews.review/?market=${market}` 
-      : `https://productreviews.review${pilotPage.path}?market=${market}`;
-    return `<link rel="alternate" hreflang="${lang}" href="${href}" />`;
-  }).join("\n    ");
-  
-  const xDefaultTag = `<link rel="alternate" hreflang="x-default" href="https://productreviews.review${pilotPage.path}" />`;
 
   let html = baseHtml
     .replace(/<title>.*?<\/title>/i, `<title>${pilotPage.title}</title>`)
@@ -202,9 +359,22 @@ export function renderPilotHtml(pilotPage: PilotPage, baseHtml: string): string 
     .replace(/<link rel="canonical" href=".*?"\s*\/?>/i, `<link rel="canonical" href="${canonicalUrl}" />`)
     .replace(/<meta property="og:title" content=".*?"\s*\/?>/i, `<meta property="og:title" content="${pilotPage.title}" />`)
     .replace(/<meta property="og:description" content=".*?"\s*\/?>/i, `<meta property="og:description" content="${pilotPage.description}" />`)
-    .replace(/<meta property="og:url" content=".*?"\s*\/?>/i, `<meta property="og:url" content="${canonicalUrl}" />`);
+    .replace(/<meta property="og:url" content=".*?"\s*\/?>/i, `<meta property="og:url" content="${canonicalUrl}" />`)
+    .replace(/<meta name="twitter:title" content=".*?"\s*\/?>/i, `<meta name="twitter:title" content="${pilotPage.title}" />`)
+    .replace(/<meta name="twitter:description" content=".*?"\s*\/?>/i, `<meta name="twitter:description" content="${pilotPage.description}" />`)
+    .replace(/<meta name="twitter:url" content=".*?"\s*\/?>/i, `<meta name="twitter:url" content="${canonicalUrl}" />`)
+    .replace(/<!-- Schema\.org JSON-LD structured data -->[\s\S]*?<script type="application\/ld\+json">[\s\S]*?<\/script>/i, "");
 
-  html = html.replace(/<\/head>/i, `    ${hreflangTags}\n    ${xDefaultTag}\n</head>`);
+  if (pilotPage.type !== "policy") {
+    const hreflangTags = Object.entries(MARKET_HREFLANG_MAP).map(([market, lang]) => {
+      const href = pilotPage.path === "/"
+        ? `https://productreviews.review/?market=${market}`
+        : `https://productreviews.review${pilotPage.path}?market=${market}`;
+      return `<link rel="alternate" hreflang="${lang}" href="${href}" />`;
+    }).join("\n    ");
+    const xDefaultTag = `<link rel="alternate" hreflang="x-default" href="https://productreviews.review${pilotPage.path}" />`;
+    html = html.replace(/<\/head>/i, `    ${hreflangTags}\n    ${xDefaultTag}\n</head>`);
+  }
 
   if (pilotPage.record) {
     const r = pilotPage.record;
@@ -272,9 +442,9 @@ export function renderPilotHtml(pilotPage: PilotPage, baseHtml: string): string 
           "name": "${pilotPage.title}",
           "speakable": {
             "@type": "SpeakableSpecification",
-            "xpath": [
-              "/html/head/title",
-              "/html/head/meta[@name='description']/@content"
+            "cssSelector": [
+              "h1",
+              "article p"
             ]
           },
           "url": "${canonicalUrl}"
@@ -376,7 +546,7 @@ export function renderPilotHtml(pilotPage: PilotPage, baseHtml: string): string 
             <p style="font-size: 14px; color: #a1a1aa; margin-bottom: 16px;">
               Verified lowest price starting at $${r.priceUSD} with authentic manufacturer warranty and Amazon A-to-z return guarantee.
             </p>
-            <a href="/api/affiliate/redirect?market=US&asin=${r.amazonAsin}&q=${encodeURIComponent(r.name)}" rel="nofollow sponsored" style="display: inline-block; background: #FFE600; color: #000000; font-weight: 800; font-size: 14px; padding: 12px 24px; border-radius: 8px; text-decoration: none;">
+            <a href="/api/affiliate/redirect?market=US&asin=${r.amazonAsin}&q=${encodeURIComponent(r.name)}" rel="nofollow sponsored noopener noreferrer" style="display: inline-block; background: #FFE600; color: #000000; font-weight: 800; font-size: 14px; padding: 12px 24px; border-radius: 8px; text-decoration: none;">
               Check Lowest Price & Stock on Amazon →
             </a>
           </section>
@@ -421,7 +591,7 @@ export function renderPilotHtml(pilotPage: PilotPage, baseHtml: string): string 
     </div>
     `;
 
-    html = html.replace(/<div id="root"><\/div>/i, ssrContent);
+    html = html.replace(/<div id="root">\s*<\/div>/i, ssrContent);
   } else if (pilotPage.compareRecords) {
     const [r1, r2] = pilotPage.compareRecords;
     const jsonLdScript = `
@@ -479,17 +649,88 @@ export function renderPilotHtml(pilotPage: PilotPage, baseHtml: string): string 
       </main>
     </div>
     `;
-    html = html.replace(/<div id="root"><\/div>/i, ssrCompareContent);
+    html = html.replace(/<div id="root">\s*<\/div>/i, ssrCompareContent);
+  } else if (pilotPage.type === "policy" && pilotPage.policy) {
+    const p = pilotPage.policy;
+    const jsonLdScript = `
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://productreviews.review/" },
+            { "@type": "ListItem", "position": 2, "name": "${p.heading}", "item": "${canonicalUrl}" }
+          ]
+        },
+        {
+          "@type": "${p.schemaType}",
+          "name": "${pilotPage.title}",
+          "description": "${pilotPage.description}",
+          "url": "${canonicalUrl}",
+          "publisher": {
+            "@type": "Organization",
+            "name": "productreviews.review Editorial Board",
+            "url": "https://productreviews.review/"
+          }
+        }
+      ]
+    }
+    </script>
+    `;
+    html = html.replace(/<\/head>/i, `${jsonLdScript}\n</head>`);
+
+    const ssrPolicyContent = `
+    <div id="root">
+      <main style="max-width: 860px; margin: 0 auto; padding: 32px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #e4e4e7; background-color: #09090b; line-height: 1.7;">
+        <nav aria-label="Breadcrumb" style="font-size: 13px; color: #a1a1aa; margin-bottom: 20px;">
+          <a href="/" style="color: #FFE600; text-decoration: none;">Home</a> &gt; 
+          <span>${p.heading}</span>
+        </nav>
+        <article style="background: #121214; border: 1px solid #27272a; border-radius: 16px; padding: 28px;">
+          <header style="border-bottom: 1px solid #27272a; padding-bottom: 16px; margin-bottom: 24px;">
+            <h1 style="font-size: 30px; font-weight: 800; color: #ffffff; margin: 0 0 8px 0;">${p.heading}</h1>
+            <p style="font-size: 14px; color: #a1a1aa; margin: 0;">${p.subtitle}</p>
+          </header>
+          ${p.sections.map((sec) => `
+            <section style="margin-bottom: 22px;">
+              <h2 style="font-size: 18px; font-weight: 700; color: #FFE600; margin: 0 0 8px 0;">${sec.title}</h2>
+              <p style="font-size: 14px; color: #d4d4d8; margin: 0;">${sec.body}</p>
+            </section>
+          `).join("")}
+          <footer style="border-top: 1px solid #27272a; padding-top: 16px; margin-top: 24px; font-size: 13px; color: #a1a1aa;">
+            <a href="/" style="color: #FFE600; text-decoration: none; font-weight: bold;">← Back to productreviews.review Hardware Directory</a>
+          </footer>
+        </article>
+      </main>
+    </div>
+    `;
+    html = html.replace(/<div id="root">\s*<\/div>/i, ssrPolicyContent);
   }
 
   return html;
 }
 
 export function render404Html(baseHtml: string, requestPath: string): string {
-  const notFoundTitle = "Page Not Found | productreviews.review";
-  const notFoundDesc = "The requested product review or gear guide could not be located in our verified hardware repository.";
+  const notFoundTitle = "404 Page Not Found | productreviews.review";
+  const notFoundDesc = "The requested page could not be located on productreviews.review.";
+  const safePath = requestPath.replace(/[<>"'&]/g, "");
+  const notFoundBody = `
+    <div id="root">
+      <main style="max-width: 720px; margin: 64px auto; padding: 32px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #e4e4e7; background-color: #09090b; text-align: center;">
+        <h1 style="font-size: 32px; font-weight: 800; color: #ffffff; margin-bottom: 12px;">404 — Page Not Found</h1>
+        <p style="font-size: 15px; color: #a1a1aa; margin-bottom: 24px;">The requested path (${safePath}) does not correspond to a published product review, comparison, or editorial page.</p>
+        <a href="/" style="display: inline-block; background: #FFE600; color: #000000; font-weight: 800; padding: 12px 24px; border-radius: 10px; text-decoration: none;">Return to Homepage</a>
+      </main>
+    </div>
+  `;
+
   return baseHtml
     .replace(/<title>.*?<\/title>/i, `<title>${notFoundTitle}</title>`)
     .replace(/<meta name="description" content=".*?"\s*\/?>/i, `<meta name="description" content="${notFoundDesc}" />`)
-    .replace(/<meta name="robots" content=".*?"\s*\/?>/i, `<meta name="robots" content="noindex, follow" />`);
+    .replace(/<link rel="canonical" href=".*?"\s*\/?>/i, "")
+    .replace(/<meta name="robots" content=".*?"\s*\/?>/i, `<meta name="robots" content="noindex, follow" />`)
+    .replace(/<!-- Schema\.org JSON-LD structured data -->[\s\S]*?<script type="application\/ld\+json">[\s\S]*?<\/script>/i, "")
+    .replace(/<div id="root">\s*<\/div>/i, notFoundBody);
 }

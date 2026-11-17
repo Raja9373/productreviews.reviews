@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/ssr.ts": {
+      "includeFiles": "dist/index.html"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/sitemap",
@@ -9,8 +14,40 @@
       "destination": "/sitemap.xml"
     },
     {
-      "source": "/((?!api/|.*\\..*).*)",
-      "destination": "/index.html"
+      "source": "/review/:slug*",
+      "destination": "/api/ssr?path=/review/:slug*"
+    },
+    {
+      "source": "/compare/:slug*",
+      "destination": "/api/ssr?path=/compare/:slug*"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/api/ssr?path=/privacy"
+    },
+    {
+      "source": "/terms",
+      "destination": "/api/ssr?path=/terms"
+    },
+    {
+      "source": "/affiliate-disclosure",
+      "destination": "/api/ssr?path=/affiliate-disclosure"
+    },
+    {
+      "source": "/about",
+      "destination": "/api/ssr?path=/about"
+    },
+    {
+      "source": "/contact",
+      "destination": "/api/ssr?path=/contact"
+    },
+    {
+      "source": "/editorial-policy",
+      "destination": "/api/ssr?path=/editorial-policy"
+    },
+    {
+      "source": "/((?!api/|assets/|.*\\..*).+)",
+      "destination": "/api/ssr?path=/$1"
     }
   ],
   "headers": [
