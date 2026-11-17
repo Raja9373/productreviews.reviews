@@ -72,16 +72,21 @@ Sitemap: https://productreviews.review/sitemap.xml
 
   // 3. Dynamic XML Sitemaps
   const serveDynamicSitemap = (req: express.Request, res: express.Response) => {
+    const isAlias = req.path === "/sitemap-main.xml" || req.path === "/sitemap_index.xml";
     try {
       const xml = generateSitemapXml("https://productreviews.review");
       res.setHeader("Content-Type", "application/xml; charset=utf-8");
-      res.setHeader("X-Robots-Tag", "noindex");
+      if (isAlias) {
+        res.setHeader("X-Robots-Tag", "noindex");
+      }
       res.setHeader("Cache-Control", "public, max-age=3600");
       res.status(200).send(xml);
     } catch (err: any) {
       console.warn("[sitemap generation error]:", err);
       res.setHeader("Content-Type", "application/xml; charset=utf-8");
-      res.setHeader("X-Robots-Tag", "noindex");
+      if (isAlias) {
+        res.setHeader("X-Robots-Tag", "noindex");
+      }
       res.status(200).send('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>https://productreviews.review/</loc></url>\n</urlset>');
     }
   };

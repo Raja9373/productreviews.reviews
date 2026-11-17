@@ -48,7 +48,6 @@ export default function (req: any, res: any) {
 
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/xml; charset=utf-8');
-  res.setHeader('X-Robots-Tag', 'noindex');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
   res.end(xml);
